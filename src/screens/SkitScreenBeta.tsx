@@ -155,7 +155,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                     return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
                                 })()}
                                 layout="inline"
-                    >;
+                    />;
                 }}
                 setTooltip={setTooltip}
                 isVerticalLayout={isVerticalLayout}
