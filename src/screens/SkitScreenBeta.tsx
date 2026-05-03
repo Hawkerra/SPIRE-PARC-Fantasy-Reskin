@@ -145,7 +145,17 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
-                    return <Nameplate actor={actor as Actor} />;
+                    return <Nameplate 
+                                actor={actor} 
+                                size={isVerticalLayout ? "medium" : "large"}
+                                role={(() => {
+                                    const roleModules = stage().getSave().layout.getModulesWhere((m: any) => 
+                                        m && m.type !== 'quarters' && m.ownerId === actor.id
+                                    );
+                                    return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
+                                })()}
+                                layout="inline"
+                    >;
                 }}
                 setTooltip={setTooltip}
                 isVerticalLayout={isVerticalLayout}
@@ -192,13 +202,21 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                         }
                     }
                     if (!actor) return null;
-                    return (                    
-                        <ActorCard
-                            actor={actor}
-                            visitingFaction={undefined /* Don't display visiting status in skits. */}
-                            role={actor.getRole(stage().getSave())}
-                            collapsedSections={[ActorCardSection.STATS]}
-                        />
+                    // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
+                    return (
+                        <div style={{
+                            position: 'relative',
+                            maxWidth: isVerticalLayout ? '40vw' : '30vw',
+                            right: 0,
+                            top: 0
+                        }}>
+                            <ActorCard
+                                actor={actor}
+                                visitingFaction={undefined /* Don't display visiting status in skits. */}
+                                role={actor.getRole(stage().getSave())}
+                                collapsedSections={[ActorCardSection.STATS]}
+                            />
+                        </div>
                     );
                 }}
             />
