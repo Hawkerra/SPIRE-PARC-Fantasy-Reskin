@@ -184,10 +184,12 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableGhostSpeakers={true}
                 enableTalkingAnimation={true}
                 responsiveOverlay={(actor) => {
-                    if (skit.script && skit.script.length > (skit.currentIndex || 0) ? (skit.script[(skit.currentIndex || 0)].endScene || false) : false) {
-                        return (
-                            <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
-                        );
+                    if (skit && skit.script && skit.script.length > 0) {
+                        if (skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)].endScene || false) {
+                            return (
+                                <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
+                            );
+                        }
                     }
                     if (!actor) return null;
                     return (                    
