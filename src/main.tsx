@@ -1,7 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { CssBaseline, ThemeProvider } from '@mui/material'
 import App from './App'
 import './index.scss'
+import theme from './screens/Theme'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   // You can uncomment these if you want to follow the
@@ -10,6 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   //     commented-out code, but because of the nature
   //     of stages it's disabled by default here.
   // <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
   // </React.StrictMode>,
 )

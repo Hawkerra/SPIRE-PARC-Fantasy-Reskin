@@ -102,7 +102,7 @@ const getActorOutfitsAtIndex = (skit: SkitData, scriptIndex: number, allActors: 
 export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, isVerticalLayout }) => {
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
-    const [isGeneratingNextSkit, setIsGeneratingNextSkit] = React.useState<boolean>(false);
+    const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
@@ -125,6 +125,16 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 		}
 	}, [stage]);
 
+    useEffect(() => {
+        if (skit.script.length == 0) {
+            setIsLoading(true);
+            stage().continueSkit().then(() => {
+                setSkit({...stage().getSave().currentSkit as SkitData});
+                setIsLoading(false);
+            });
+        }
+    }, [skit]);
+
     return (
 		<BlurredBackground
 			imageUrl={decorImageUrl}
@@ -132,7 +142,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 		>
             <NovelVisualizer
                 script={skit}
-                loading={isGeneratingNextSkit}
+                loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
                     return <Nameplate actor={actor as Actor} />;
@@ -174,8 +184,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableGhostSpeakers={true}
                 enableTalkingAnimation={true}
                 responsiveOverlay={(actor) => {
-                    const sceneEnded = skit.script && skit.script.length > 0 ? (skit.script[skit.script.length - 1].endScene || false) : false;
-                    if (sceneEnded && skit.currentIndex === skit.script.length - 1) {
+                    if (skit.script && skit.script.length > (skit.currentIndex || 0) ? (skit.script[(skit.currentIndex || 0)].endScene || false) : false) {
                         return (
                             <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
                         );
