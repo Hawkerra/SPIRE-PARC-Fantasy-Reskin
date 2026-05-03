@@ -10,6 +10,7 @@ import { TooltipProvider } from '../contexts/TooltipContext';
 import TooltipBar from '../components/TooltipBar';
 import { useTooltip } from '../contexts/TooltipContext';
 import { AttenuationScreen } from './AttenuationScreen';
+import { SkitScreenBeta } from './SkitScreenBeta';
 
 /*
  * Base screen management; the Stage class will display this, and this will track the current screen being displayed.
@@ -80,9 +81,13 @@ const BaseScreenContent: FC<{ stage: () => Stage }> = ({ stage }) => {
                 // Render aperture screen
                 <AttenuationScreen stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
             )}
-            {screenType === ScreenType.SKIT && (
+            {screenType === ScreenType.SKIT && !stage().betaMode && (
                 // Render skit screen
                 <SkitScreen stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
+            )}
+            {screenType === ScreenType.SKIT && stage().betaMode && (
+                // Render skit screen beta
+                <SkitScreenBeta stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
             )}
             
             {/* Unified tooltip bar that renders over all screens */}

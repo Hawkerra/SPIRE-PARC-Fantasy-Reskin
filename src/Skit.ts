@@ -30,6 +30,7 @@ export interface ScriptEntry {
 }
 
 export interface SkitData {
+    id?: string;
     type: SkitType;
     moduleId: string;
     actorId?: string;
@@ -37,6 +38,7 @@ export interface SkitData {
     initialActorOutfits?: {[actorId: string]: string}; // Initial actor outfits at the start of the skit.
     script: ScriptEntry[];
     generating?: boolean;
+    currentIndex?: number;
     context: any;
     summary?: string;
     endProperties?: { [actorId: string]: { [stat: string]: number } }; // Stat changes to apply when scene ends
