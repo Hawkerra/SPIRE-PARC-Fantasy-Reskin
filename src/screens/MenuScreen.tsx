@@ -108,6 +108,8 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
             console.log(`Starting new game from settings: ${stage().getGenerateAidePromise() ? "loading aide" : "entering station"}`);
             if (stage().getGenerateAidePromise()) {
                 setScreenType(ScreenType.LOADING);
+            } else if (stage().betaMode && stage().getSave().currentSkit) {
+                setScreenType(ScreenType.SKIT);
             } else {
                 setScreenType(ScreenType.STATION);
             }

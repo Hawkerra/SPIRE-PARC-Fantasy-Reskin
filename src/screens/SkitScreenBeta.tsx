@@ -108,6 +108,16 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
     const decorImageUrl = module ? stage().getSave().actors[module.ownerId || '']?.decorImageUrls[module.type] || module.getAttribute('defaultImageUrl') : '';
 
+    const actors = {...stage().getSave().actors, 'player': {
+        id: 'player',
+        name: stage().getSave().player.name,
+        decorImageUrls: {},
+        outfitId: '',
+        getEmotionImage: () => '', // Player doesn't have an image, but this prevents errors when trying to access it.
+        themeColor: '#718096',
+        themeFontFamily: '"Arial Black", "Helvetica Neue", Arial, sans-serif',
+    }};
+
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
 		if (input.trim() === '' && skitArg.script.length > 0 && skitArg.script[index].endScene) {
@@ -159,8 +169,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }}
                 setTooltip={setTooltip}
                 isVerticalLayout={isVerticalLayout}
-                actors={stage().getSave().actors}
-                playerActorId={''}
+                actors={actors}
+                playerActorId={'player'}
                 getPresentActors={(_script, _index) =>
                     getActorsAtIndex(_script, _index, stage().getSave().actors) || []
                 }
@@ -179,6 +189,25 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     }
                     const outfitId = getActorOutfitsAtIndex(_script, index, stage().getSave().actors)[actor.id] || actor.outfitId;
                     return actor.getEmotionImage(emotion, stage(), outfitId);
+                }}
+                getActorFilter={(actor, _script, index) => {
+                    // Get current location ID of this actor as of this index in the script (the actor may not be in the scene; if their location is not a module, then they should be a hologram):
+                    const actorLocationId = (() => {
+                        const locations = skit.initialActorLocations || {};
+                        let currentLocationId = locations[actor.id] || '';
+                        for (let i = 0; i <= index && i < skit.script.length; i++) {
+                            const entry = skit.script[i];
+                            if (entry.movements && entry.movements[actor.id]) {
+                                currentLocationId = entry.movements[actor.id];
+                            }
+                        }
+                        return currentLocationId;
+                    })();
+
+                    return {
+                        filter: actor.isHologram(stage().getSave(), actorLocationId) ? 'hologram' : undefined,
+                        filterColor: actor.isHologram(stage().getSave(), actorLocationId) ? actor.themeColor : undefined
+                    };
                 }}
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {

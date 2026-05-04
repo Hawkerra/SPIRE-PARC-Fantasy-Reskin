@@ -422,8 +422,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     }
 
     saveGame() {
-        if (this.currentSave.currentSkit) {
-            return; // Don't save during an active skit
+        if (this.currentSave.currentSkit && !this.betaMode) {
+            return; // Don't save during an active skit (except in beta mode; just trying this out first).
         }
         // Update timestamp on current save
         this.currentSave.timestamp = Date.now();
