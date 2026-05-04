@@ -19,6 +19,7 @@ export enum SkitType {
 }
 
 export interface ScriptEntry {
+    speakerId?: string;
     speaker: string;
     message: string;
     speechUrl: string; // URL of TTS audio
@@ -873,6 +874,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     // Adjust speaker name to match actor name if possible
                     const matched = findBestNameMatch(entry.speaker, Object.values(stage.getSave().actors));
                     if (matched) {
+                        entry.speakerId = matched.id;
                         entry.speaker = matched.name;
                     }
                 }

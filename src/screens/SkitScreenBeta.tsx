@@ -206,7 +206,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     return (
                         <div style={{
                             position: 'relative',
-                            maxWidth: isVerticalLayout ? '40vw' : '30vw',
+                            maxWidth: isVerticalLayout ? '30vw' : '15vw',
                             right: 0,
                             top: 0
                         }}>
