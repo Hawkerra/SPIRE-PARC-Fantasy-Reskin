@@ -191,7 +191,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     };
                 }}
                 enableAudio={!stage().getSave().disableTextToSpeech}
-                enableGhostSpeakers={true}
+                enablePopInSpeakers={true}
                 enableTalkingAnimation={true}
                 responsiveOverlay={(actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
