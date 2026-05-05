@@ -631,7 +631,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     `  NARRATOR: [CHARACTER NAME moves to FACTION NAME] You watch on-screen as Character Name's shuttle detaches from the PARC and disappears into the stars.\n\n` +
                 `Example Multi-Tag Usage Format:\n` +
                     `  CHARACTER NAME: [CHARACTER NAME expresses JOY][CHARACTER NAME moves to HERE][CHARACTER NAME wears CHEERLEADING UNIFORM]Character Name bursts into the room with a huge grin. "Hey, I just had to come see you! I'm so happy to be here!"\n\n` +
-                `Current Scene Script Log to Continue:\n${buildScriptLog(skit, [], stage)}` +
+                `Ongoing Scene Log:\n${buildScriptLog(skit, [], stage)}` +
                 `\n\nPrimary Instruction:\n` +
                 `  ${skit.script.length == 0 ? 'Produce the initial moments of a scene (perhaps joined in medias res)' : 'Extend or conclude the current scene script'} with three to five entries, ` +
                 `based upon the Premise and the specified Scene Prompt. Primarily involve the Present Characters, although Absent Characters may be moved to this location using appropriate tags, if warranted. ` +
@@ -667,7 +667,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
             );
 
             const response = await stage.makeText({
-                prompt: fullPrompt,
+                template: fullPrompt,
                 min_tokens: 10,
                 max_tokens: 800,
                 include_history: true,
