@@ -575,18 +575,18 @@ export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise
             `\n\nInstruction:\nAnalyze the preceding scene script output a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. `) +
         `Example Response:\n` +
         `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`;
-     const endResponse = await stage.generator.textGen({
+     let endResponse = await stage.makeText({
         prompt: summaryPrompt,
         min_tokens: 1,
-        max_tokens: 150,
+        max_tokens: 300,
         include_history: true,
         stop: ['#END']
     });
-    if (endResponse && endResponse.result) {
+    if (endResponse) {
         // Strip double-asterisks. TODO: Remove this once other model issue is resolved.
-        endResponse.result = endResponse.result.replace(/\*\*/g, '');
+        endResponse = endResponse.replace(/\*\*/g, '');
 
-        const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse.result);
+        const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
         skit.summary = summaryMatch ? summaryMatch[1].trim() : '';
         console.log('New summary for skit:', skit.summary);
         return skit.summary;
@@ -665,16 +665,16 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 ((stage.getSave().language || 'English').toLowerCase() !== 'english' ? `\n\nNote: The game is now being played in ${stage.getSave().language}. Regardless of historic language use, generate this skit content in ${stage.getSave().language} accordingly. Special emotion, appearance, and movement tags continue to use English (these are invisible to the user).` : '')
             );
 
-            const response = await stage.generator.textGen({
+            const response = await stage.makeText({
                 prompt: fullPrompt,
                 min_tokens: 10,
-                max_tokens: 500,
+                max_tokens: 800,
                 include_history: true,
                 stop: []
             });
-            if (response && response.result && response.result.trim().length > 0) {
+            if (response && response.trim().length > 0) {
                 // First, detect and parse any tags that may be embedded in the response.
-                let text = response.result;
+                let text = response;
                 let endScene = false;
                 let summary = '';
 
@@ -932,20 +932,17 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         `[END SCENE]\n[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]\n\n` +
                         `Example Response:\n` +
                         `[CONTINUE SCENE]\n[SUMMARY: The scene has a promising setup with the faction representative's visit and offer, but it would benefit from further development of the patient's internal conflict and decision-making process before accepting the offer, as well as more dialogue to flesh out the interaction between the patient and the representative.]`;
-                    const endResponse = await stage.generator.textGen({
+                    const endResponse = await stage.makeText({
                         prompt: endPrompt,
                         min_tokens: 1,
-                        max_tokens: 150,
+                        max_tokens: 300,
                         include_history: true,
                         stop: ['#END']
                     });
-                    if (endResponse && endResponse.result) {
-                        // Strip double-asterisks. TODO: Remove this once other model issue is resolved.
-                        text = text.replace(/\*\*/g, '');
-
-                        if (endResponse.result.includes('[END SCENE]')) {
+                    if (endResponse) {
+                        if (endResponse.includes('[END SCENE]')) {
                             endScene = true;
-                            const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse.result);
+                            const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
                             summary = summaryMatch ? summaryMatch[1].trim() : '';
                             console.log('Model determined scene should end. Summary:', summary);
                         }
@@ -1051,20 +1048,18 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                             `If the scene presents no appreciable change, or all relevant tags have been presented, the response may be ended early with [END]. \n\n`
                         );
 
-                        const requestAnalysis = await stage.generator.textGen({
+                        const requestAnalysis = await stage.makeText({
                             prompt: analysisPrompt, // + (stage.betaMode ? '%%%TOOLS%%%\n\nMake tool calls for appropriate stat changes.\n\n' : ''),
                             min_tokens: 50,
-                            max_tokens: (summary ? 500 : 600),
+                            max_tokens: (summary ? 800 : 1000),
                             include_history: true,
                             stop: ['[END]'],
                         });
 
-                        console.log('Request analysis response:', requestAnalysis?.result);
-                        if (requestAnalysis && requestAnalysis.result) {
-                            const analysisText = requestAnalysis.result;
-
+                        console.log('Request analysis response:', requestAnalysis);
+                        if (requestAnalysis) {
                             // Process analysisText for stat changes
-                            const lines = analysisText.split('\n');
+                            const lines = requestAnalysis.split('\n');
                             for (const line of lines) {
                                 // Strip double-asterisks. TODO: Remove replace() (keep trim()) once other model issue is resolved.
                                 const trimmed = line.replace(/\*\*/g, '').trim();
@@ -1352,16 +1347,16 @@ export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Ac
         `Revised Character Arc: John Smith has yet to find their footing in the PARC; they can't seem to make friends with the other patients—beyond the StationAide—, and the director hasn't proven trustworthy.\n[END]\n\n` +
         `Revised Character Arc: Jane Doe has started to open up to others, forming tentative friendships. She feels a bit out of her depth in her role as Custodian, but appreciates the trust the director has placed in her and hopes to prove that faith justified.\n[END]\n`);
     
-    const requestAnalysis = await stage.generator.textGen({
+    const requestAnalysis = await stage.makeText({
         prompt: analysisPrompt,
         min_tokens: 50,
-        max_tokens: 300,
+        max_tokens: 400,
         include_history: true,
         stop: ['[END]']
     });
-    if (requestAnalysis && requestAnalysis.result) {
+    if (requestAnalysis) {
         // trim may have a System: and or "Revised Character Arc" or similar prefix; remove these.
-        let analysisText = requestAnalysis.result.trim();
+        let analysisText = requestAnalysis.trim();
         if (analysisText.startsWith("System:")) {
             analysisText = analysisText.substring("System:".length).trim();
         }

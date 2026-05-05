@@ -128,7 +128,7 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
     }
 
     // Generate faction distillation using AI
-    const generatedResponse = await stage.generator.textGen({
+    const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
             `\n\nBackground: This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
             `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
@@ -161,14 +161,14 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
             `#END#`,
         stop: ['#END'],
         include_history: true,
-        max_tokens: 400,
+        max_tokens: 600,
     });
     
     console.log('Generated faction distillation:');
     console.log(generatedResponse);
     
     // Parse the generated response
-    const lines = generatedResponse?.result.split('\n').map((line: string) => line.trim()) || [];
+    const lines = generatedResponse?.split('\n').map((line: string) => line.trim()) || [];
     const parsedData: any = {};
     
     for (let line of lines) {
@@ -266,7 +266,7 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
 
 export async function generateFactionModule(faction: Faction, stage: Stage): Promise<string|null> {
     // Generate a module design for the faction
-    const generatedResponse = await stage.generator.textGen({
+    const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content. The goal is to define a faction-themed module/room for a space station management game. ` +
             // Provide existing module names/roles to avoid overly similar suggestions
             `\n\nExisting Modules:\n${Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')}` +
@@ -296,20 +296,19 @@ export async function generateFactionModule(faction: Faction, stage: Stage): Pro
             `#END#`,
         stop: ['#END'],
         include_history: true,
-        max_tokens: 350,
+        max_tokens: 500,
     });
 
     console.log('Generated faction module distillation:');
     console.log(generatedResponse);
 
-    if (!generatedResponse?.result) {
+    if (!generatedResponse) {
         console.error('Failed to generate faction module');
         return null;
     }
 
     // Parse the generated response
-    const text = generatedResponse.result;
-    const lines = text.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+    const lines = generatedResponse.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
     
     let moduleName = '';
     let purpose = '';

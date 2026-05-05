@@ -392,7 +392,7 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
     }
 
     // Take this data and use text generation to get an updated distillation of this character, including a physical description.
-    const generatedResponse = await stage.generator.textGen({
+    const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
             `\n\nBackground: This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
             `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
@@ -449,12 +449,12 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
                 ''),
         stop: ['#END'],
         include_history: true, // There won't be any history, but if this is true, the front-end doesn't automatically apply pre-/post-history prompts.
-        max_tokens: 400,
+        max_tokens: 600,
     });
     console.log('Generated character distillation:');
     console.log(generatedResponse);
     // Parse the generated response into components:
-    const lines = generatedResponse?.result.split('\n').map((line: string) => line.trim()) || [];
+    const lines = generatedResponse?.split('\n').map((line: string) => line.trim()) || [];
     const parsedData: any = {};
     // data could be erroneously formatted (for instance, "1. Name:" or "-Description:"), so be resilient:
     for (let line of lines) {
@@ -668,7 +668,7 @@ export async function generateActorDecor(actor: Actor, module: Module, stage: St
             prompt: descriptionPrompt,
             stop: ['#END'],
             min_tokens: 30,
-            max_tokens: 150,
+            max_tokens: 400,
         });
 
         // Generate a decor image based on the generated room description

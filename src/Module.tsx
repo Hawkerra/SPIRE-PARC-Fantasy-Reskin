@@ -656,7 +656,7 @@ export class Layout {
 
 export async function generateModule(name: string, stage: Stage, additionalInformation?: string, role?: string): Promise<ModuleIntrinsic|null> {
     // Generate a module from a module name, some arbitrary details, and a role title
-    const generatedResponse = await stage.generator.textGen({
+    const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content. ` +
             `The goal is to define a module/room for a space station management game, based primarily upon the name, and potentially some other information, ` +
             `while generally avoiding duplicating existing content below. ` +
@@ -701,14 +701,13 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
     console.log('Generated module distillation:');
     console.log(generatedResponse);
 
-    if (!generatedResponse?.result) {
+    if (!generatedResponse) {
         console.error('Failed to generate module');
         return null;
     }
 
     // Parse the generated response
-    const text = generatedResponse.result;
-    const lines = text.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+    const lines = generatedResponse.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
     
     let moduleName = '';
     let purpose = '';

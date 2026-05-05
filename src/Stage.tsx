@@ -843,6 +843,24 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         };
     }
 
+    async makeText(textRequest: Object): Promise<string> {
+        const response = await this.generator.textGen(textRequest);
+        if (response?.result) {
+        // The response may begin with thinking text in <thinking> tags; remove that.
+            let resultText = response.result;
+            const thinkingTagPattern = /<thinking>(.*?)<\/thinking>/gs;
+            resultText = resultText.replace(thinkingTagPattern, '').trim();
+            // The response may have "System:" in it, which indicates the location of the text we actually want to return; anything before and including "System:" should be removed.
+            const systemTagIndex = resultText.indexOf('System:');
+            if (systemTagIndex !== -1) {
+                resultText = resultText.substring(systemTagIndex + 'System:'.length).trim();
+            }
+
+            return resultText;
+        }
+        return '';
+    }
+
     async makeImage(imageRequest: Object, defaultUrl: string): Promise<string> {
         return (await this.generator.makeImage(imageRequest))?.url ?? defaultUrl;
     }
