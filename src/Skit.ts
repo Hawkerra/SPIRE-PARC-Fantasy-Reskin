@@ -662,7 +662,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +
                 `Regardless of past events or style, ensure the suggested Narrative Tone bleeds into the nature of this scene and its writing. ` +
                 `\n\n${alternativePrompt}` +
-                ((stage.getSave().language || 'English').toLowerCase() !== 'english' ? `\n\nNote: The game is now being played in ${stage.getSave().language}. Regardless of historic language use, generate this skit content in ${stage.getSave().language} accordingly. Special emotion, appearance, and movement tags continue to use English (these are invisible to the user).` : '')
+                ((stage.getSave().language || 'English').toLowerCase() !== 'english' ? `\n\nNote: The game is now being played in ${stage.getSave().language}. Regardless of historic language use, generate this skit content in ${stage.getSave().language} accordingly. Special emotion, appearance, and movement tags continue to use English (these are invisible to the user).` : '') +
+                `\n\nAt the "System:" prompt, ` + (skit.script.length == 0 ? 'begin the scene script with appropriate initial movement or outfit tags (if applicable).' : 'continue the scene script.\n\nSystem: ')
             );
 
             const response = await stage.makeText({
