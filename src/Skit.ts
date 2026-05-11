@@ -480,9 +480,9 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             `\n]\n\n`
         ) +
         `#${playerName}'s profile#\n[\n${save.player.description}\n]\n\n` +
-        (stationAide ? (presentActorIds.has(stationAide.id) ? `\n\nThe holographic StationAide™ ${stationAide.name} is active in the scene. Profile: ${stationAide.profile}` : `\n\nThe holographic StationAide™ ${stationAide.name} remains absent from the scene unless summoned.`) : '') +
+        (stationAide ? `#StationAide™ profile#\n[\n` + (presentActorIds.has(stationAide.id) ? `The holographic StationAide™ ${stationAide.name} is active in the scene.` : `\n\nThe holographic StationAide™ ${stationAide.name} remains absent from the scene unless summoned.`) + `\n${stationAide.profile}\n]\n\n` : '') +
         // List non-present characters for reference; just need description and profile:
-        `#Absent Characters (Aboard the PARC But Not Currently in the Scene)#\n[\n${absentPatients.map(actor => {
+        (absentPatients.length > 0 ? `#Absent Characters (Aboard the PARC But Not Currently in the Scene)#\n[\n${absentPatients.map(actor => {
             // Roll name and current location
             const roleModule = stage.getLayout().getModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
@@ -495,8 +495,7 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') +
                 `    Profile: ${actor.profile}\n    Role: ${roleModule?.getAttribute('role') || 'Patient'}\n    Location: ${locationString}`;
-        }).join('\n')}` +
-        `\n]\n\n` +
+        }).join('\n')}` + `\n]\n\n` : '') +
         // List away characters for reference; just need description and profile:
         (awayPatients.length > 0 ? `#Off-Station Characters (On Assignment Away from the PARC)#\n[\n${awayPatients.map(actor => {
             // Just role name and faction on loan to
@@ -509,8 +508,8 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 // (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') + // Unnecessary for absent characters
                 `    Profile: ${actor.profile}\n    Role: ${roleModule?.getAttribute('role') || 'Patient'}\n    On Assignment to: ${atFaction?.name || 'Unknown Faction'}`;
-        }).join('\n')}` : '') +
-        `\n]\n\n` +
+        }).join('\n')}` + `\n]\n\n` : '') +
+        
         // List cryo characters for reference; just need description and profile:
         (cryoPatients.length > 0 ? `#Cryo Frozen Characters (Absolutely Unavailable)#\n[\n${cryoPatients.map(actor => {
             const entranceEvent = stage.getSave().timeline?.find(event => event.skit?.actorId === actor.id && event.skit?.type === SkitType.ENTER_CRYO);
@@ -520,13 +519,13 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 // (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') + // Unnecessary for cryo characters
                 `    Profile: ${actor.profile}\n    Days in Cryo: ${save.day - entranceDate}`;
-        }).join('\n')}` : '') +
-        `\n]\n\n` +
+        }).join('\n')}` + `\n]\n\n` : '') +
+
         // List stat meanings, for reference:
         `#Stat Explanations#\n[\n${Object.values(Stat).map(stat => `${stat.toUpperCase()}: ${getStatDescription(stat)}`).join('\n')}\n]\n\n` +
         `#Scene Prompt#\n[\n  ${generateSkitTypePrompt(skit, stage, skit.script.length > 0)}\n` +
         (faction ? `${faction.name} Details: ${faction.description}\n${faction.name} Aesthetic:\n  ${faction.visualStyle}` : '') +
-        (factionRepresentative ? `\n${faction?.name || 'The faction'}'s representative, ${factionRepresentative.name}, appears on-screen. Their description: ${factionRepresentative.getDescription(currentActorOutfitIds[factionRepresentative.id] || factionRepresentative.outfitId)}` : 'They have no designated liaison for this communication; any characters introduced during this scene will be transient.') +
+        (faction && factionRepresentative ? `\n${faction?.name || 'The faction'}'s representative, ${factionRepresentative.name}, appears on-screen. Their description: ${factionRepresentative.getDescription(currentActorOutfitIds[factionRepresentative.id] || factionRepresentative.outfitId)}` : 'They have no designated liaison for this communication; any characters introduced during this scene will be transient.') +
         (faction ? `\n\nThis skit may explore the nature of this faction's relationship with an intentions for the Director, the PARC, or its patients. ` +
             `Typically, this and other factions contact the PARC to express interest in making offers for resources, information, or patients. ` +
             `The faction could have a temporary job to offer a patient, or suggest an exchange of resources or favors. Or they could have a permanent role in mind for an ideal candidate patient. ` +
@@ -564,7 +563,7 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             const otherOutfits = actor.outfits.filter(o => o.id !== currentOutfitId && o.emotionPack['neutral']);
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') +
-                `    Profile: ${actor.profile}\n    Character Arc: ${actor.characterArc}\n    Days Aboard: ${save.day - birthDay}\n` +
+                `    Profile: ${actor.profile}\n    Character Arc: ${actor.characterArc || 'Undetermined'}\n    Days Aboard: ${save.day - birthDay}\n` +
                 (roleModule ? `    Role: ${roleModule.getAttribute('role') || 'Patient'} (${actor.heldRoles[roleModule.getAttribute('role') || 'Patient'] || 0} days)\n` : '') +
                 `    Role Description: ${roleModule?.getAttribute('roleDescription') || 'This character has no assigned role aboard the PARC. They are to focus upon their own needs.'}\n` +
                 `    Stats:\n      ${Object.entries(actor.stats).map(([stat, value]) => `${stat}: ${value}`).join(', ')}`}).join('\n')}` +
@@ -638,7 +637,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `\n]\n\n` +
                 `#Tag Instruction#\n[\n` +
                 `Embedded within this script, you may employ special tags to trigger various game mechanics. ` +
-                `\n\nA Character turn tag ("[CHARACTER NAME turn]") must be used to indicate a new script entry, attributed to the NARRATOR for general narration or to a specific character who is speaking or performing an action. ` +
+                `\n\nA Character turn tag ("[CHARACTER NAME turn]") must be used to indicate a new script entry; use NARRATOR for general narration entries or to a specific character who is speaking or performing an action. Consecutive turns are preferred over long turns. ` +
                 `\n\nEmotion tags ("[CHARACTER NAME expresses JOY]") should be used to indicate visible emotional shifts in a character's appearance using a single-word emotion name. ` +
                 `\n\nAppearance tags ("[CHARACTER NAME wears APPEARANCE NAME]") should be used when a character changes appearance. ` +
                     `When establishing a character at the beginning of a scene or when moving to this location with a movement tag, give special consideration to the inclusion of a 'wears' tag to explicitly call out an appropriate look. ` +
@@ -648,19 +647,19 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `\n\nCharacter movement tags ("[CHARACTER NAME moves to LOCATION]") are also used to move a character to another faction, abstractly representing any faction mission or time away. ` +
                 `\n\nA Scene movement tag ("[SCENE moves to LOCATION]") may be used when the scene itself transitions to another module. ` +
                 `When this tag is used, all characters currently present in the scene are treated as relocating together. ` +
+                `\n\nAn end tag ("[END SCENE]") should be used to indicate the conclusion of the scene, if the scene feels absolutely concluded. ` +
                 `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
                 `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
                 `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
                 `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. ` +
                 `\n]\n\n` +
-                `#Request#\n[\n` +
-                `This scene is a brief visual novel skit within a video game; as such, the scene avoids major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
+                `#Current Instruction#\n[\n` +
+                `Develop several tagged turn entries for this scene in a visual novel; this is a skit in a video game, so the scene avoids major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
                 (skit.script.length == 0 ? 'As this is the initial, establishing moment of a new scene, evaluate the current appearance and alternative appearances of each character and use Appearance ("wears") tags to update the characters to the most appropriate outfit for the moment. ' : '') +
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +
                 `Regardless of past events or style, ensure the suggested Narrative Tone bleeds into the nature of this scene and its writing. ` +
                 `\n\n${alternativePrompt}` +
                 ((stage.getSave().language || 'English').toLowerCase() !== 'english' ? `\n\nNote: The game is now being played in ${stage.getSave().language}. Regardless of historic language use, generate this skit content in ${stage.getSave().language} accordingly. Special emotion, appearance, and movement tags continue to use English (these are invisible to the user).` : '') +
-                `\n\n` + (skit.script.length == 0 ? 'Begin the scene script with appropriate initial movement or outfit tags (if applicable).' : 'Continue the scene script.') +
                 `\n]`
             );
 
@@ -669,7 +668,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 min_tokens: 10,
                 max_tokens: 800,
                 include_history: true,
-                stop: []
+                stop: ["[END SCENE]"]
             });
             if (response && response.trim().length > 0) {
                 // First, detect and parse any tags that may be embedded in the response.
