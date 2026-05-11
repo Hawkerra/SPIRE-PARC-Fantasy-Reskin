@@ -3,7 +3,7 @@
  */
 import React, { FC, useCallback, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
-import Actor, { isHologram } from '../actors/Actor';
+import Actor, { getRole, isHologram } from '../actors/Actor';
 import { Stage } from '../Stage';
 import { generateSkitScript, SkitData } from '../Skit';
 import { Emotion } from '../actors/Emotion';
@@ -243,7 +243,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                             <ActorCard
                                 actor={actor}
                                 visitingFaction={undefined /* Don't display visiting status in skits. */}
-                                role={actor.getRole(stage().getSave())}
+                                role={getRole(actor, stage().getSave())}
                                 collapsedSections={[ActorCardSection.STATS]}
                             />
                         </div>

@@ -12,7 +12,7 @@ import { TurnIndicator as SharedTurnIndicator } from '../components/UIComponents
 import { useTooltip } from '../contexts/TooltipContext';
 import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete } from '@mui/icons-material';
 import { SkitType } from '../Skit';
-import { generateActorDecor, isHologram } from '../actors/Actor';
+import { generateActorDecor, getRole, isHologram } from '../actors/Actor';
 import { scoreToGrade, assignActorToRole } from '../utils';
 
 // Styled components for the day/turn display
@@ -1288,7 +1288,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                             >
                                                 <ActorCard
                                                     actor={actor}
-                                                    role={actor.getRole(stage().getSave())}
+                                                    role={getRole(actor, stage().getSave())}
                                                     visitingFaction={actor.isOffSite(stage().getSave()) ? stage().getSave().factions[actor.locationId] : undefined}
                                                     isDragging={draggedActor?.id === actor.id}
                                                     draggable={true}
@@ -1496,7 +1496,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                 >
                                                     <ActorCard
                                                         actor={actor}
-                                                        role={actor.getRole(stage().getSave())}
+                                                        role={getRole(actor, stage().getSave())}
                                                         visitingFaction={actor.isOffSite(stage().getSave()) ? stage().getSave().factions[actor.locationId] : undefined}
                                                         isDragging={draggedActor?.id === actor.id}
                                                         draggable={true}
