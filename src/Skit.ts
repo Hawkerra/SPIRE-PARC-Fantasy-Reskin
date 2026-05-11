@@ -418,7 +418,11 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
     return null;
 }
 
-export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
+function buildPromptSegment(title: string, content: string) {
+    return content.trim() ? `\n\n#${title}#\n[\n${content.trim()}\n]\n\n` : '';
+}
+
+export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
     const playerName = stage.getSave().player.name;
     const save = stage.getSave();
 
@@ -465,24 +469,19 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
         `${playerName} is the only non-patient aboard the station (although they may hire patients on as crew or staff); as a result, the station may feel a bit lonely or alienating at times. ` +
         `Much of the day-to-day maintenance and operation of the station is automated by the station's AI, ${save.aide.name || 'StationAide™'}, and various drones, enabling ${playerName} to focus on patient care and rehabilitation.` +
         `\n]\n\n#Narrative Tone#\n[\n${save.tone || stage.TONE_MAP['Original']}` + `\n]\n\n` +
-        
-        (save.stationStats ? (
-            `#Station Stats#\n[\n` +
-            Object.values(StationStat).map(stat => `  ${stat} (${save.stationStats?.[stat] || 3}): ${STATION_STAT_PROMPTS[stat][getStatRating(save.stationStats?.[stat] || 3)]}`).join('\n') +
-            `\n]\n\n` 
-        ) : '')+
+        buildPromptSegment('Station Stats', save.stationStats ? (
+            Object.values(StationStat).map(stat => `  ${stat} (${save.stationStats?.[stat] || 3}): ${STATION_STAT_PROMPTS[stat][getStatRating(save.stationStats?.[stat] || 3)]}`).join('\n')
+        ) : '') +
         (
             // If module is a quarters, present it as "Owner's quarters" or "vacant quarters": module type otherwise.
-            `#Modules and Crew Roles#\n[\n` +
-            save.layout.getModulesWhere(module => true).map(module => module.type == 'quarters' ? 
+            buildPromptSegment('Modules and Crew Roles', save.layout.getModulesWhere(module => true).map(module => module.type == 'quarters' ? 
                 (module.ownerId ? `  ${save.actors[module.ownerId]?.name || 'Unknown'}'s Quarters` : '  Vacant Quarters') : 
-                `  ${module.getAttribute('name')} ${module.getAttribute('role') ? `(${module.getAttribute('role')} : ${module.ownerId ? `${save.actors[module.ownerId]?.name || 'Unknown'}` : 'None'})` : ''}`).join('\n') +
-            `\n]\n\n`
+                `  ${module.getAttribute('name')} ${module.getAttribute('role') ? `(${module.getAttribute('role')} : ${module.ownerId ? `${save.actors[module.ownerId]?.name || 'Unknown'}` : 'None'})` : ''}`).join('\n'))
         ) +
-        `#${playerName}'s profile#\n[\n${save.player.description}\n]\n\n` +
-        (stationAide ? `#StationAide™ profile#\n[\n` + (presentActorIds.has(stationAide.id) ? `The holographic StationAide™ ${stationAide.name} is active in the scene.` : `\n\nThe holographic StationAide™ ${stationAide.name} remains absent from the scene unless summoned.`) + `\n${stationAide.profile}\n]\n\n` : '') +
+        buildPromptSegment(`${playerName}'s profile`, save.player.description) +
+        (stationAide ? buildPromptSegment('StationAide™ profile', (presentActorIds.has(stationAide.id) ? `The holographic StationAide™ ${stationAide.name} is active in the scene.` : `\n\nThe holographic StationAide™ ${stationAide.name} remains absent from the scene unless summoned.`) + `\n${stationAide.profile}`) : '') +
         // List non-present characters for reference; just need description and profile:
-        (absentPatients.length > 0 ? `#Absent Characters (Aboard the PARC But Not Currently in the Scene)#\n[\n${absentPatients.map(actor => {
+        buildPromptSegment('Absent Characters (Available to Add)', absentPatients.map(actor => {
             // Roll name and current location
             const roleModule = stage.getLayout().getModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
@@ -495,9 +494,9 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') +
                 `    Profile: ${actor.profile}\n    Role: ${roleModule?.getAttribute('role') || 'Patient'}\n    Location: ${locationString}`;
-        }).join('\n')}` + `\n]\n\n` : '') +
+        }).join('\n')) +
         // List away characters for reference; just need description and profile:
-        (awayPatients.length > 0 ? `#Off-Station Characters (On Assignment Away from the PARC)#\n[\n${awayPatients.map(actor => {
+        buildPromptSegment('Off-Station Characters (On Assignment Away from the PARC)', awayPatients.map(actor => {
             // Just role name and faction on loan to
             const roleModule = stage.getLayout().getModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
@@ -508,10 +507,10 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 // (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') + // Unnecessary for absent characters
                 `    Profile: ${actor.profile}\n    Role: ${roleModule?.getAttribute('role') || 'Patient'}\n    On Assignment to: ${atFaction?.name || 'Unknown Faction'}`;
-        }).join('\n')}` + `\n]\n\n` : '') +
+        }).join('\n')) +
         
         // List cryo characters for reference; just need description and profile:
-        (cryoPatients.length > 0 ? `#Cryo Frozen Characters (Absolutely Unavailable)#\n[\n${cryoPatients.map(actor => {
+        buildPromptSegment('Cryo Frozen Characters (Absolutely Unavailable)', cryoPatients.map(actor => {
             const entranceEvent = stage.getSave().timeline?.find(event => event.skit?.actorId === actor.id && event.skit?.type === SkitType.ENTER_CRYO);
             const entranceDate = entranceEvent ? entranceEvent.day : stage.getSave().day;
             const currentOutfitId = currentActorOutfitIds[actor.id] || actor.outfitId;
@@ -519,41 +518,42 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
             return `  ${actor.name}\n    Current Appearance (${currentOutfit.name}): ${actor.getDescription(currentOutfitId)}\n` +
                 // (otherOutfits.length > 0 ? `    Other Appearances: ${otherOutfits.map(o => o.name).join(', ')}\n` : '') + // Unnecessary for cryo characters
                 `    Profile: ${actor.profile}\n    Days in Cryo: ${save.day - entranceDate}`;
-        }).join('\n')}` + `\n]\n\n` : '') +
+        }).join('\n')) +
 
         // List stat meanings, for reference:
-        `#Stat Explanations#\n[\n${Object.values(Stat).map(stat => `${stat.toUpperCase()}: ${getStatDescription(stat)}`).join('\n')}\n]\n\n` +
-        `#Scene Prompt#\n[\n  ${generateSkitTypePrompt(skit, stage, skit.script.length > 0)}\n` +
-        (faction ? `${faction.name} Details: ${faction.description}\n${faction.name} Aesthetic:\n  ${faction.visualStyle}` : '') +
-        (faction && factionRepresentative ? `\n${faction?.name || 'The faction'}'s representative, ${factionRepresentative.name}, appears on-screen. Their description: ${factionRepresentative.getDescription(currentActorOutfitIds[factionRepresentative.id] || factionRepresentative.outfitId)}` : 'They have no designated liaison for this communication; any characters introduced during this scene will be transient.') +
-        (faction ? `\n\nThis skit may explore the nature of this faction's relationship with an intentions for the Director, the PARC, or its patients. ` +
+        buildPromptSegment('Stat Explanations', Object.values(Stat).map(stat => `${stat.toUpperCase()}: ${getStatDescription(stat)}`).join('\n')) +
+        buildPromptSegment('Scene Prompt', `#Scene Prompt#\n[\n${generateSkitTypePrompt(skit, stage, skit.script.length > 0)}\n`) +
+        (faction ? buildPromptSegment(`${faction.name} Details`, `${faction.name} Details: ${faction.description}\n${faction.name} Aesthetic:\n  ${faction.visualStyle}` +
+            (factionRepresentative ? `\n${faction?.name || 'The faction'}'s representative, ${factionRepresentative.name}, appears on-screen. Their description: ${factionRepresentative.getDescription(currentActorOutfitIds[factionRepresentative.id] || factionRepresentative.outfitId)}` :
+                'They have no designated liaison for this communication; any characters introduced during this scene will be transient.')) : '') +
+        (faction ? buildPromptSegment(`${faction.name} Relationship`, `This skit may explore the nature of this faction's relationship with an intentions for the Director, the PARC, or its patients. ` +
             `Typically, this and other factions contact the PARC to express interest in making offers for resources, information, or patients. ` +
             `The faction could have a temporary job to offer a patient, or suggest an exchange of resources or favors. Or they could have a permanent role in mind for an ideal candidate patient. ` +
             `If a patient is already on-loan to this faction, use this opportunity to update the Director on their status, depict the patient's return, or convert them to a permanent placement with the faction. ` +
-            `Remember to use appropriate tags when moving characters on- or off-station in the skit. ` : '') +
+            `Remember to use appropriate tags when moving characters on- or off-station in the skit. `) : '') +
         `\n]\n\n` +
-        `#Known Factions#\n[\n${Object.values(stage.getSave().factions).filter(faction => faction.active && faction.reputation > 0).map(faction => `${faction.name}: ${faction.getReputationDescription()}`).join('\n  ')}\n]\n\n` +
+        buildPromptSegment(`Known Factions`, `${Object.values(stage.getSave().factions).filter(faction => faction.active && faction.reputation > 0).map(faction => `${faction.name}: ${faction.getReputationDescription()}`).join('\n  ')}`) +
         ((historyLength > 0 && pastEvents.length) ? 
                 // Include last few skit scripts for context and style reference; use summary except for most recent skit or if no summary.
-                '\n\n#Recent Events and Skits#\n[\n' + pastEvents.map((v, index) =>  {
+                buildPromptSegment('Recent Events and Skits', pastEvents.map((v, index) =>  {
                 if (v.skit) {
                     const module = stage.getSave().layout.getModuleById(v.skit.moduleId || '');
                     const moduleOwner = module?.ownerId ? stage.getSave().actors[module.ownerId] : null;
                     const moduleDescription = module ? (module.type === 'quarters' && moduleOwner ? `${moduleOwner.name}'s quarters` : `the ${module.getAttribute('name')}`) : 'an unknown location';
                     return ((!v.skit.summary || index == pastEvents.length - 1) ?
-                        (`\n\n  Script of Scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` +
+                        (`\n\nScript of Scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` +
                         `${buildScriptLog(v.skit, [], stage)}`) :
-                        (`\n\n  Summary of scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` + v.skit.summary)
+                        (`\n\nSummary of scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` + v.skit.summary)
                         )
                 } else {
-                    return `\n\n  Action ${stage.getSave().day - v.day} days ago: ${v.description || ''}`;
+                    return `\n\nAction ${stage.getSave().day - v.day} days ago: ${v.description || ''}`;
                 }
-            }).join('') + '\n]\n\n' : '') +
-        (module ? (`#Current Module#\n[\nThe following scene is set in ` +
+            }).join('')) : '') +
+        (module ? buildPromptSegment('Current Module', `The following scene is set in ` +
             `${module.type === 'quarters' ? `${moduleOwner ? `${moduleOwner.name}'s` : 'a vacant'} quarters` : 
-            `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}\n]\n\n`) : '') +
+            `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}`) : '') +
         // List characters who are here, along with full stat details:
-        `#Present Characters (Currently in the Scene)#\n[\n${presentPatients.map(actor => {
+        buildPromptSegment('Present Characters (Currently in the Scene)', `${presentPatients.map(actor => {
             const roleModule = stage.getLayout().getModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
             )[0];
@@ -566,13 +566,13 @@ export function generateSkitPrompt(skit: SkitData, stage: Stage, historyLength: 
                 `    Profile: ${actor.profile}\n    Character Arc: ${actor.characterArc || 'Undetermined'}\n    Days Aboard: ${save.day - birthDay}\n` +
                 (roleModule ? `    Role: ${roleModule.getAttribute('role') || 'Patient'} (${actor.heldRoles[roleModule.getAttribute('role') || 'Patient'] || 0} days)\n` : '') +
                 `    Role Description: ${roleModule?.getAttribute('roleDescription') || 'This character has no assigned role aboard the PARC. They are to focus upon their own needs.'}\n` +
-                `    Stats:\n      ${Object.entries(actor.stats).map(([stat, value]) => `${stat}: ${value}`).join(', ')}`}).join('\n')}` +
-        `\n]\n\n${instruction}`;
+                `    Stats:\n      ${Object.entries(actor.stats).map(([stat, value]) => `${stat}: ${value}`).join(', ')}`}).join('\n')}`) +
+        `\n\n${instruction}`;
     return fullPrompt;
 }
 
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
-    const summaryPrompt = generateSkitPrompt(skit, stage, 0,
+    const summaryPrompt = buildSkitPrompt(skit, stage, 0,
             `Scene Script for Analysis:\n${buildScriptLog(skit, skit.script, stage)}` +
             `\n\nInstruction:\nAnalyze the preceding scene script output a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. `) +
         `Example Response:\n` +
@@ -610,8 +610,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
     let retries = 3;
     while (retries > 0) {
         try {
-            const fullPrompt = generateSkitPrompt(skit, stage, 5 + retries * 5, // Start with lots of history, reducing each iteration.
-                `#Demonstrative Script and Tag Formatting#\n[\n` +
+            const fullPrompt = buildSkitPrompt(skit, stage, 5 + retries * 5, // Start with lots of history, reducing each iteration.
+                buildPromptSegment(`Demonstrative Script and Tag Formatting`, 
                     `[SOME CHARACTER turn] Some Character does some actions in prose; for example, they may be waving to you, the player. They say, "My dialogue is in quotation marks."\n` +
                     `[SOME CHARACTER turn][SOME CHARACTER expresses PRIDE] They add, "A character can have two consecutive entries, if they have more to say or do, and it makes sense to break up a lot of activity."\n` +
                     `[ANOTHER CHARACTER turn][ANOTHER CHARACTER moves to HERE][ANOTHER CHARACTER expresses JOY][SOME CHARACTER expresses SURPRISE] ` +
@@ -621,10 +621,10 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     (stage.getSave().disableImpersonation ? '' : `[${stage.getSave().player.name.toUpperCase()} turn] "Hey, Some Character," I greet them warmly. I'm the player, and my entries use first-person narrative voice, while all other skit entries use second-person to refer to me.\n`) +
                     `[NARRATOR turn][SOME CHARACTER moves to OTHER MODULE NAME] Some Character ducks out with a smile. You hear their boots fade away down the corridor beyond.\n` +
                     `[ANOTHER CHARACTER turn][SCENE moves to OTHER MODULE NAME][SOME CHARACTER wears FORMAL WEAR] You and Another Character follow Some Character to the other module, where they have changed into more formal attire.\n` +
-                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step beyond the bulkhead, leaving the PARC to join Faction Name. You watch on-screen as their shuttle detaches from the station and disappears into the stars.\n` +
-                `]\n\n` +
-                `#Ongoing Scene Log#\n[\n${buildScriptLog(skit, [], stage)}\n]\n\n` +
-                `#Primary Instruction#\n[\n` +
+                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step beyond the bulkhead, leaving the PARC to join Faction Name. You watch on-screen as their shuttle detaches from the station and disappears into the stars.\n`
+                 ) +
+                buildPromptSegment(`Ongoing Scene Log`, buildScriptLog(skit, [], stage)) +
+                buildPromptSegment(`Primary Instruction`, 
                 `${skit.script.length == 0 ? 'Produce the initial moments of a scene (perhaps joined in medias res)' : 'Extend or conclude the current scene script'} with three to five entries, ` +
                 `based upon the Premise and the specified Scene Prompt. Primarily involve the Present Characters, although Absent Characters may be moved to this location using appropriate tags, if warranted. ` +
                 `The script should tacitly consider characters' stats, relationships, past events, and the station's stats—among other factors—to craft a compelling scene. ` +
@@ -633,9 +633,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `Although a loose script format is employed, the actual content should be professionally edited narrative prose. ` +
                 (stage.getSave().disableImpersonation ? 
                     `New entries refer to the player, ${stage.getSave().player.name}, in second-person; all other characters are referred to in third-person, even in their own entries.` :
-                    `Entries from the player, ${stage.getSave().player.name}, are written in first-person, while other entries consistently refer to ${stage.getSave().player.name} in second-person; all other characters are referred to in third-person, even in their own entries.`) +
-                `\n]\n\n` +
-                `#Tag Instruction#\n[\n` +
+                    `Entries from the player, ${stage.getSave().player.name}, are written in first-person, while other entries consistently refer to ${stage.getSave().player.name} in second-person; all other characters are referred to in third-person, even in their own entries.`)) +
+                buildPromptSegment(`Tag Instruction`, 
                 `Embedded within this script, you may employ special tags to trigger various game mechanics. ` +
                 `\n\nA Character turn tag ("[CHARACTER NAME turn]") must be used to indicate a new script entry; use NARRATOR for general narration entries or to a specific character who is speaking or performing an action. Consecutive turns are preferred over long turns. ` +
                 `\n\nEmotion tags ("[CHARACTER NAME expresses JOY]") should be used to indicate visible emotional shifts in a character's appearance using a single-word emotion name. ` +
@@ -651,17 +650,17 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
                 `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
                 `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
-                `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. ` +
-                `\n]\n\n` +
-                `#Current Instruction#\n[\n` +
-                `Develop and output several tagged turn entries for this scene in a visual novel, following example and historic formatting. ` +
+                `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `) +
+                
+                buildPromptSegment(`Current Instruction`, 
+                `The assistant will now craft and output multiple tagged turn entries, developing this scene for a visual novel, following example and historic formatting and rules above. ` +
                 `This is a skit in a video game, so avoid major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
                 (skit.script.length == 0 ? 'As this is the initial, establishing moment of a new scene, evaluate the current appearance and alternative appearances of each character and use Appearance ("wears") tags to update the characters to the most appropriate outfit for the moment. ' : '') +
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +
-                `Regardless of past events or style, ensure the suggested Narrative Tone bleeds into the nature of this scene and its writing. ` +
+                `Ensure that the nature and writing of the scene suit the current Narrative Tone suggested above. ` +
                 `\n\n${alternativePrompt}` +
                 ((stage.getSave().language || 'English').toLowerCase() !== 'english' ? `\n\nNote: The game is now being played in ${stage.getSave().language}. Regardless of historic language use, generate this skit content in ${stage.getSave().language} accordingly. Special emotion, appearance, and movement tags continue to use English (these are invisible to the user).` : '') +
-                `\n]`
+                ``)
             );
 
             const response = await stage.makeText({
@@ -946,7 +945,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
                 console.log('Perform additional analysis.');
                 ttsPromises.push((async () => {
-                    const endPrompt = generateSkitPrompt(skit, stage, 0,
+                    const endPrompt = buildSkitPrompt(skit, stage, 0,
                         `Scene Script for Analysis:\n${buildScriptLog(skit, scriptEntries, stage)}` +
                         `\n\nInstruction:\nAnalyze the preceding scene script and determine whether the final moments make for a suitable ending to the scene. ` +
                         `If the scene feels complete or has reached a good suspended moment, output "[END SCENE]" followed by a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. ` +
@@ -973,7 +972,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
                     if (endScene) {
                         console.log('Scene ending detected; further outcome analysis being conducted.');
-                        const analysisPrompt = generateSkitPrompt(skit, stage, 0,
+                        const analysisPrompt = buildSkitPrompt(skit, stage, 0,
                             `Scene Script for Analysis:\n${buildScriptLog(skit, scriptEntries, stage)}` +
                             `\n\nInstruction:\nAnalyze the preceding scene script and output formatted tags in brackets, identifying the following categorical changes to be incorporated into the game as a result of events in this scene. ` +
                             `\n` +
@@ -1361,7 +1360,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 }
 
 export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Actor): Promise<void> {
-    const analysisPrompt = generateSkitPrompt(skit, stage, 0,
+    const analysisPrompt = buildSkitPrompt(skit, stage, 0,
         `Scene Script for Analysis:\n${buildScriptLog(skit, [], stage)}` +
         `${actor.name}'s Current Character Arc:\n${actor.characterArc || 'No established character arc.'}` +
         `\n\nInstruction:\nAnalyze the preceding scene script ${actor.name}'s character arc, then output a revised character arc paragraph that reflects any significant developments from the latest scene script. ` +
