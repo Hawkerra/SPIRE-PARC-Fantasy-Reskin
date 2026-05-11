@@ -420,7 +420,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
 }
 
 function buildPromptSegment(title: string, content: string) {
-    return content.trim() ? `${title}: {\n${content.trim()}\n}\n\n` : '';
+    return content.trim() ? `${title}: [\n${content.trim()}\n]\n\n` : '';
 }
 
 export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
@@ -463,13 +463,14 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     const factionRepresentative = faction ? save.actors[faction.representativeId || ''] : null;
     const stationAide = save.actors[save.aide.actorId || ''];
 
-    let fullPrompt = `{{messages}}\n#Premise#\n[\nThis is a sci-fi visual novel game set on a space station that resurrects and rehabilitates patients who died in other universes' apocalypses: ` +
+    let fullPrompt = `{{messages}}` +
+        buildPromptSegment('Premise', `This is a sci-fi visual novel game set on a space station that resurrects and rehabilitates patients who died in other universes' apocalypses: ` +
         `the Post-Apocalypse Rehabilitation Center. ` +
         `The thrust of the game positions the player character, ${playerName}, as the Director of the PARC station, interacting with patients and crew as they navigate this complex futuristic universe together. ` +
         `The PARC is an isolated station near a black hole, from which it pulls and reconstitutes the echoes of apocalypse victims. It serves as both sanctuary and containment for its diverse inhabitants, who hail from various alternate realities. ` +
         `${playerName} is the only non-patient aboard the station (although they may hire patients on as crew or staff); as a result, the station may feel a bit lonely or alienating at times. ` +
-        `Much of the day-to-day maintenance and operation of the station is automated by the station's AI, ${save.aide.name || 'StationAide™'}, and various drones, enabling ${playerName} to focus on patient care and rehabilitation.` +
-        `\n]\n\n#Narrative Tone#\n[\n${save.tone || stage.TONE_MAP['Original']}` + `\n]\n\n` +
+        `Much of the day-to-day maintenance and operation of the station is automated by the station's AI, ${save.aide.name || 'StationAide™'}, and various drones, enabling ${playerName} to focus on patient care and rehabilitation.`) +
+        buildPromptSegment('Narrative Tone', save.tone || stage.TONE_MAP['Original']) +
         buildPromptSegment('Station Stats', save.stationStats ? (
             Object.values(StationStat).map(stat => `  ${stat} (${save.stationStats?.[stat] || 3}): ${STATION_STAT_PROMPTS[stat][getStatRating(save.stationStats?.[stat] || 3)]}`).join('\n')
         ) : '') +
@@ -569,7 +570,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
                 (roleModule ? `    Role: ${roleModule.getAttribute('role') || 'Patient'} (${actor.heldRoles[roleModule.getAttribute('role') || 'Patient'] || 0} days)\n` : '') +
                 `    Role Description: ${roleModule?.getAttribute('roleDescription') || 'This character has no assigned role aboard the PARC. They are to focus upon their own needs.'}\n` +
                 `    Stats:\n      ${Object.entries(actor.stats).map(([stat, value]) => `${stat}: ${value}`).join(', ')}`}).join('\n')}`) +
-        `\n\n${instruction}`;
+        `\n${instruction}`;
     return fullPrompt;
 }
 
@@ -678,18 +679,13 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 let endScene = false;
                 let summary = '';
 
-                // Strip double-asterisks. TODO: Remove this once other model issue is resolved.
-                text = text.replace(/\*\*/g, '');
-
-                // Remove any initial "System:" prefix
-                if (text.toLowerCase().startsWith('system:')) {
-                    text = text.slice(7).trim();
-                }
-
                 // Remove everything up to the first [NAME turn] tag, if it exists, to allow for some flexibility in model output while still ensuring we start parsing from the first turn.
                 const firstTurnIndex = text.search(/\[[^\]]+ turn\]/i);
                 if (firstTurnIndex > 0) {
                     text = text.slice(firstTurnIndex);
+                } else {
+                    console.warn('No turn tags found in response; unable to parse script entries. Response was:', response);
+                    continue;
                 }
 
                 // Parse response based on turn tags, e.g. "[NAME turn] content".

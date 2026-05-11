@@ -851,6 +851,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         if (response?.result) {
         // The response may begin with thinking text in <thinking> tags; remove that.
             let resultText = response.result;
+            // Strip double-asterisks. TODO: Remove this once other model issue is resolved.
+            resultText = resultText.replace(/\*\*/g, '');
             const thinkingTagPattern = /<thinking>(.*?)<\/thinking>/gs;
             resultText = resultText.replace(thinkingTagPattern, '').trim();
             // The response may have "System:" in it, which indicates the location of the text we actually want to return; anything before and including "System:" should be removed.
