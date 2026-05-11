@@ -64,10 +64,6 @@ export const ActorCard: FC<ActorCardProps> = ({
     const currentSections = (isExpanded && expandedSections?.length > 0) ? expandedSections : collapsedSections;
     const clickable = !!onClick;
 
-    console.log(`Rendering ActorCard for ${actor.name}`);
-    console.log(actor);
-    console.log(Object.getPrototypeOf(actor));
-
     // Default hover behavior
     const defaultWhileHover = {
         backgroundColor: (clickable || draggable) ? 'rgba(0, 255, 136, 0.15)' : undefined,
