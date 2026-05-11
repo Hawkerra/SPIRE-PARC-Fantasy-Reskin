@@ -419,7 +419,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
 }
 
 function buildPromptSegment(title: string, content: string) {
-    return content.trim() ? `\n\n#${title}#\n[\n${content.trim()}\n]\n\n` : '';
+    return content.trim() ? `#${title}#\n[\n${content.trim()}\n]\n\n` : '';
 }
 
 export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
@@ -522,7 +522,8 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
 
         // List stat meanings, for reference:
         buildPromptSegment('Stat Explanations', Object.values(Stat).map(stat => `${stat.toUpperCase()}: ${getStatDescription(stat)}`).join('\n')) +
-        buildPromptSegment('Scene Prompt', `#Scene Prompt#\n[\n${generateSkitTypePrompt(skit, stage, skit.script.length > 0)}\n`) +
+        
+        buildPromptSegment('Scene Prompt', `${generateSkitTypePrompt(skit, stage, skit.script.length > 0)}\n`) +
         (faction ? buildPromptSegment(`${faction.name} Details`, `${faction.name} Details: ${faction.description}\n${faction.name} Aesthetic:\n  ${faction.visualStyle}` +
             (factionRepresentative ? `\n${faction?.name || 'The faction'}'s representative, ${factionRepresentative.name}, appears on-screen. Their description: ${factionRepresentative.getDescription(currentActorOutfitIds[factionRepresentative.id] || factionRepresentative.outfitId)}` :
                 'They have no designated liaison for this communication; any characters introduced during this scene will be transient.')) : '') +
@@ -531,7 +532,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
             `The faction could have a temporary job to offer a patient, or suggest an exchange of resources or favors. Or they could have a permanent role in mind for an ideal candidate patient. ` +
             `If a patient is already on-loan to this faction, use this opportunity to update the Director on their status, depict the patient's return, or convert them to a permanent placement with the faction. ` +
             `Remember to use appropriate tags when moving characters on- or off-station in the skit. `) : '') +
-        `\n]\n\n` +
+
         buildPromptSegment(`Known Factions`, `${Object.values(stage.getSave().factions).filter(faction => faction.active && faction.reputation > 0).map(faction => `${faction.name}: ${faction.getReputationDescription()}`).join('\n  ')}`) +
         ((historyLength > 0 && pastEvents.length) ? 
                 // Include last few skit scripts for context and style reference; use summary except for most recent skit or if no summary.
