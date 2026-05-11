@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Stage } from '../Stage';
-import Actor from '../actors/Actor';
+import Actor, { getRole } from '../actors/Actor';
 import Faction from '../factions/Faction';
 import { ModuleIntrinsic } from '../Module';
 import { GlassPanel, Title, Button } from '../components/UIComponents';
@@ -275,7 +275,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                             textTransform: 'capitalize',
                                                         }}
                                                     >
-                                                        {actor.getRole(stage().getSave()) || actor.origin}
+                                                        {getRole(actor, stage().getSave()) || actor.origin}
                                                     </div>
                                                 </motion.div>
                                             ))

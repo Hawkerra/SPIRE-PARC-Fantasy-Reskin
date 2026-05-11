@@ -1,4 +1,4 @@
-import Actor, { getStatDescription, findBestNameMatch, Stat, namesMatch } from "./actors/Actor";
+import Actor, { getStatDescription, findBestNameMatch, Stat, namesMatch, getRole } from "./actors/Actor";
 import { Emotion, EMOTION_MAPPING } from "./actors/Emotion";
 import { getStatRating, Module, MODULE_TEMPLATES, STATION_STAT_PROMPTS, StationStat } from "./Module";
 import { Stage } from "./Stage";
@@ -654,7 +654,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. ` +
                 `\n]\n\n` +
                 `#Current Instruction#\n[\n` +
-                `Develop several tagged turn entries for this scene in a visual novel; this is a skit in a video game, so the scene avoids major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
+                `Develop and output several tagged turn entries for this scene in a visual novel, following example and historic formatting. ` +
+                `This is a skit in a video game, so avoid major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
                 (skit.script.length == 0 ? 'As this is the initial, establishing moment of a new scene, evaluate the current appearance and alternative appearances of each character and use Appearance ("wears") tags to update the characters to the most appropriate outfit for the moment. ' : '') +
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +
                 `Regardless of past events or style, ensure the suggested Narrative Tone bleeds into the nature of this scene and its writing. ` +
@@ -1156,7 +1157,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                                     const allActors = Object.values(stage.getSave().actors);
                                     const matchedActor = findBestNameMatch(characterNameRaw, allActors);
 
-                                    const currentRole = matchedActor ? matchedActor.getRole(stage.getSave()) : null;
+                                    const currentRole = matchedActor ? getRole(matchedActor, stage.getSave()) : null;
 
                                     const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({name: m.getAttribute('role') || ''})));
                                     const newRole = ['NONE', 'PATIENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';

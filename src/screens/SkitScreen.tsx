@@ -4,7 +4,7 @@
 import React, { FC, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
 import { Module } from '../Module';
-import Actor, { namesMatch, findBestNameMatch, isHologram } from '../actors/Actor';
+import Actor, { namesMatch, findBestNameMatch, isHologram, getRole } from '../actors/Actor';
 import { Stage } from '../Stage';
 import { SkitData } from '../Skit';
 import ActorImage from '../actors/ActorImage';
@@ -677,7 +677,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                     <ActorCard
                         actor={hoveredActor}
                         visitingFaction={undefined /* Don't display visiting status in skits. */}
-                        role={hoveredActor.getRole(stage().getSave())}
+                        role={getRole(hoveredActor, stage().getSave())}
                         collapsedSections={[ActorCardSection.STATS]}
                     />
                 </div>

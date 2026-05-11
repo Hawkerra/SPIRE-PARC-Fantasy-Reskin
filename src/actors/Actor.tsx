@@ -221,18 +221,6 @@ class Actor {
         return Object.values(save.factions).some(faction => this.locationId === faction.id);
     }
 
-    getRole(save: SaveType): string {
-        const roleModule = save.layout.getModulesWhere((m: any) => m && m.type !== 'quarters' && m.ownerId === this.id)[0];
-        if (roleModule !== undefined) {
-            return roleModule.getAttribute('role') || '';
-        } else if (save.aide.actorId === this.id) {
-            return 'StationAide™';
-        } else if (this.factionId && save.factions[this.factionId]) {
-            return save.factions[this.factionId].name;
-        }
-        return '';
-    }
-
     /**
      * Get the emotion image for this actor, falling back to neutral if not available.
      * If the emotion is not defined or matches the base/neutral image, kick off generation
@@ -831,6 +819,18 @@ export function findBestNameMatch<T extends { name: string }>(
     }
 
     return bestMatch;
+}
+
+export function getRole(actor: Actor, save: SaveType): string {
+    const roleModule = save.layout.getModulesWhere((m: any) => m && m.type !== 'quarters' && m.ownerId === actor.id)[0];
+    if (roleModule !== undefined) {
+        return roleModule.getAttribute('role') || '';
+    } else if (save.aide.actorId === actor.id) {
+        return 'StationAide™';
+    } else if (actor.factionId && save.factions[actor.factionId]) {
+        return save.factions[actor.factionId].name;
+    }
+    return '';
 }
 
 export default Actor;
