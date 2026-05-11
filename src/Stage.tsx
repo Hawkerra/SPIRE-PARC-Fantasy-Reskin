@@ -364,8 +364,11 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.saveGame();
 
         if (save.currentSkit) {
+            console.log('In a skit');
             // If there's still a current skit, then it hasn't even started. Change screens back to SkitScreen:
             setScreenType(ScreenType.SKIT);
+        } else {
+            setScreenType(ScreenType.STATION);
         }
     }
 

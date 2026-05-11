@@ -4,7 +4,7 @@
 import React, { FC, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
 import { Module } from '../Module';
-import Actor, { namesMatch, findBestNameMatch } from '../actors/Actor';
+import Actor, { namesMatch, findBestNameMatch, isHologram } from '../actors/Actor';
 import { Stage } from '../Stage';
 import { SkitData } from '../Skit';
 import ActorImage from '../actors/ActorImage';
@@ -624,7 +624,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                     actor={actor}
                     emotion={emotion}
                     imageUrl={actor.getEmotionImage(emotion, stage(), outfitId)}
-                    hologram={actor.isHologram(stage().getSave(), module ? module.id || '' : '')}
+                    hologram={isHologram(actor, stage().getSave(), module ? module.id || '' : '')}
                     xPosition={xPosition}
                     yPosition={isVerticalLayout ? 20 : 0}
                     zIndex={50 - Math.abs(xPosition - 50)}

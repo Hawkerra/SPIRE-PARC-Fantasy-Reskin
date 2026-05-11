@@ -216,9 +216,6 @@ class Actor {
         this.locationId = this.factionId;
     }
 
-    isHologram(save: SaveType, currentLocationId: string): boolean {
-        return (!!this.factionId) || (save.factions[currentLocationId || this.locationId] !== undefined) || save.aide.actorId === this.id;
-    }
 
     isOffSite(save: SaveType): boolean {
         return Object.values(save.factions).some(faction => this.locationId === faction.id);
@@ -262,6 +259,10 @@ class Actor {
         return emotionUrl || fallbackUrl;
     }
 }
+
+export function isHologram(actor: Actor, save: SaveType, currentLocationId: string): boolean {
+        return (!!actor.factionId) || (save.factions[currentLocationId || actor.locationId] !== undefined) || save.aide.actorId === actor.id;
+    }
 
 export function getStatDescription(stat: Stat | string): string {
     const key = typeof stat === 'string' ? stat : stat;

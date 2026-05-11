@@ -3,7 +3,7 @@
  */
 import React, { FC, useCallback, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
-import Actor from '../actors/Actor';
+import Actor, { isHologram } from '../actors/Actor';
 import { Stage } from '../Stage';
 import { generateSkitScript, SkitData } from '../Skit';
 import { Emotion } from '../actors/Emotion';
@@ -121,6 +121,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
 		if (input.trim() === '' && skitArg.script.length > 0 && skitArg.script[index].endScene) {
+            console.log('Ending skit and returning to map screen');
 			stage().endSkit(setScreenType);
 			return null;
 		} else {
@@ -205,8 +206,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     })();
 
                     return {
-                        filter: actor.isHologram(stage().getSave(), actorLocationId) ? 'hologram' : undefined,
-                        filterColor: actor.isHologram(stage().getSave(), actorLocationId) ? actor.themeColor : undefined
+                        filter: isHologram(actor, stage().getSave(), actorLocationId) ? 'hologram' : undefined,
+                        filterColor: isHologram(actor, stage().getSave(), actorLocationId) ? actor.themeColor : undefined
                     };
                 }}
                 onSubmitInput={handleSkitSubmit}
