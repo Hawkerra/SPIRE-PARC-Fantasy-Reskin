@@ -213,6 +213,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
                     const endScene = index >= 0 ? (skit.script[index]?.endScene || false) : false;
+                    console.log('Getting submit button config for index:', index, 'input:', inputText);
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
                         enabled: true,
@@ -231,7 +232,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                             );
                         }
                     }
-                    if (!actor) return null;
+                    if (!actor || actor.id == 'player') return null;
                     // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
                     return (
                         <div style={{

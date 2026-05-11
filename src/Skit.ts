@@ -154,9 +154,10 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
         return ((skit.script && skit.script.length > 0) || additionalEntries.length > 0) ?
             [...skit.script, ...additionalEntries].map(e => {
                 // Find the best matching emotion key for this speaker
+                const speakerName = e.speaker || (stage?.getSave().actors[e.speakerId || '']?.name || (e.speakerId == 'player' ? stage?.getSave().player.name : '') || 'Unknown Speaker');
                 const emotionKeys = Object.keys(e.actorEmotions || {});
                 const candidates = emotionKeys.map(key => ({ name: key }));
-                const bestMatch = findBestNameMatch(e.speaker, candidates);
+                const bestMatch = findBestNameMatch(speakerName, candidates);
                 const matchingKey = bestMatch?.name;
                 const emotionText = matchingKey ? ` [${matchingKey} expresses ${e.actorEmotions?.[matchingKey]}]` : '';
                 const wearsText = Object.entries(e.outfitChanges || {}).map(([actorId, outfitId]) => {
@@ -164,7 +165,7 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
                     const outfit = actor?.outfits.find(o => o.id === outfitId);
                     return actor && outfit ? ` [${actor.name} wears ${outfit.name}]` : '';
                 }).join('');
-                return `[${e.speaker} turn]${emotionText}${wearsText} ${e.message}`.trim();
+                return `[${speakerName} turn]${emotionText}${wearsText} ${e.message}`.trim();
             }).join('\n')
             : '(None so far)';
 }
@@ -654,7 +655,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `) +
                 
                 buildPromptSegment(`Current Instruction`, 
-                `The assistant will now craft and output multiple tagged turn entries, developing this scene for a visual novel, following example and historic formatting and rules above. ` +
+                `The assistant will now craft and output multiple narrative entries/turns, developing this scene for a visual novel, including tags per example and historic formatting and the rules above. ` +
                 `This is a skit in a video game, so avoid major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
                 (skit.script.length == 0 ? 'As this is the initial, establishing moment of a new scene, evaluate the current appearance and alternative appearances of each character and use Appearance ("wears") tags to update the characters to the most appropriate outfit for the moment. ' : '') +
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +
@@ -803,12 +804,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     // Remove all tags to get pure prose/dialogue content.
                     trimmed = trimmed.replace(/\[([^\]]+)\]/g, '').trim();
 
-                    // Backward-compatible fallback for legacy "NAME: content" entries.
-                    const legacyEntryMatch = /^([^:\n]+):\s*(.*)$/.exec(trimmed);
-                    const legacySpeaker = !turnMatch && legacyEntryMatch ? legacyEntryMatch[1].trim() : '';
-                    const legacyMessage = !turnMatch && legacyEntryMatch ? legacyEntryMatch[2].trim() : '';
-
-                    const startsNewEntry = !!turnMatch || !!legacySpeaker;
+                    const startsNewEntry = !!turnMatch;
 
                     if (startsNewEntry) {
                         if (hasCurrentEntry) {
@@ -821,8 +817,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                             });
                         }
 
-                        currentSpeaker = turnMatch ? turnMatch[1].trim() : legacySpeaker;
-                        currentMessage = turnMatch ? trimmed : legacyMessage;
+                        currentSpeaker = turnMatch ? turnMatch[1].trim() : 'NARRATOR';
+                        currentMessage = turnMatch ? trimmed : '';
                         hasCurrentEntry = true;
                         currentEmotionTags = newEmotionTags;
                         currentMovements = newMovements;
