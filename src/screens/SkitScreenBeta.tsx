@@ -115,7 +115,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         outfitId: '',
         getEmotionImage: () => '', // Player doesn't have an image, but this prevents errors when trying to access it.
         themeColor: '#718096',
-        themeFontFamily: '"Arial Black", "Helvetica Neue", Arial, sans-serif',
+        themeFontFamily: `'Geologica', sans-serif`, // Player needs some nice default font.
     }};
 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
@@ -213,7 +213,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
                     const endScene = index >= 0 ? (skit.script[index]?.endScene || false) : false;
-                    console.log('Getting submit button config for index:', index, 'input:', inputText);
+                    if (endScene) {
+                        console.log('Getting submit button config for index:', index);
+                        console.log(skit.script);
+                    }
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
                         enabled: true,

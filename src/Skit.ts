@@ -420,7 +420,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
 }
 
 function buildPromptSegment(title: string, content: string) {
-    return content.trim() ? `#${title}#\n[\n${content.trim()}\n]\n\n` : '';
+    return content.trim() ? `${title}: {\n${content.trim()}\n}\n\n` : '';
 }
 
 export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
