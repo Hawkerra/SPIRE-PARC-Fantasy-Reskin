@@ -166,7 +166,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     return (
 		<BlurredBackground
 			imageUrl={decorImageUrl}
-			overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
+			// overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
 		>
             {/* Top right control buttons */}
             <div style={{
@@ -216,8 +216,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                 style={{ // center nameplate horizontally in parent container:
                                     position: 'absolute',
                                     left: '50%',
-                                    bottom: '50%',
-                                    transform: 'translate(-50%, -50%)',
+                                    transform: 'translateX(-50%)',
                                     zIndex: 5
                                 }}
                                 role={(() => {
@@ -255,10 +254,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 getActorFilter={(actor, _script, index) => {
                     // Get current location ID of this actor as of this index in the script (the actor may not be in the scene; if their location is not a module, then they should be a hologram):
                     const actorLocationId = (() => {
-                        const locations = skit.initialActorLocations || {};
+                        const locations = _script.initialActorLocations || {};
                         let currentLocationId = locations[actor.id] || '';
-                        for (let i = 0; i <= index && i < skit.script.length; i++) {
-                            const entry = skit.script[i];
+                        for (let i = 0; i <= index && i < _script.script.length; i++) {
+                            const entry = _script.script[i];
                             if (entry.movements && entry.movements[actor.id]) {
                                 currentLocationId = entry.movements[actor.id];
                             }
@@ -273,9 +272,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }}
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
-                    console.log('Getting submit button config for index', index, 'inputText:', inputText);
-                    console.log(_script);
-                    const endScene = index >= 0 ? (_script[index]?.endScene || false) : false;
+                    const endScene = index >= 0 ? (_script.script[index]?.endScene || false) : false;
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
                         enabled: true,
