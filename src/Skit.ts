@@ -678,7 +678,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
                 // Remove everything up to the first [NAME turn] tag, if it exists, to allow for some flexibility in model output while still ensuring we start parsing from the first turn.
                 const firstTurnIndex = text.search(/\[[^\]]+ turn\]/i);
-                if (firstTurnIndex > 0) {
+                if (firstTurnIndex >= 0) {
                     text = text.slice(firstTurnIndex);
                 } else {
                     console.warn('No turn tags found in response; unable to parse script entries. Response was:', response);
