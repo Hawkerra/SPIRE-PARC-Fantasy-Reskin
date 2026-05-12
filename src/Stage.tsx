@@ -1015,6 +1015,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             let endFactionChanges: { [actorId: string]: string } = save.currentSkit.endFactionChanges || {};
             let endRoleChanges: { [actorId: string]: string } = save.currentSkit.endRoleChanges || {};
 
+            console.log('Applying skit outcomes.');
+            console.log(endProps);
+            console.log(endFactionChanges);
+            console.log(endRoleChanges);
             // Apply role changes to actors
             for (const actorId in endRoleChanges) {
                 const actor = save.actors[actorId];

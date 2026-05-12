@@ -286,6 +286,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableTalkingAnimation={true}
                 responsiveOverlay={(actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
+                        console.log(`Debugging responseOverlay: ${skit.script.length} script entries, current index ${skit.currentIndex}, endScene: ${skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene}`);
                         if (skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene || false) {
                             return (
                                 <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
