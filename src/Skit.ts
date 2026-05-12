@@ -890,7 +890,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         continue;
                     }
                     // Adjust speaker name to match actor name if possible
-                    const matched = findBestNameMatch(entry.speaker, Object.values(stage.getSave().actors));
+                    const matched = findBestNameMatch(entry.speaker, [...Object.values(stage.getSave().actors), {name: stage.getSave().player.name, id: 'player'}]); // Include player as a possible match
                     if (matched) {
                         entry.speakerId = matched.id;
                         entry.speaker = matched.name;
