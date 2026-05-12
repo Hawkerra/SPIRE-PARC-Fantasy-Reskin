@@ -206,7 +206,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
             </div>
 
             <NovelVisualizer
-                script={skit}
+                skit={skit}
                 loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
