@@ -19,7 +19,7 @@ import {
     LastPage,
     PlayArrow,
     Menu as MenuIcon,
-    Book as BookIcon
+    EditNote
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
@@ -178,6 +178,19 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 zIndex: 10
             }}>
                 <IconButton 
+                    onClick={() => setShowContentManagement(true)}
+                    title="Content Management"
+                    sx={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': {
+                            color: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }}
+                >
+                    <EditNote />
+                </IconButton>
+                <IconButton 
                     onClick={() => setScreenType(ScreenType.MENU)}
                     title="Menu"
                     sx={{
@@ -190,19 +203,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 >
                     <MenuIcon />
                 </IconButton>
-                <IconButton 
-                    onClick={() => setShowContentManagement(true)}
-                    title="Content Management"
-                    sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        '&:hover': {
-                            color: 'rgba(255, 255, 255, 1)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                        }
-                    }}
-                >
-                    <BookIcon />
-                </IconButton>
             </div>
 
             <NovelVisualizer
@@ -213,8 +213,12 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     return <Nameplate 
                                 actor={actor} 
                                 size={isVerticalLayout ? "medium" : "large"}
-                                style={{// center nameplate in parent
-                                    ...(isVerticalLayout ? { transform: 'translate(-50%, -50%)', left: '50%', top: '50%' } : { marginBottom: '1rem' })
+                                style={{ // center nameplate horizontally in parent container:
+                                    position: 'absolute',
+                                    left: '50%',
+                                    bottom: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    zIndex: 5
                                 }}
                                 role={(() => {
                                     const roleModules = stage().getSave().layout.getModulesWhere((m: any) => 
@@ -282,7 +286,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableTalkingAnimation={true}
                 responsiveOverlay={(skit, actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
-                        console.log(`Debugging responseOverlay: ${skit.script.length} script entries, current index ${skit.currentIndex}, endScene: ${skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene}`);
                         if (skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene || false) {
                             return (
                                 <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />

@@ -4,6 +4,7 @@
  */
 
 import { createTheme } from '@mui/material/styles';
+import { warning } from 'framer-motion';
 
 // Shared palette for all screen classes.
 export const colors = {
@@ -39,6 +40,7 @@ export const colors = {
     pale: '#eafff2',
     muted: 'rgba(255, 255, 255, 0.9)',
     veryMuted: 'rgba(255, 255, 255, 0.6)',
+    warning: '#ffb347',
   },
 };
 
