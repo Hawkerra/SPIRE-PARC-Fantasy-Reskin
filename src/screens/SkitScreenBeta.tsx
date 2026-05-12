@@ -269,11 +269,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }}
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
-                    const endScene = index >= 0 ? (skit.script[index]?.endScene || false) : false;
-                    if (endScene) {
-                        console.log('Getting submit button config for index:', index);
-                        console.log(skit.script);
-                    }
+                    const endScene = index >= 0 ? (_script[index]?.endScene || false) : false;
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
                         enabled: true,
@@ -284,7 +280,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableAudio={!stage().getSave().disableTextToSpeech}
                 enablePopInSpeakers={true}
                 enableTalkingAnimation={true}
-                responsiveOverlay={(actor) => {
+                responsiveOverlay={(skit, actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
                         console.log(`Debugging responseOverlay: ${skit.script.length} script entries, current index ${skit.currentIndex}, endScene: ${skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene}`);
                         if (skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene || false) {
