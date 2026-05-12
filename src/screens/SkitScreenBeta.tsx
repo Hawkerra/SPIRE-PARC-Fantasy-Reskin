@@ -273,6 +273,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }}
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
+                    console.log('Getting submit button config for index', index, 'inputText:', inputText);
+                    console.log(_script);
                     const endScene = index >= 0 ? (_script[index]?.endScene || false) : false;
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
