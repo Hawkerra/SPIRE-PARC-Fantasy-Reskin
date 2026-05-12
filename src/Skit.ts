@@ -588,9 +588,6 @@ export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise
         stop: ['#END']
     });
     if (endResponse) {
-        // Strip double-asterisks. TODO: Remove this once other model issue is resolved.
-        endResponse = endResponse.replace(/\*\*/g, '');
-
         const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
         skit.summary = summaryMatch ? summaryMatch[1].trim() : '';
         console.log('New summary for skit:', skit.summary);
@@ -656,7 +653,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `) +
                 
                 buildPromptSegment(`Current Instruction`, 
-                `The assistant will now craft and output multiple narrative entries/turns, developing this scene for a visual novel, including tags per example and historic formatting and the rules above. ` +
+                `The System will now craft and output multiple narrative entries/turns, developing this scene for a visual novel, utilizing tags per example and historic formatting and obeying the rules above. ` +
                 `This is a skit in a video game, so avoid major developments or concrete details which would fundamentally alter or subvert the mechanics of the game. ` +
                 (skit.script.length == 0 ? 'As this is the initial, establishing moment of a new scene, evaluate the current appearance and alternative appearances of each character and use Appearance ("wears") tags to update the characters to the most appropriate outfit for the moment. ' : '') +
                 `Generally, focus upon interpersonal dynamics, character growth, faction and patient relationships, and the Station's state, capabilities, and inhabitants. ` +

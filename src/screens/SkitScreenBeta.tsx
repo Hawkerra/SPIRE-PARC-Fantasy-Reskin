@@ -12,12 +12,16 @@ import Nameplate from '../components/Nameplate';
 import { BlurredBackground } from '../components/BlurredBackground';
 import { useTooltip } from '../contexts/TooltipContext';
 import ActorCard, { ActorCardSection } from '../components/ActorCard';
+import { ContentManagementScreen } from './ContentManagementScreen';
 
 import {
     Send,
     LastPage,
-    PlayArrow
+    PlayArrow,
+    Menu as MenuIcon,
+    Book as BookIcon
 } from '@mui/icons-material';
+import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
 
 interface SkitScreenBetaProps {
@@ -103,6 +107,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
+    const [showContentManagement, setShowContentManagement] = React.useState(false);
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
@@ -146,11 +151,60 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         }
     }, [skit]);
 
+    // Handle Escape key to open menu
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !showContentManagement) {
+                setScreenType(ScreenType.MENU);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [setScreenType, showContentManagement]);
+
     return (
 		<BlurredBackground
 			imageUrl={decorImageUrl}
 			overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
 		>
+            {/* Top right control buttons */}
+            <div style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                display: 'flex',
+                gap: '0.5rem',
+                zIndex: 10
+            }}>
+                <IconButton 
+                    onClick={() => setScreenType(ScreenType.MENU)}
+                    title="Menu"
+                    sx={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': {
+                            color: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }}
+                >
+                    <MenuIcon />
+                </IconButton>
+                <IconButton 
+                    onClick={() => setShowContentManagement(true)}
+                    title="Content Management"
+                    sx={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': {
+                            color: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }}
+                >
+                    <BookIcon />
+                </IconButton>
+            </div>
+
             <NovelVisualizer
                 script={skit}
                 loading={isLoading}
@@ -159,6 +213,9 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     return <Nameplate 
                                 actor={actor} 
                                 size={isVerticalLayout ? "medium" : "large"}
+                                style={{// center nameplate in parent
+                                    ...(isVerticalLayout ? { transform: 'translate(-50%, -50%)', left: '50%', top: '50%' } : { marginBottom: '1rem' })
+                                }}
                                 role={(() => {
                                     const roleModules = stage().getSave().layout.getModulesWhere((m: any) => 
                                         m && m.type !== 'quarters' && m.ownerId === actor.id
@@ -254,6 +311,14 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     );
                 }}
             />
+            
+            {/* Content Management Modal */}
+            {showContentManagement && (
+                <ContentManagementScreen
+                    stage={stage}
+                    onClose={() => setShowContentManagement(false)}
+                />
+            )}
         </BlurredBackground>
     );
 
