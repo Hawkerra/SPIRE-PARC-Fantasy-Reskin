@@ -419,7 +419,8 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
     return null;
 }
 
-function buildPromptSegment(title: string, content: string) {
+// Weird place for this because I'm using it all over.
+export function buildPromptSegment(title: string, content: string) {
     return content.trim() ? `${title}: [\n${content.trim()}\n]\n\n` : '';
 }
 
@@ -576,10 +577,10 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
 
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
     const summaryPrompt = buildSkitPrompt(skit, stage, 0,
-            `Scene Script for Analysis:\n${buildScriptLog(skit, skit.script, stage)}` +
-            `\n\nInstruction:\nAnalyze the preceding scene script output a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. `) +
-        `Example Response:\n` +
-        `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`;
+            buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
+            buildPromptSegment('Instruction', `Analyze the preceding scene script output a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
+        buildPromptSegment('Example Response',
+            `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`);
      let endResponse = await stage.makeText({
         prompt: summaryPrompt,
         min_tokens: 1,
@@ -942,14 +943,12 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 console.log('Perform additional analysis.');
                 ttsPromises.push((async () => {
                     const endPrompt = buildSkitPrompt(skit, stage, 0,
-                        `Scene Script for Analysis:\n${buildScriptLog(skit, scriptEntries, stage)}` +
-                        `\n\nInstruction:\nAnalyze the preceding scene script and determine whether the final moments make for a suitable ending to the scene. ` +
-                        `If the scene feels complete or has reached a good suspended moment, output "[END SCENE]" followed by a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. ` +
-                        `If the scene does not feel complete, output "[CONTINUE SCENE]" and "[SUMMARY: ...]" tag with a brief explanation of what is missing or what could be developed further to reach a satisfying conclusion. `) +
-                        `Example Response:\n` +
-                        `[END SCENE]\n[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]\n\n` +
-                        `Example Response:\n` +
-                        `[CONTINUE SCENE]\n[SUMMARY: The scene has a promising setup with the faction representative's visit and offer, but it would benefit from further development of the patient's internal conflict and decision-making process before accepting the offer, as well as more dialogue to flesh out the interaction between the patient and the representative.]`;
+                        buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, scriptEntries, stage)) +
+                        buildPromptSegment('Instruction', `Analyze the preceding scene script and determine whether the final moments make for a suitable ending to the scene. ` +
+                            `If the scene feels complete or has reached a good suspended moment, output "[END SCENE]" followed by a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes. ` +
+                            `If the scene does not feel complete, output "[CONTINUE SCENE]" and "[SUMMARY: ...]" tag with a brief explanation of what is missing or what could be developed further to reach a satisfying conclusion. `) +
+                        buildPromptSegment('Example Responses', `[END SCENE]\n[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]\n\n` +
+                        `[CONTINUE SCENE]\n[SUMMARY: The scene has a promising setup with the faction representative's visit and offer, but it would benefit from further development of the patient's internal conflict and decision-making process before accepting the offer, as well as more dialogue to flesh out the interaction between the patient and the representative.]`));
                     const endResponse = await stage.makeText({
                         prompt: endPrompt,
                         min_tokens: 1,

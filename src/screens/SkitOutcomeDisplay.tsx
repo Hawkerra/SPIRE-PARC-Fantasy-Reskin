@@ -310,7 +310,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ skitData, stage, layo
                 position: 'absolute',
                 top: '3%',
                 right: '3%',
-                bottom: `${bottomVh}vh`,
+                bottom: stage.betaMode ? `3%` : `${bottomVh}vh`,
                 zIndex: 3,
                 display: 'flex',
                 flexDirection: 'row-reverse',

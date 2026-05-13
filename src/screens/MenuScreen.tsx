@@ -63,6 +63,8 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
         // Check if aide is still being generated
         if (stage().getGenerateAidePromise()) {
             setScreenType(ScreenType.LOADING);
+        } else if (stage().getSave().currentSkit) {
+            setScreenType(ScreenType.SKIT);
         } else {
             setScreenType(ScreenType.STATION);
         }
