@@ -1,12 +1,12 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
 import { Stage } from '../Stage';
 import { v4 as generateUuid } from 'uuid';
 import Actor, { Stat, ACTOR_STAT_ICONS, generateBaseActorImage, generateEmotionImage, generateActorDecor, VOICE_MAP, Outfit, ORIGINAL_OUTFIT_NAME } from '../actors/Actor';
 import { Emotion, EMOTION_PROMPTS } from '../actors/Emotion';
 import { GlassPanel, Title, Button, TextInput, Chip } from '../components/UIComponents';
-import { Close, Save, Image as ImageIcon } from '@mui/icons-material';
+import { Close, Save, Image as ImageIcon, PlayArrow } from '@mui/icons-material';
 import { scoreToGrade } from '../utils';
 
 interface ActorDetailScreenProps {
@@ -14,6 +14,8 @@ interface ActorDetailScreenProps {
     stage: () => Stage;
     onClose: () => void;
 }
+
+const voiceSampleCache = new Map<string, string>();
 
 export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, onClose }) => {
     type ImageTarget = 'base' | Emotion;
@@ -66,8 +68,10 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingDemoSpeech, setIsGeneratingDemoSpeech] = useState(false);
     const [regeneratingImages, setRegeneratingImages] = useState<Set<string>>(new Set());
     const [, forceUpdate] = useState({});
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const imageUploadInputRef = useRef<HTMLInputElement>(null);
     const [imageDialog, setImageDialog] = useState<{
         open: boolean;
@@ -99,6 +103,86 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
             emotionPack: { ...(outfit.emotionPack || {}) },
         })));
     };
+
+    async function generateDemoSpeech(voiceId: string, transcript: string) {
+        const ttsResponse = await stage().generator.speak({
+            transcript,
+            voice_id: voiceId || undefined
+        });
+        if (ttsResponse && ttsResponse.url) {
+            return ttsResponse.url;
+        } else {
+            return '';
+        }
+    }
+
+    const getVoiceSampleCacheKey = (actorId: string, voiceId: string): string => `${actorId}:${voiceId}`;
+
+    const playSampleUrl = async (sampleUrl: string) => {
+        if (!sampleUrl) {
+            return;
+        }
+
+        try {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.src = '';
+            }
+
+            const audio = new Audio(sampleUrl);
+            audioRef.current = audio;
+            await audio.play();
+        } catch (error) {
+            console.error('Failed to play demo speech sample:', error);
+            stage().showPriorityMessage('Unable to play voice sample. Please try again.');
+        }
+    };
+
+    const handlePlayDemoSpeech = async () => {
+        if (isGeneratingDemoSpeech) {
+            return;
+        }
+
+        const selectedVoiceId = editedActor.voiceId?.trim();
+        if (!selectedVoiceId) {
+            stage().showPriorityMessage('Please select a voice ID first.');
+            return;
+        }
+
+        const cacheKey = getVoiceSampleCacheKey(actor.id, selectedVoiceId);
+        const cachedSampleUrl = voiceSampleCache.get(cacheKey);
+        if (cachedSampleUrl) {
+            await playSampleUrl(cachedSampleUrl);
+            return;
+        }
+
+        setIsGeneratingDemoSpeech(true);
+        try {
+            const sampleUrl = await generateDemoSpeech(selectedVoiceId, editedActor.profile || actor.profile || actor.name);
+            if (!sampleUrl) {
+                stage().showPriorityMessage('Voice sample generation returned no audio URL.');
+                return;
+            }
+
+            voiceSampleCache.set(cacheKey, sampleUrl);
+            await playSampleUrl(sampleUrl);
+        } catch (error) {
+            console.error('Failed to generate demo speech sample:', error);
+            stage().showPriorityMessage('Failed to generate voice sample. Please try again.');
+        } finally {
+            setIsGeneratingDemoSpeech(false);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.src = '';
+                audioRef.current = null;
+            }
+        };
+    }, []);
 
     const handleCloseDetail = () => {
         actor.outfits = initialOutfitsRef.current.map((outfit) => ({
@@ -789,27 +873,53 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         >
                                             Voice ID
                                         </label>
-                                        <select
-                                            value={editedActor.voiceId}
-                                            onChange={(e) => handleInputChange('voiceId', e.target.value)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px',
-                                                fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
-                                                borderRadius: '5px',
-                                                color: '#e0f0ff',
-                                                fontFamily: 'inherit',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            {Object.entries(VOICE_MAP).map(([id, description]) => (
-                                                <option key={id} value={id}>
-                                                    {description}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
+                                            <select
+                                                value={editedActor.voiceId}
+                                                onChange={(e) => handleInputChange('voiceId', e.target.value)}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '12px',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
+                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    borderRadius: '5px',
+                                                    color: '#e0f0ff',
+                                                    fontFamily: 'inherit',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                {Object.entries(VOICE_MAP).map(([id, description]) => (
+                                                    <option key={id} value={id}>
+                                                        {description}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <Button
+                                                onClick={handlePlayDemoSpeech}
+                                                disabled={isGeneratingDemoSpeech || !editedActor.voiceId}
+                                                style={{
+                                                    alignSelf: 'stretch',
+                                                    minWidth: '120px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px',
+                                                }}
+                                            >
+                                                {isGeneratingDemoSpeech ? (
+                                                    <>
+                                                        <CircularProgress size={14} style={{ color: '#00ff88' }} />
+                                                        Loading
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <PlayArrow style={{ fontSize: '18px' }} />
+                                                        Play
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     {/* Theme Color */}

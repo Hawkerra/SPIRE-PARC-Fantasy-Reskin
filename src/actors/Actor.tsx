@@ -295,7 +295,9 @@ export async function loadReserveActorFromFullPath(fullPath: string, stage: Stag
 
 // Mapping of voice IDs to a description of the voice, so the AI can choose an ID based on the character profile.
 export const VOICE_MAP: {[key: string]: string} = {
-    '751212e5-a871-45c7-b10b-6f42a5785954': 'feminine - posh and catty',
+    '05261898-ccd1-4270-bfb2-78e8ecba225d': 'feminine - high, refined, and warm',
+    '98bcf0b0-a0f7-4828-8686-4f8692293d68': 'feminine - low, posh, and fried',
+    '751212e5-a871-45c7-b10b-6f42a5785954': 'feminine - high, posh, and catty',
     '03a438b7-ebfa-4f72-9061-f086d8f1fca6': 'feminine - calm and soothing', // HQ Female Lowrange
     'a2533977-83cb-4c10-9955-0277e047538f': 'feminine - energetic and lively', // LQ Female Midrange
     '057d53b3-bb28-47f1-9c19-a85a79851863': 'feminine - low and warm', // HQ Female Midrange
