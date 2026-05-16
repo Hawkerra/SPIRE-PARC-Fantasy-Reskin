@@ -2,9 +2,11 @@ import React, { FC } from 'react';
 import { motion } from 'framer-motion';
 import { Paper, Typography, Box } from '@mui/material';
 import { TrendingUp, Handshake, TrendingDown, ContentCut } from '@mui/icons-material';
-import { Stat, ACTOR_STAT_ICONS } from '../actors/Actor';
+import Actor, { Stat, ACTOR_STAT_ICONS } from '../actors/Actor';
+import Nameplate from '../components/Nameplate';
+import { scoreToGrade } from '../utils';
 import { StationStat, STATION_STAT_ICONS } from '../Module';
-import { accumulateOutcomes, Outcome, SkitData } from '../Skit';
+import { Outcome } from '../Skit';
 import { Stage } from '../Stage';
 
 
@@ -12,15 +14,48 @@ interface SkitOutcomeDisplayProps {
     outcomes: Outcome[];
     stage: Stage;
     layout?: any;
-    messageBoxTopVh?: number;
 }
 
-const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, messageBoxTopVh = 60 }) => {
+const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout }) => {
     // Calculate bottom position based on message box top
-    const bottomVh = Math.max(100 - messageBoxTopVh + 2, 15); // At least 15vh from bottom, 2vh padding above message box
 
     const currentOutcomes: Outcome[] = outcomes || [];
     const save = stage.getSave();
+
+    // --- Stat grouping ---
+    interface StatEntry { stat: Stat | StationStat; oldValue: number; newValue: number; }
+    interface ActorStatGroup { actorId: string; actor: Actor | undefined; entries: StatEntry[]; }
+
+    const actorStatGroups: ActorStatGroup[] = (() => {
+        const map = new Map<string, ActorStatGroup>();
+        currentOutcomes.filter(o => o.type === 'actorStat' && o.actorId && o.stat != null).forEach(o => {
+            const actorId = o.actorId!;
+            if (!map.has(actorId)) {
+                const actor: Actor | undefined = save.actors[actorId];
+                map.set(actorId, { actorId, actor, entries: [] });
+            }
+            const actor = map.get(actorId)!.actor;
+            const currentValue: number = actor?.stats?.[o.stat as Stat] ?? 5;
+            const newValue = Math.max(1, Math.min(10, currentValue + (o.amount ?? 0)));
+            if (newValue !== currentValue) {
+                map.get(actorId)!.entries.push({ stat: o.stat!, oldValue: currentValue, newValue });
+            }
+        });
+        return Array.from(map.values()).filter(g => g.entries.length > 0);
+    })();
+
+    const stationStatEntries: StatEntry[] = (() => {
+        return currentOutcomes
+            .filter(o => o.type === 'stationStat' && o.stat != null)
+            .map(o => {
+                const currentValue: number = save.stationStats?.[o.stat as StationStat] ?? 5;
+                const newValue = Math.max(1, Math.min(10, currentValue + (o.amount ?? 0)));
+                return { stat: o.stat!, oldValue: currentValue, newValue };
+            })
+            .filter(e => e.newValue !== e.oldValue);
+    })();
+
+    const otherOutcomes = currentOutcomes.filter(o => o.type !== 'actorStat' && o.type !== 'stationStat');
 
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
@@ -90,6 +125,60 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         return null;
     }
 
+    const renderStatEntries = (entries: Array<{ stat: Stat | StationStat; oldValue: number; newValue: number }>, cardIndex: number, isStation: boolean) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {entries.map((entry, statIndex) => {
+                const isIncrease = entry.newValue > entry.oldValue;
+                const isDecrease = entry.newValue < entry.oldValue;
+                const StatIcon = isStation
+                    ? STATION_STAT_ICONS[entry.stat as StationStat]
+                    : ACTOR_STAT_ICONS[entry.stat as Stat];
+                return (
+                    <motion.div
+                        key={String(entry.stat)}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.8 + cardIndex * 0.2 + statIndex * 0.1 }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 4px',
+                            background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
+                            borderRadius: '8px',
+                            border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {StatIcon && <StatIcon sx={{ fontSize: '1.2rem', color: isIncrease ? '#00ff88' : isDecrease ? '#ff6b6b' : '#fff', opacity: 0.9 }} />}
+                            <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
+                                {String(entry.stat)}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <span className="stat-grade" data-grade={scoreToGrade(entry.oldValue)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
+                                {scoreToGrade(entry.oldValue)}
+                            </span>
+                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                                {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
+                            </Typography>
+                            <motion.span
+                                className="stat-grade"
+                                data-grade={scoreToGrade(entry.newValue)}
+                                style={{ fontSize: '2rem' }}
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.5, delay: 0.9 + cardIndex * 0.2 + statIndex * 0.1 }}
+                            >
+                                {scoreToGrade(entry.newValue)}
+                            </motion.span>
+                        </Box>
+                    </motion.div>
+                );
+            })}
+        </Box>
+    );
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -50 }}
@@ -97,9 +186,9 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             transition={{ duration: 0.6, delay: 0.3 }}
             style={{
                 position: 'absolute',
-                top: '3%',
-                right: '3%',
-                bottom: `3%`,
+                top: '2vh',
+                right: '2vh',
+                bottom: `2vh`,
                 zIndex: 3,
                 display: 'flex',
                 flexDirection: 'row-reverse',
@@ -165,53 +254,110 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     </Paper>
                 </div>
 
-                {currentOutcomes.map((outcome, outcomeIndex) => {
+                {/* Actor stat groups — one card per actor */}
+                {actorStatGroups.map((group, groupIndex) => (
+                    <div key={`actorStat_${group.actorId}`}>
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.5 + groupIndex * 0.2 }}
+                        >
+                            <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(0,255,136,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.5, delay: 0.6 + groupIndex * 0.2 }}
+                                    style={{ marginBottom: '12px' }}
+                                >
+                                    <Box sx={{
+                                        width: '100%',
+                                        height: '150px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        border: '2px solid rgba(0,255,136,0.4)',
+                                        backgroundImage: group.actor ? `url(${group.actor.getEmotionImage(group.actor.getDefaultEmotion())})` : 'none',
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: '50% 15%',
+                                        backgroundRepeat: 'no-repeat',
+                                        filter: 'brightness(1.1)',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+                                    }} />
+                                </motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.7 + groupIndex * 0.2 }}
+                                    style={{ marginBottom: '12px' }}
+                                >
+                                    <Nameplate
+                                        actor={group.actor}
+                                        name={group.actor ? undefined : resolveActorName(group.actorId)}
+                                        size="large"
+                                        role={group.actor && layout ? (() => {
+                                            const roleModules = layout.getModulesWhere((m: any) => m && m.type !== 'quarters' && m.ownerId === group.actor?.id);
+                                            return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
+                                        })() : undefined}
+                                        layout="inline"
+                                    />
+                                </motion.div>
+                                {renderStatEntries(group.entries, groupIndex, false)}
+                            </Paper>
+                        </motion.div>
+                    </div>
+                ))}
+
+                {/* Station stat group — one card for PARC */}
+                {stationStatEntries.length > 0 && (
+                    <div key="stationStats">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.5 + actorStatGroups.length * 0.2 }}
+                        >
+                            <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(0,255,136,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.5, delay: 0.6 + actorStatGroups.length * 0.2 }}
+                                    style={{ marginBottom: '12px' }}
+                                >
+                                    <Box sx={{
+                                        width: '100%',
+                                        height: '150px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        border: '2px solid rgba(0,255,136,0.4)',
+                                        backgroundImage: `url(https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png)`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: '50% 15%',
+                                        backgroundRepeat: 'no-repeat',
+                                        filter: 'brightness(1.1)',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+                                    }} />
+                                </motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.7 + actorStatGroups.length * 0.2 }}
+                                    style={{ marginBottom: '12px' }}
+                                >
+                                    <Nameplate name="PARC" size="large" layout="inline" />
+                                </motion.div>
+                                {renderStatEntries(stationStatEntries, actorStatGroups.length, true)}
+                            </Paper>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Other outcomes — one card each */}
+                {otherOutcomes.map((outcome, outcomeIndex) => {
                     const accent = getAccent(outcome);
                     const OutcomeIcon = getOutcomeIcon(outcome);
+                    const cardIndex = actorStatGroups.length + (stationStatEntries.length > 0 ? 1 : 0) + outcomeIndex;
 
                     let content: React.ReactNode = null;
 
                     switch (outcome.type) {
-                        case 'actorStat': {
-                            const StatIcon = outcome.stat ? ACTOR_STAT_ICONS[outcome.stat as Stat] : undefined;
-                            content = (
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, padding: '12px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', textAlign: 'left', flex: 1 }}>
-                                        {resolveActorName(outcome.actorId)}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, justifyContent: 'center' }}>
-                                        {StatIcon ? <StatIcon sx={{ fontSize: '1.2rem', color: accent.color }} /> : null}
-                                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: accent.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            {String(outcome.stat || 'stat')}
-                                        </Typography>
-                                    </Box>
-                                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: accent.color, textAlign: 'right', flex: 0.6 }}>
-                                        {formatAmount(outcome.amount)}
-                                    </Typography>
-                                </Box>
-                            );
-                            break;
-                        }
-                        case 'stationStat': {
-                            const StatIcon = outcome.stat ? STATION_STAT_ICONS[outcome.stat as StationStat] : undefined;
-                            content = (
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, padding: '12px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', textAlign: 'left', flex: 1 }}>
-                                        PARC
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, justifyContent: 'center' }}>
-                                        {StatIcon ? <StatIcon sx={{ fontSize: '1.2rem', color: accent.color }} /> : null}
-                                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: accent.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            {String(outcome.stat || 'station stat')}
-                                        </Typography>
-                                    </Box>
-                                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: accent.color, textAlign: 'right', flex: 0.6 }}>
-                                        {formatAmount(outcome.amount)}
-                                    </Typography>
-                                </Box>
-                            );
-                            break;
-                        }
                         case 'roleChange':
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
@@ -285,7 +431,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.55 + outcomeIndex * 0.14 }}
+                                transition={{ duration: 0.4, delay: 0.55 + cardIndex * 0.14 }}
                             >
                                 <Paper
                                     elevation={6}
