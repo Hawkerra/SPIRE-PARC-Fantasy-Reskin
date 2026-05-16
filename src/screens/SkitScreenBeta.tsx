@@ -312,7 +312,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableTalkingAnimation={true}
                 responsiveOverlay={(skit, actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
-                        if (accumulateOutcomes.length > 0 && !actor && actor.id !== 'player') {
+                        if (accumulateOutcomes.length > 0 && (!actor || actor.id == 'player')) {
                             return (
                                 <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
                             );
