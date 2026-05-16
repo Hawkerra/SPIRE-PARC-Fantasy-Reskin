@@ -704,8 +704,8 @@ export async function commitActorToEcho(actor: Actor, stage: Stage, outfitId: st
 
 export function namesMatch(name: string, possibleName: string): boolean {
 
-    name = name.toLowerCase();
-    possibleName = possibleName.toLowerCase();
+    name = name?.toLowerCase() || '';
+    possibleName = possibleName?.toLowerCase() || '';
 
     const names = name.split(' ');
     // If the possible name contains at least half of the parts of the character name, then close enough.
