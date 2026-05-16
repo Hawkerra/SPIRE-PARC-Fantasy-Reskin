@@ -314,25 +314,30 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     if (skit && skit.script && skit.script.length > 0) {
                         if (accumulateOutcomes.length > 0 && (!actor || actor.id == 'player')) {
                             return (
-                                <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
+                                
                             );
                         }
                     }
                     if (!actor || actor.id == 'player') return null;
                     // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
                     return (
-                        <div style={{
-                            position: 'relative',
-                            maxWidth: isVerticalLayout ? '30vw' : '15vw',
-                            right: 0,
-                            top: 0
-                        }}>
-                            <ActorCard
-                                actor={actor}
-                                visitingFaction={undefined /* Don't display visiting status in skits. */}
-                                role={getRole(actor, stage().getSave())}
-                                collapsedSections={[ActorCardSection.STATS]}
-                            />
+                        <div>
+                            {actor && actor.id != 'player' && (
+                                <div style={{
+                                    position: 'relative',
+                                    maxWidth: isVerticalLayout ? '30vw' : '15vw',
+                                    right: 0,
+                                    top: 0
+                                }}>
+                                    <ActorCard
+                                        actor={actor}
+                                        visitingFaction={undefined /* Don't display visiting status in skits. */}
+                                        role={getRole(actor, stage().getSave())}
+                                        collapsedSections={[ActorCardSection.STATS]}
+                                    />
+                                </div>
+                            )}
+                            {(accumulateOutcomes.length < 0) && <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />}
                         </div>
                     );
                 }}
