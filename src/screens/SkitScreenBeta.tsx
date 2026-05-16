@@ -311,14 +311,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enablePopInSpeakers={true}
                 enableTalkingAnimation={true}
                 responsiveOverlay={(skit, actor) => {
-                    if (skit && skit.script && skit.script.length > 0) {
-                        if (accumulateOutcomes.length > 0 && (!actor || actor.id == 'player')) {
-                            return (
-                                
-                            );
-                        }
-                    }
-                    if (!actor || actor.id == 'player') return null;
                     // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
                     return (
                         <div>
