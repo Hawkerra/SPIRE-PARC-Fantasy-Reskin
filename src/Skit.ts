@@ -631,7 +631,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     (stage.getSave().disableImpersonation ? '' : `[${stage.getSave().player.name.toUpperCase()} turn] "Hey, Some Character," I greet them warmly. I'm the player, and my entries use first-person narrative voice, while all other skit entries use second-person to refer to me.\n`) +
                     `[NARRATOR turn][SOME CHARACTER moves to OTHER MODULE NAME] Some Character ducks out with a smile. You hear their boots fade away down the corridor beyond.\n` +
                     `[ANOTHER CHARACTER turn][SCENE moves to OTHER MODULE NAME][SOME CHARACTER wears FORMAL WEAR] You and Another Character follow Some Character to the other module, where they have changed into more formal attire.\n` +
-                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step beyond the bulkhead, leaving the PARC to join Faction Name. You watch on-screen as their shuttle detaches from the station and disappears into the stars.\n`
+                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step beyond the bulkhead, leaving the PARC to join Faction Name. You watch on-screen as their shuttle detaches from the station and disappears into the stars.` +
+                    `Your dataslate pings as Faction Name's payment hits your account.[STATION: Wealth +1]\n`
                  ) +
                 buildPromptSegment(`Ongoing Scene Log`, buildScriptLog(skit, [], stage)) +
                 buildPromptSegment(`Primary Instruction`, 
@@ -645,22 +646,32 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     `New entries refer to the player, ${stage.getSave().player.name}, in second-person; all other characters are referred to in third-person, even in their own entries.` :
                     `Entries from the player, ${stage.getSave().player.name}, are written in first-person, while other entries consistently refer to ${stage.getSave().player.name} in second-person; all other characters are referred to in third-person, even in their own entries.`)) +
                 buildPromptSegment(`Scene Cue Tags`, 
-                `Embedded within this script, you may employ these special cue tags to trigger desired behaviors in the game engine. ` +
-                `\n\nA Character turn tag ("[CHARACTER NAME turn]" or "[NARRATOR turn]") must be used to initiate a new script entry; use NARRATOR for general narration entries or to a specific character who is speaking or performing an action. Consecutive turns are preferred over long turns. ` +
-                `\n\nEmotion tags ("[CHARACTER NAME expresses JOY]") should be used to indicate visible emotional shifts in a character's appearance using a single-word emotion name. ` +
-                `\n\nAppearance tags ("[CHARACTER NAME wears APPEARANCE NAME]") should be used when a character changes appearance. ` +
-                    `When establishing a character at the beginning of a scene or when moving to this location with a movement tag, give special consideration to the inclusion of a 'wears' tag to explicitly call out an appropriate look. ` +
-                    `APPEARANCE NAME must be found under the specified character—either their current appearance or one of their listed alternatives. ` +
-                `\n\nA Character movement tag ("[CHARACTER NAME moves to LOCATION]") must be used when an Absent Character enters the scene. ` +
-                `\n\nCharacter movement tags ("[CHARACTER NAME moves to LOCATION]") must also be included when a character leaves the scene or moves to a different module on the station. ` +
-                `\n\nCharacter movement tags ("[CHARACTER NAME moves to LOCATION]") are also used to move a character to another faction, abstractly representing any faction mission or time away. ` +
-                `\n\nA Scene movement tag ("[SCENE moves to LOCATION]") may be used when the scene itself transitions to another module. ` +
-                `When this tag is used, all characters currently present in the scene are treated as relocating together. ` +
-                `\n\nAn end tag ("[END SCENE]") should be used to indicate the conclusion of the scene, if the scene feels absolutely concluded. ` +
-                `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
-                `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
-                `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
-                `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `) +
+                    `Embedded within this script, you may employ these special cue tags to trigger desired behaviors in the game engine. ` +
+                    `\n\n#Turn Tag:#\n` +
+                        `A character turn tag must be used to initiate a new script entry. Use NARRATOR for general narration entries, or the specific character who is speaking or performing actions in this entry. Consecutive turns are preferred over long turns.\n` +
+                        `[<characterName> turn]who is speaking or performing an action.` +
+                    `\n\n#Emotion Tag:#\n` +
+                        `Emotion tags should be used to indicate visible emotional shifts in a character's appearance using a single-word emotion name.\n` +
+                        `[<characterName> expresses <emotion>]` +
+                    `\n\n#Wears Tag:#\n` +
+                        `Wears tags should be used when a character changes outfit or appearance. ` +
+                        `When establishing a character at the beginning of a scene or when moving to this location with a movement tag, ` +
+                        `give special consideration to the inclusion of a 'wears' tag to explicitly call out an appropriate look. ` +
+                        `<appearanceName> must be found under the specified character—either their current appearance or one of their listed alternatives.\n` +
+                        `[<characterName> wears <appearanceName>]` +
+                    `\n\n#Movement Tag:#\n` +
+                        `A character movement tag must be used when an Absent Character enters the scene; when a present character leaves or moves to a different module on the station; ` +
+                        `or when a character moves to another faction, abstractly representing any faction mission or time away. ` +
+                        `If "Scene" is used as the character name, it indicates that the scene itself is moving to a different location, and all present characters are moving with it. ` +
+                        `[<characterName|"Scene"> moves to <locationName|factionName|"Here"|"Another module">]` +
+                    `\n\n#End Scene Tag:#\n` +
+                        `An end scene tag should be used to indicate the conclusion of the scene, if the scene has reached a natural conclusion or suspended moment in this chunk of the script.\n` +
+                        `[END SCENE]` +
+                    `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
+                    `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
+                    `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
+                    `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `
+                ) +
                 
                 buildPromptSegment(`Outcome Tags`, 
                             `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content. ` +
