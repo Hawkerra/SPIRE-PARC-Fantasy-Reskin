@@ -329,7 +329,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                     />
                                 </div>
                             )}
-                            {(accumulateOutcomes.length < 0) && <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />}
+                            {(accumulatedOutcomes.length > 0) && <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />}
                         </div>
                     );
                 }}
