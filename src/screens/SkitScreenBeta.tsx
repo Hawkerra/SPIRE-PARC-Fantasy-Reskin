@@ -155,7 +155,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 setIsLoading(false);
             });
         }
-        setAccumulatedOutcomes(accumulateOutcomes(skit.script) || []);
+        setAccumulatedOutcomes(accumulateOutcomes(skit.script.slice(0, Math.min((skit.currentIndex || 0) + 1, skit.script.length))) || []);
 
     }, [skit]);
 
@@ -329,7 +329,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                     />
                                 </div>
                             )}
-                            {(accumulatedOutcomes.length > 0) && <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />}
+                            {(accumulatedOutcomes.length > 0) && <SkitOutcomeDisplay outcomes={accumulatedOutcomes} stage={stage()} layout={stage().getSave().layout} />}
                         </div>
                     );
                 }}

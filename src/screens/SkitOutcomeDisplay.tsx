@@ -9,17 +9,17 @@ import { Stage } from '../Stage';
 
 
 interface SkitOutcomeDisplayProps {
-    skitData: SkitData;
+    outcomes: Outcome[];
     stage: Stage;
     layout?: any;
     messageBoxTopVh?: number;
 }
 
-const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ skitData, stage, layout, messageBoxTopVh = 60 }) => {
+const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, messageBoxTopVh = 60 }) => {
     // Calculate bottom position based on message box top
     const bottomVh = Math.max(100 - messageBoxTopVh + 2, 15); // At least 15vh from bottom, 2vh padding above message box
 
-    const currentOutcomes: Outcome[] = accumulateOutcomes(skitData.script) || [];
+    const currentOutcomes: Outcome[] = outcomes || [];
     const save = stage.getSave();
 
     const resolveActorName = (actorId?: string): string => {
@@ -160,7 +160,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ skitData, stage, layo
                                 mt: 0.5
                             }}
                         >
-                            'Closing the skit will accept these outcomes.'
+                            Closing the skit will accept these outcomes.
                         </Typography>
                     </Paper>
                 </div>
