@@ -1,6 +1,5 @@
 import React, { FC } from 'react';
 import { Stage } from '../Stage';
-import { SkitScreen } from './SkitScreen';
 import { StationScreen } from './StationScreen';
 import { EchoScreen } from './EchoScreen';
 import { CryoScreen } from './CryoScreen';
@@ -81,11 +80,7 @@ const BaseScreenContent: FC<{ stage: () => Stage }> = ({ stage }) => {
                 // Render aperture screen
                 <AttenuationScreen stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
             )}
-            {screenType === ScreenType.SKIT && !stage().betaMode && (
-                // Render skit screen
-                <SkitScreen stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
-            )}
-            {screenType === ScreenType.SKIT && stage().betaMode && (
+            {screenType === ScreenType.SKIT && (
                 // Render skit screen beta
                 <SkitScreenBeta stage={stage} setScreenType={setScreenType} isVerticalLayout={isVerticalLayout} />
             )}

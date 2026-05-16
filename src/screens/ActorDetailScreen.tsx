@@ -908,15 +908,9 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 }}
                                             >
                                                 {isGeneratingDemoSpeech ? (
-                                                    <>
-                                                        <CircularProgress size={14} style={{ color: '#00ff88' }} />
-                                                        Loading
-                                                    </>
+                                                    <CircularProgress size={14} style={{ color: '#00ff88' }} />
                                                 ) : (
-                                                    <>
-                                                        <PlayArrow style={{ fontSize: '18px' }} />
-                                                        Play
-                                                    </>
+                                                    <PlayArrow style={{ fontSize: '18px' }} />
                                                 )}
                                             </Button>
                                         </div>

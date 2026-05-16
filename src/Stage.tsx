@@ -5,7 +5,7 @@ import Actor, { loadReserveActor, generateBaseActorImage, commitActorToEcho, Sta
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, Module, registerModule } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
-import { generateSkitScript, generateSkitSummary, SkitData, SkitType, updateCharacterArc } from "./Skit";
+import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
 import { smartRehydrate } from "./SaveRehydration";
 import { Emotion, EmotionPromptMap, getDefaultEmotionPromptMap } from "./actors/Emotion";
 import { assignActorToRole } from "./utils";
@@ -496,7 +496,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             this.getSave().directorModule = { ...this.freshSave.directorModule };
         }
 
-        this.generateUncreatedModules();
+        // Currently, if a new module doesn't complete generation before the game is closed, it will never be generated; this could catch ungenerated ones.
+        // this.generateUncreatedModules();
         
         const placeholderModule = {
             name: this.getSave().directorModule.name,
@@ -938,37 +939,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         save.currentSkit = skit;
     }
 
-    generateUncreatedModules() {
-        // Go through past skits in the timeline and find any with endNewModule data, and generate those modules if they don't already exist.
-        const save = this.getSave();
-        const skitsToProcess: SkitData[] = [];
-        if (save.timeline) {
-            save.timeline.forEach(entry => {
-                if (entry.skit && entry.skit.endNewModule && this.getSave()?.customModules?.[entry.skit.endNewModule.id] === undefined) {
-                    skitsToProcess.push(entry.skit);
-                }
-            });
-        }
-
-        skitsToProcess.forEach(skit => {
-            if (skit.endNewModule) {
-                const moduleData = skit.endNewModule;
-                // Kick off module generation
-                generateModule(moduleData.moduleName, this, 
-                    moduleData.description,
-                    moduleData.roleName).then(module => {
-                        if (module) {
-                            this.getSave().customModules = { ...this.getSave().customModules, [moduleData.id]: module };
-                            registerModule(moduleData.id, module);
-                            this.saveGame();
-                            // Show priority message in tooltip
-                            this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
-                        }
-                });
-            }
-        });
-    }
-
     endSkit(setScreenType: (type: ScreenType) => void) {
         const save = this.getSave();
         if (save.currentSkit) {
@@ -980,128 +950,30 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             // Save skit to timeline first, so (most) outcomes save afterward.
             this.pushToTimeline(save, `${save.currentSkit.type} skit.`, save.currentSkit);
 
-            this.generateUncreatedModules();
 
-            // Apply generated appearance outcomes.
-            if (save.currentSkit.endNewAppearances) {
-                save.currentSkit.endNewAppearances.forEach(appearanceData => {
-                    const actor = save.actors[appearanceData.actorId];
-                    if (actor) {
-                        const alreadyExists = actor.outfits.some(outfit => namesMatch(outfit.name, appearanceData.appearanceName));
-                        if (!alreadyExists) {
-                            const newOutfitId = appearanceData.id || generateUuid();
-                            actor.outfits.push({
-                                id: newOutfitId,
-                                name: appearanceData.appearanceName,
-                                description: appearanceData.description,
-                                emotionPack: {},
-                            });
 
-                            // Kick off outfit portrait generation in the background.
-                            generateBaseActorImage(actor, this, false, true, newOutfitId).then(() => {
-                                this.showPriorityMessage(`New appearance for ${actor.name}: "${appearanceData.appearanceName}"`);
-                                this.saveGame();
-                                return generateAdditionalActorImages(actor, this, newOutfitId);
-                            }).catch((err) => {
-                                console.error('Error generating images for new appearance outcome:', err);
-                            });
-                        }
+
+            // Handle all outcomes:
+            const outcomes = accumulateOutcomes(save.currentSkit.script) || [];
+            for (const outcome of outcomes) {
+                if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
+                    if (save.actors[outcome.actorId]) {
+                        const actor = save.actors[outcome.actorId];
+                        actor.stats[outcome.stat as Stat] += outcome.amount;
+                        this.showPriorityMessage(`${actor.name}'s ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
                     }
-                });
-            }
-
-            // Apply endProperties to actors - find from the final entry with endScene=true
-            let endProps: { [actorId: string]: { [stat: string]: number } } = save.currentSkit.endProperties || {};
-            let endFactionChanges: { [actorId: string]: string } = save.currentSkit.endFactionChanges || {};
-            let endRoleChanges: { [actorId: string]: string } = save.currentSkit.endRoleChanges || {};
-
-            console.log('Applying skit outcomes.');
-            console.log(endProps);
-            console.log(endFactionChanges);
-            console.log(endRoleChanges);
-            // Apply role changes to actors
-            for (const actorId in endRoleChanges) {
-                const actor = save.actors[actorId];
-                if (!actor) continue;
-
-                const newRole = endRoleChanges[actorId];
-                console.log(`Changing ${actor.name}'s role to ${newRole || 'None'}`);
-
-                // If newRole is not empty, find the module with that role and assign the actor
-                if (newRole) {
-                    // Find module with matching role
-                    const roleModules = save.layout.getModulesWhere(m => {
-                        const moduleRole = m.getAttribute('role');
-                        return !!(moduleRole && moduleRole.toLowerCase() === newRole.toLowerCase());
-                    });
-
-                    if (roleModules.length > 0) {
-                        const targetModule = roleModules[0];
-                        // Clear any existing owner
-                        if (targetModule.ownerId) {
-                            console.log(`Removing previous owner from ${targetModule.getAttribute('name')} role`);
-                        }
-                        
-                        // Use centralized role assignment logic
-                        assignActorToRole(this, actor, targetModule, save.layout);
-                        console.log(`Assigned ${actor.name} to ${newRole} role in ${targetModule.getAttribute('name')} module`);
-                    } else {
-                        console.warn(`No module found with role: ${newRole}`);
+                } else if (outcome.type === 'stationStat' && outcome.stat && outcome.stat in StationStat && outcome.amount) {
+                    // Handle station stat changes here if needed
+                    if (save.stationStats && outcome.stat in save.stationStats) {
+                        save.stationStats[outcome.stat as StationStat] += outcome.amount;
+                        this.showPriorityMessage(`Station's ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
                     }
-                } else {
-                    // If newRole is empty, just clear any current role assignments
-                    const currentRoleModules = save.layout.getModulesWhere(m => m.type !== 'quarters' && m.ownerId === actor.id);
-                    currentRoleModules.forEach(module => {
-                        console.log(`Removing ${actor.name} from ${module.getAttribute('name')} role`);
-                        module.ownerId = '';
-                    });
-                }
-            }
-
-            // Apply faction changes to actors
-            for (const actorId in endFactionChanges) {
-                const actor = save.actors[actorId];
-                const newFactionId = endFactionChanges[actorId];
-                if (actor && actor.factionId != newFactionId) {
-                    console.log(`Changing ${actor.name}'s faction from ${actor.factionId || 'PARC'} to ${newFactionId || 'PARC'}`);
-                    
-                    // If currently a faction rep and joining PARC (factionId = ''), need to generate a new faction rep:
-                    if (newFactionId === '') {
-                        const currentFaction = Object.values(save.factions).find(faction => faction.representativeId === actor.id);
-                        this.pushToTimeline(save, `${actor.name}, formerly of the ${currentFaction?.name || 'unknown faction'} joined the ${newFactionId ? save.factions[newFactionId]?.name || 'unknown faction' : 'PARC'}.`);
-                        if (currentFaction) {
-                            console.log(`Generating new representative for faction ${currentFaction.name} as ${actor.name} is leaving.`);
-                            generateFactionRepresentative(currentFaction, this).then(() => {
-                                console.log(`Generated new faction representative for ${currentFaction.name}`);
-                            })
-                        }
-                        // Clear locationId if it was set to a faction
-                        if (actor.locationId && !save.layout.getModuleById(actor.locationId)) {
-                            actor.locationId = '';
-                        }
-                    } else {
-                        // If joining a faction, set locationId to the factionId
-                        this.pushToTimeline(save, `${actor.name} left the ${actor.factionId ? save.factions[actor.factionId]?.name || 'unknown faction' : 'PARC'} to join the ${newFactionId ? save.factions[newFactionId]?.name || 'unknown faction' : 'PARC'}.`);
-                        actor.locationId = newFactionId;
-                        // Free up rooms owned by this actor
-                        save.layout.getModulesWhere(m => m.ownerId === actor.id).forEach(module => {
-                            module.ownerId = '';
-                        });
-                    }
-                    actor.factionId = newFactionId;
-                }
-            }
-
-            for (const actorId in endProps) {
-                const actorChanges = endProps[actorId];
-                
-                // Handle Faction reputation changes
-                if (actorId === 'FACTION') {
-                    Object.entries(endProps[actorId]).forEach(([factionId, change]) => {
-                        const faction = this.getSave().factions[factionId];
+                } else if (outcome.type === 'factionReputation' && outcome.factionId && outcome.amount) {
+                    if (save.factions[outcome.factionId]) {
+                        const faction = this.getSave().factions[outcome.factionId];
                         if (!faction) return;
 
-                        const newReputation = Math.max(0, Math.min(10, faction.reputation + change));
+                        const newReputation = Math.max(0, Math.min(10, faction.reputation + outcome.amount));
 
                         faction.reputation = newReputation;
                     
@@ -1123,34 +995,106 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                                 }
                             });
                         }
-                    });
-                // Handle special "STATION" id for station stat changes
-                } else if (actorId === 'STATION') {
-                    if (!save.stationStats) {
-                        continue;
                     }
-                    // Apply to save.stationStats; actorChanges is a map of stat name to change amount
-                    for (const prop of Object.keys(actorChanges)) {
-                        // Find matching station stat (case-insensitive)
-                        for (const statKey of Object.keys(save.stationStats)) {
-                            if (statKey.toLowerCase() === prop.toLowerCase() ||
-                                statKey.toLowerCase().includes(prop.toLowerCase()) ||
-                                prop.toLowerCase().includes(statKey.toLowerCase())) {
-                                const currentValue = save.stationStats[statKey as StationStat];
-                                save.stationStats[statKey as StationStat] = Math.max(1, Math.min(10, currentValue + actorChanges[prop]));
-                                break;
+                } else if (outcome.type === 'factionChange' && outcome.actorId && outcome.factionId !== undefined) {
+                    const actor = save.actors[outcome.actorId];
+                    const newFactionId = outcome.factionId;
+                    if (actor && actor.factionId != newFactionId) {
+                        console.log(`Changing ${actor.name}'s faction from ${actor.factionId || 'PARC'} to ${newFactionId || 'PARC'}`);
+                        
+                        // If currently a faction rep and joining PARC (factionId = ''), need to generate a new faction rep:
+                        if (newFactionId === '') {
+                            const currentFaction = Object.values(save.factions).find(faction => faction.representativeId === actor.id);
+                            this.pushToTimeline(save, `${actor.name}, formerly of the ${currentFaction?.name || 'unknown faction'} joined the ${newFactionId ? save.factions[newFactionId]?.name || 'unknown faction' : 'PARC'}.`);
+                            if (currentFaction) {
+                                console.log(`Generating new representative for faction ${currentFaction.name} as ${actor.name} is leaving.`);
+                                generateFactionRepresentative(currentFaction, this).then(() => {
+                                    console.log(`Generated new faction representative for ${currentFaction.name}`);
+                                })
                             }
+                            // Clear locationId if it was set to a faction
+                            if (actor.locationId && !save.layout.getModuleById(actor.locationId)) {
+                                actor.locationId = '';
+                            }
+                        } else {
+                            // If joining a faction, set locationId to the factionId
+                            this.pushToTimeline(save, `${actor.name} left the ${actor.factionId ? save.factions[actor.factionId]?.name || 'unknown faction' : 'PARC'} to join the ${newFactionId ? save.factions[newFactionId]?.name || 'unknown faction' : 'PARC'}.`);
+                            actor.locationId = newFactionId;
+                            // Free up rooms owned by this actor
+                            save.layout.getModulesWhere(m => m.ownerId === actor.id).forEach(module => {
+                                module.ownerId = '';
+                            });
                         }
+                        actor.factionId = newFactionId;
                     }
-                    continue;
-                }
-                
-                const actor = save.actors[actorId];
-                if (actor) {
-                    // Apply to actor.stats; actorChanges is a map of stat name to change amount
-                    for (const prop of Object.keys(actorChanges)) {
-                        const stat = (prop as keyof typeof actor.stats);
-                        actor.stats[stat] = Math.max(1, Math.min(10, actor.stats[stat] + actorChanges[prop]));
+                } else if (outcome.type === 'roleChange' && outcome.actorId) {
+                    const actor = save.actors[outcome.actorId];
+                    const newRole = outcome.role || '';
+                    if (newRole) {
+                        // Find module with matching role
+                        const roleModules = save.layout.getModulesWhere(m => {
+                            const moduleRole = m.getAttribute('role');
+                            return !!(moduleRole && moduleRole.toLowerCase() === newRole.toLowerCase());
+                        });
+
+                        if (roleModules.length > 0) {
+                            const targetModule = roleModules[0];
+                            // Clear any existing owner
+                            if (targetModule.ownerId) {
+                                console.log(`Removing previous owner from ${targetModule.getAttribute('name')} role`);
+                            }
+                            
+                            // Use centralized role assignment logic
+                            assignActorToRole(this, actor, targetModule, save.layout);
+                            console.log(`Assigned ${actor.name} to ${newRole} role in ${targetModule.getAttribute('name')} module`);
+                        } else {
+                            console.warn(`No module found with role: ${newRole}`);
+                        }
+                    } else {
+                        // If newRole is empty, just clear any current role assignments
+                        const currentRoleModules = save.layout.getModulesWhere(m => m.type !== 'quarters' && m.ownerId === actor.id);
+                        currentRoleModules.forEach(module => {
+                            console.log(`Removing ${actor.name} from ${module.getAttribute('name')} role`);
+                            module.ownerId = '';
+                        });
+                    }
+                } else if (outcome.type === 'newModule' && outcome.module) {
+                    const moduleData = outcome.module;
+                    // Kick off module generation
+                    generateModule(moduleData.moduleName, this, 
+                        moduleData.description,
+                        moduleData.roleName).then(module => {
+                            if (module) {
+                                this.getSave().customModules = { ...this.getSave().customModules, [moduleData.id]: module };
+                                registerModule(moduleData.id, module);
+                                this.saveGame();
+                                // Show priority message in tooltip
+                                this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
+                            }
+                    });
+                } else if (outcome.type === 'newOutfit' && outcome.actorId && outcome.outfit && outcome.outfit.outfitName) {
+                    const actor = save.actors[outcome.actorId];
+                    const outfit = outcome.outfit;
+                    if (actor) {
+                        const alreadyExists = actor.outfits.some(o => namesMatch(o.name, outfit.outfitName));
+                        if (!alreadyExists) {
+                            const newOutfitId = outfit.id || generateUuid();
+                            actor.outfits.push({
+                                id: newOutfitId,
+                                name: outfit.outfitName,
+                                description: outfit.description,
+                                emotionPack: {},
+                            });
+
+                            // Kick off outfit portrait generation in the background.
+                            generateBaseActorImage(actor, this, false, true, newOutfitId).then(() => {
+                                this.showPriorityMessage(`New appearance for ${actor.name}: "${outfit.outfitName}"`);
+                                this.saveGame();
+                                return generateAdditionalActorImages(actor, this, newOutfitId);
+                            }).catch((err) => {
+                                console.error('Error generating images for new appearance outcome:', err);
+                            });
+                        }
                     }
                 }
             }
@@ -1199,7 +1143,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         if (!skit) return;
         skit.generating = true;
         try {
-            const { entries, endScene, statChanges } = await generateSkitScript(skit, this);
+            const entries = await generateSkitScript(skit, this);
             skit.script.push(...entries);
         } catch (err) {
             console.error('Error continuing skit script', err);

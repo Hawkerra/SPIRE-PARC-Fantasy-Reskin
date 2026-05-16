@@ -110,7 +110,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
             console.log(`Starting new game from settings: ${stage().getGenerateAidePromise() ? "loading aide" : "entering station"}`);
             if (stage().getGenerateAidePromise()) {
                 setScreenType(ScreenType.LOADING);
-            } else if (stage().betaMode && stage().getSave().currentSkit) {
+            } else if (stage().getSave().currentSkit) {
                 setScreenType(ScreenType.SKIT);
             } else {
                 setScreenType(ScreenType.STATION);
@@ -286,7 +286,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     }}
                 >
                     {stage().isAuthenticated 
-                        ? 'v2026.05.10 - I am testing out some prompting changes. Skits may be a bit busted.'
+                        ? 'v2026.05.16 - Lots of big skit updates that might break things.'
                         : (
                             <>
                                 This is an unofficial bot; for the latest version for PARC, visit:{' '}

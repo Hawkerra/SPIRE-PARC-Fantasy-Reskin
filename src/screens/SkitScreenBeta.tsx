@@ -5,7 +5,7 @@ import React, { FC, useCallback, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
 import Actor, { getRole, isHologram } from '../actors/Actor';
 import { Stage } from '../Stage';
-import { generateSkitScript, SkitData } from '../Skit';
+import { accumulateOutcomes, generateSkitScript, Outcome, SkitData } from '../Skit';
 import { Emotion } from '../actors/Emotion';
 import SkitOutcomeDisplay from './SkitOutcomeDisplay';
 import Nameplate from '../components/Nameplate';
@@ -19,7 +19,8 @@ import {
     LastPage,
     PlayArrow,
     Menu as MenuIcon,
-    EditNote
+    EditNote,
+    Close
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
@@ -107,12 +108,13 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
+    const [accumulatedOutcomes, setAccumulatedOutcomes] = React.useState<Outcome[]>([]);
     const [showContentManagement, setShowContentManagement] = React.useState(false);
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
     const decorImageUrl = module ? stage().getSave().actors[module.ownerId || '']?.decorImageUrls[module.type] || module.getAttribute('defaultImageUrl') : '';
-
+    
     const actors = {...stage().getSave().actors, 'player': {
         id: 'player',
         name: stage().getSave().player.name,
@@ -123,22 +125,26 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         themeFontFamily: `'Geologica', sans-serif`, // Player needs some nice default font.
     }};
 
+    const handleClose = useCallback(() => {
+        // Remove length beyond current index.
+        setSkit(prev => {
+            const newScript = prev.script.slice(0, (prev.currentIndex || 0) + 1);
+            return {...prev, script: newScript};
+        });
+        stage().setSkit(skit);
+        stage().endSkit(setScreenType);
+    }, [stage, setScreenType]);
+
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
-		if (input.trim() === '' && skitArg.script.length > 0 && skitArg.script[index].endScene) {
-            console.log('Ending skit and returning to map screen');
-			stage().endSkit(setScreenType);
-			return null;
-		} else {
-			const nextEntries = await generateSkitScript(skitArg as SkitData, stage());
-			(skitArg as SkitData).script.push(...nextEntries.entries);
-			const currentTimelineEvent = stage().getSave().timeline?.find(e => e.skit?.id === skitArg.id);
-			if (currentTimelineEvent) {
-				currentTimelineEvent.skit = skitArg as SkitData;
-				stage().saveGame();
-			}
-			return skitArg;
-		}
+        const nextEntries = await generateSkitScript(skitArg as SkitData, stage());
+        (skitArg as SkitData).script.push(...nextEntries);
+        const currentTimelineEvent = stage().getSave().timeline?.find(e => e.skit?.id === skitArg.id);
+        if (currentTimelineEvent) {
+            currentTimelineEvent.skit = skitArg as SkitData;
+            stage().saveGame();
+        }
+        return skitArg;
 	}, [stage]);
 
     useEffect(() => {
@@ -149,6 +155,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 setIsLoading(false);
             });
         }
+        setAccumulatedOutcomes(accumulateOutcomes(skit.script) || []);
+
     }, [skit]);
 
     // Handle Escape key to open menu
@@ -179,7 +187,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
             }}>
                 <IconButton 
                     onClick={() => setShowContentManagement(true)}
-                    title="Content Management"
+                    onMouseEnter={() => setTooltip('Content Management', EditNote)}
+                    onMouseLeave={() => clearTooltip()}
                     sx={{
                         color: 'rgba(255, 255, 255, 0.7)',
                         '&:hover': {
@@ -192,7 +201,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 </IconButton>
                 <IconButton 
                     onClick={() => setScreenType(ScreenType.MENU)}
-                    title="Menu"
+                    onMouseEnter={() => setTooltip('Menu', MenuIcon)}
+                    onMouseLeave={() => clearTooltip()}
                     sx={{
                         color: 'rgba(255, 255, 255, 0.7)',
                         '&:hover': {
@@ -202,6 +212,24 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     }}
                 >
                     <MenuIcon />
+                </IconButton>
+                <IconButton
+                    onClick={handleClose}
+                    onMouseEnter={() => setTooltip('End Scene', Close)}
+                    onMouseLeave={() => clearTooltip()}
+                    disabled={isLoading || skit.script.length < 3}
+                    sx={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&:hover': {
+                            color: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        '&.Mui-disabled': {
+                            color: 'rgba(255, 255, 255, 0.25)'
+                        }
+                    }}
+                >
+                    <Close />
                 </IconButton>
             </div>
 
@@ -272,12 +300,11 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }}
                 onSubmitInput={handleSkitSubmit}
                 getSubmitButtonConfig={(_script, index, inputText) => {
-                    const endScene = index >= 0 ? (_script.script[index]?.endScene || false) : false;
                     return {
-                        label: inputText.trim().length > 0 ? 'Send' : (endScene ? 'End' : 'Continue'),
+                        label: inputText.trim().length > 0 ? 'Send' : 'Continue',
                         enabled: true,
-                        colorScheme: inputText.trim().length > 0 ? 'primary' : (endScene ? 'error' : 'primary'),
-                        icon: inputText.trim().length > 0 ? <Send /> : (endScene ? <LastPage /> : <PlayArrow />),
+                        colorScheme: 'primary',
+                        icon: inputText.trim().length > 0 ? <Send /> : <PlayArrow />,
                     };
                 }}
                 enableAudio={!stage().getSave().disableTextToSpeech}
@@ -285,7 +312,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 enableTalkingAnimation={true}
                 responsiveOverlay={(skit, actor) => {
                     if (skit && skit.script && skit.script.length > 0) {
-                        if (skit.script[Math.min(skit.currentIndex || 0, skit.script.length - 1)]?.endScene || false) {
+                        if (accumulateOutcomes.length > 0 && !actor && actor.id !== 'player') {
                             return (
                                 <SkitOutcomeDisplay skitData={skit} stage={stage()} layout={stage().getSave().layout} />
                             );
