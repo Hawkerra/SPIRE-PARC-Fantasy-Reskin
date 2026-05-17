@@ -36,7 +36,7 @@ export interface ScriptEntry {
     message: string;
     speechUrl: string; // URL of TTS audio
     actorEmotions?: {[key: string]: Emotion}; // actor name -> emotion string
-    endScene?: boolean; // Whether this entry marks the end of the scene
+    endScene?: boolean; // Whether this entry marks a scene end
     movements?: {[actorId: string]: string}; // actor ID -> new module ID
     outfitChanges?: {[actorId: string]: string}; // actor ID -> new outfit ID
     moveToModuleId?: string; // Optional ID of a module that the scene moves to as of this entry.
@@ -797,7 +797,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 // Keep a backward-compatible fallback for legacy "NAME: content" lines.
                 const lines = text.split('\n');
                 const combinedEntries: { speaker: string; message: string }[] = [];
-                const combinedTagData: {emotions: {[key: string]: Emotion}, movements: {[actorId: string]: string}, outfitChanges: {[actorId: string]: string}, moveToModuleId?: string, outcomes: Outcome[]}[] = [];
+                const combinedTagData: {emotions: {[key: string]: Emotion}, movements: {[actorId: string]: string}, outfitChanges: {[actorId: string]: string}, moveToModuleId?: string, outcomes: Outcome[], endScene: boolean}[] = [];
                 let currentSpeaker = 'NARRATOR';
                 let currentMessage = '';
                 let hasCurrentEntry = false;
@@ -806,6 +806,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 let currentOutfitChanges: {[actorId: string]: string} = {};
                 let currentSceneMoveToModuleId: string | undefined;
                 let currentOutcomes: Outcome[] = [];
+                let currentEndScene = false;
 
                 let parsedSceneModuleId = getCurrentSceneModuleId(skit, -1);
                 const parsedCurrentLocations = getCurrentActorLocations(skit, -1);
@@ -824,6 +825,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     const newOutfitChanges: {[actorId: string]: string} = {};
                     const newOutcomes: Outcome[] = [];
                     let newSceneMoveToModuleId: string | undefined;
+                    let newEndScene = false;
 
                     // Prepare list of all actors (not just present)
                     const allActors: Actor[] = Object.values(stage.getSave().actors);
@@ -834,6 +836,11 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         if (!raw) continue;
 
                         console.log(`Processing tag: ${raw}`);
+
+                        if (/^end\s+scene$/i.test(raw)) {
+                            newEndScene = true;
+                            continue;
+                        }
                         
                         const sceneMoveModuleId = processSceneMovementTag(raw, stage);
                         if (sceneMoveModuleId) {
@@ -1153,7 +1160,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                                 movements: currentMovements,
                                 outfitChanges: currentOutfitChanges,
                                 moveToModuleId: currentSceneMoveToModuleId,
-                                outcomes: currentOutcomes
+                                outcomes: currentOutcomes,
+                                endScene: currentEndScene
                             });
                         }
 
@@ -1165,6 +1173,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = newOutfitChanges;
                         currentSceneMoveToModuleId = newSceneMoveToModuleId;
                         currentOutcomes = newOutcomes;
+                        currentEndScene = newEndScene;
                     } else if (hasCurrentEntry) {
                         // Continuation of previous entry
                         if (trimmed) {
@@ -1175,6 +1184,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = {...currentOutfitChanges, ...newOutfitChanges};
                         currentSceneMoveToModuleId = newSceneMoveToModuleId || currentSceneMoveToModuleId;
                         currentOutcomes = [...currentOutcomes, ...newOutcomes];
+                        currentEndScene = currentEndScene || newEndScene;
                     } else if (trimmed) {
                         // If content appears before any explicit turn tag, attribute it to NARRATOR.
                         currentSpeaker = 'NARRATOR';
@@ -1185,6 +1195,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = newOutfitChanges;
                         currentSceneMoveToModuleId = newSceneMoveToModuleId;
                         currentOutcomes = newOutcomes;
+                        currentEndScene = newEndScene;
                     }
                 }
                 if (hasCurrentEntry) {
@@ -1194,7 +1205,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         movements: currentMovements,
                         outfitChanges: currentOutfitChanges,
                         moveToModuleId: currentSceneMoveToModuleId,
-                        outcomes: currentOutcomes
+                        outcomes: currentOutcomes,
+                        endScene: currentEndScene
                     });
                 }
 
@@ -1224,6 +1236,9 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     if (tagData.outcomes && tagData.outcomes.length > 0) {
                         entry.outcomes = tagData.outcomes;
                     }
+                    if (tagData.endScene) {
+                        entry.endScene = true;
+                    }
                     return entry;
                 });
 
@@ -1239,6 +1254,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                             nextEntry.actorEmotions = {...(nextEntry.actorEmotions || {}), ...emotions};
                             nextEntry.outfitChanges = {...(nextEntry.outfitChanges || {}), ...outfitChanges};
                             nextEntry.outcomes = [...(nextEntry.outcomes || []), ...(entry.outcomes || [])];
+                            nextEntry.endScene = !!(nextEntry.endScene || entry.endScene);
                         }
                         scriptEntries.splice(scriptEntries.indexOf(entry), 1);
                         continue;

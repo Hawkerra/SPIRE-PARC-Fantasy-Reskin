@@ -110,6 +110,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
     const [accumulatedOutcomes, setAccumulatedOutcomes] = React.useState<Outcome[]>([]);
     const [showContentManagement, setShowContentManagement] = React.useState(false);
+    const currentScriptIndex = Math.min(Math.max(skit.currentIndex || 0, 0), Math.max(skit.script.length - 1, 0));
+    const shouldHighlightCloseButton = !isLoading && !!skit.script[currentScriptIndex]?.endScene;
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
@@ -124,6 +126,13 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         themeColor: '#718096',
         themeFontFamily: `'Geologica', sans-serif`, // Player needs some nice default font.
     }};
+
+    const onSkitChange = useCallback((newSkit: SkitData) => {
+        if (newSkit != skit) {
+            setSkit(newSkit);
+            stage().setSkit(newSkit);
+        }
+    }, [stage, skit]);
 
     const handleClose = useCallback(() => {
         // Remove length beyond current index.
@@ -151,7 +160,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         if (skit.script.length == 0) {
             setIsLoading(true);
             stage().continueSkit().then(() => {
-                setSkit({...stage().getSave().currentSkit as SkitData});
+                const newSkit = {...stage().getSave().currentSkit as SkitData};
+                setSkit(newSkit);
                 setIsLoading(false);
             });
         }
@@ -215,11 +225,26 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 </IconButton>
                 <IconButton
                     onClick={handleClose}
-                    onMouseEnter={() => setTooltip('End Scene', Close)}
+                    onMouseEnter={() => setTooltip(shouldHighlightCloseButton ? 'Recommended: End Scene' : 'End Scene', Close)}
                     onMouseLeave={() => clearTooltip()}
                     disabled={isLoading || skit.script.length < 3}
                     sx={{
                         color: 'rgba(255, 255, 255, 0.7)',
+                        ...(shouldHighlightCloseButton ? {
+                            color: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            animation: 'closeButtonPulse 1.6s ease-in-out infinite',
+                            '@keyframes closeButtonPulse': {
+                                '0%, 100%': {
+                                    transform: 'scale(1)',
+                                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.35)'
+                                },
+                                '50%': {
+                                    transform: 'scale(1.08)',
+                                    boxShadow: '0 0 0 8px rgba(255, 255, 255, 0)'
+                                }
+                            }
+                        } : {}),
                         '&:hover': {
                             color: 'rgba(255, 255, 255, 1)',
                             backgroundColor: 'rgba(255, 255, 255, 0.1)'
@@ -235,6 +260,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
             <NovelVisualizer
                 skit={skit}
+                onSkitChange={onSkitChange}
                 loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
@@ -303,7 +329,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : 'Continue',
                         enabled: true,
-                        colorScheme: 'primary',
+                        colorScheme: inputText.trim().length > 0 ? 'secondary' : 'primary',
                         icon: inputText.trim().length > 0 ? <Send /> : <PlayArrow />,
                     };
                 }}

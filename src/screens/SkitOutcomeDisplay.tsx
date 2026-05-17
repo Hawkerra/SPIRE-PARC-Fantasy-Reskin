@@ -194,6 +194,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 flexDirection: 'row-reverse',
                 alignItems: 'flex-start',
                 gap: '20px',
+                borderBottomLeftRadius: '16px',
+                borderBottomRightRadius: '16px',
                 overflowX: 'auto',
                 overflowY: 'hidden',
                 padding: '0 20px'
