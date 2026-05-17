@@ -160,23 +160,23 @@ export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing:
 }
 
 function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], stage?: Stage): string {
-        return ((skit.script && skit.script.length > 0) || additionalEntries.length > 0) ?
-            [...skit.script, ...additionalEntries].map(e => {
-                // Find the best matching emotion key for this speaker
-                const speakerName = e.speaker || (stage?.getSave().actors[e.speakerId || '']?.name || (e.speakerId == 'player' ? stage?.getSave().player.name : '') || 'Unknown Speaker');
-                const emotionKeys = Object.keys(e.actorEmotions || {});
-                const candidates = emotionKeys.map(key => ({ name: key }));
-                const bestMatch = findBestNameMatch(speakerName, candidates);
-                const matchingKey = bestMatch?.name;
-                const emotionText = matchingKey ? ` [${matchingKey} expresses ${e.actorEmotions?.[matchingKey]}]` : '';
-                const wearsText = Object.entries(e.outfitChanges || {}).map(([actorId, outfitId]) => {
-                    const actor = stage?.getSave().actors?.[actorId];
-                    const outfit = actor?.outfits.find(o => o.id === outfitId);
-                    return actor && outfit ? ` [${actor.name} wears ${outfit.name}]` : '';
-                }).join('');
-                return `[${speakerName} turn]${emotionText}${wearsText} ${e.message}`.trim();
-            }).join('\n')
-            : '(None so far)';
+    return ((skit.script && skit.script.length > 0) || additionalEntries.length > 0) ?
+        [...skit.script, ...additionalEntries].map(e => {
+            // Find the best matching emotion key for this speaker
+            const speakerName = e.speaker || (stage?.getSave().actors[e.speakerId || '']?.name || (e.speakerId == 'player' ? stage?.getSave().player.name : '') || 'Unknown Speaker');
+            const emotionKeys = Object.keys(e.actorEmotions || {});
+            const candidates = emotionKeys.map(key => ({ name: key }));
+            const bestMatch = findBestNameMatch(speakerName, candidates);
+            const matchingKey = bestMatch?.name;
+            const emotionText = matchingKey ? ` [${matchingKey} expresses ${e.actorEmotions?.[matchingKey]}]` : '';
+            const wearsText = Object.entries(e.outfitChanges || {}).map(([actorId, outfitId]) => {
+                const actor = stage?.getSave().actors?.[actorId];
+                const outfit = actor?.outfits.find(o => o.id === outfitId);
+                return actor && outfit ? ` [${actor.name} wears ${outfit.name}]` : '';
+            }).join('');
+            return `[${speakerName} turn]${emotionText}${wearsText} ${e.message}`.trim();
+        }).join('\n')
+        : '(None so far)';
 }
 
 /**
@@ -275,6 +275,25 @@ function getCurrentActorOutfits(skit: SkitData, stage: Stage, upToIndex: number 
     }
 
     return currentOutfits;
+}
+
+/**
+ * Build a map of actorName -> current emotion at a point in the script.
+ */
+function getCurrentActorEmotions(skit: SkitData, upToIndex: number = -1): {[actorName: string]: Emotion} {
+    // All actors start neutral; map can be initialized empty.
+    const currentEmotions = {} as {[actorName: string]: Emotion};
+    const endIndex = Math.min(skit.script.length, upToIndex === -1 ? skit.script.length : upToIndex);
+    for (let i = 0; i < endIndex; i++) {
+        const entry = skit.script[i];
+        if (entry?.actorEmotions) {
+            Object.entries(entry.actorEmotions).forEach(([actorName, emotion]) => {
+                currentEmotions[actorName] = emotion;
+            });
+        }
+    }
+
+    return currentEmotions;
 }
 
 function processSceneMovementTag(rawTag: string, stage: Stage): string | null {
@@ -811,6 +830,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 let parsedSceneModuleId = getCurrentSceneModuleId(skit, -1);
                 const parsedCurrentLocations = getCurrentActorLocations(skit, -1);
                 const parsedCurrentOutfits = getCurrentActorOutfits(skit, stage, -1);
+                const parsedCurrentEmotions = getCurrentActorEmotions(skit, -1);
                 for (const line of lines) {
                     // Skip empty lines
                     let trimmed = line.trim().replace(/[“”]/g, '"').replace(/[‘’]/g, '\'');
@@ -860,14 +880,14 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
                         // Process movement tags using the shared function
                         const movementResult = processMovementTag(raw, stage, skit, parsedSceneModuleId);
-                        if (movementResult) {
+                        if (movementResult && movementResult.destinationId !== parsedCurrentLocations[movementResult.actorId]) {
                             newMovements[movementResult.actorId] = movementResult.destinationId;
                             parsedCurrentLocations[movementResult.actorId] = movementResult.destinationId;
                             continue;
                         }
 
                         const wearResult = processWearTag(raw, stage);
-                        if (wearResult) {
+                        if (wearResult && wearResult.outfitId !== parsedCurrentOutfits[wearResult.actorId]) {
                             newOutfitChanges[wearResult.actorId] = wearResult.outfitId;
                             parsedCurrentOutfits[wearResult.actorId] = wearResult.outfitId;
                             console.log(`Processed wear tag for ${wearResult.actorId}: ${wearResult.outfitId}`);
@@ -899,8 +919,9 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                                 }
                             }
                             
-                            if (!finalEmotion) continue;
+                            if (!finalEmotion || finalEmotion === parsedCurrentEmotions[matched.name]) continue;
                             newEmotionTags[matched.name] = finalEmotion;
+                            parsedCurrentEmotions[matched.name] = finalEmotion;
                         }
 
 
@@ -1126,8 +1147,11 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                                     // Normalize stat name to possible Stat enum value if possible
                                     let statKey = statNameRaw.toLowerCase().trim();
                                     const enumMatch = Object.values(Stat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
+                                    console.log(`Normalizing character stat name for matching: ${statKey}.`);
                                     if (enumMatch) statKey = enumMatch;
                                     else continue; // Invalid character stat
+
+                                    console.log(`Adding outcome for ${matched.name}: ${statKey} change of ${num}.`);
 
                                     newOutcomes.push({
                                         type: 'actorStat',
