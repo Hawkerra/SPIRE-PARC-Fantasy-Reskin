@@ -183,6 +183,16 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [setScreenType, showContentManagement]);
 
+    const outcomesAnimationKey = React.useMemo(() => {
+        if (accumulatedOutcomes.length === 0) {
+            return 'no-outcomes';
+        }
+
+        return accumulatedOutcomes
+            .map((outcome, index) => JSON.stringify({ ...outcome, index }))
+            .join('|');
+    }, [accumulatedOutcomes]);
+
     return (
 		<BlurredBackground
 			imageUrl={decorImageUrl}
@@ -349,7 +359,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                         initial={{ opacity: 0, x: -100 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -100 }}
-                                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                                        transition={{ duration: 0.28, ease: 'easeInOut' }}
                                     >
                                         <div style={{
                                             position: 'relative',
@@ -368,14 +378,14 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                 )}
                             </AnimatePresence>
 
-                            <AnimatePresence>
+                            <AnimatePresence mode="wait" initial={false}>
                                 {accumulatedOutcomes.length > 0 && (
                                     <motion.div
-                                        key="skit-outcomes"
+                                        key={outcomesAnimationKey}
                                         initial={{ opacity: 0, x: 100 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 100 }}
-                                        transition={{ duration: 0.22, ease: 'easeInOut' }}
+                                        transition={{ duration: 0.28, ease: 'easeInOut' }}
                                     >
                                         <SkitOutcomeDisplay outcomes={accumulatedOutcomes} stage={stage()} layout={stage().getSave().layout} />
                                     </motion.div>
