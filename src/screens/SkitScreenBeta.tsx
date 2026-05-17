@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface SkitScreenBetaProps {
     stage: () => Stage;
@@ -341,22 +342,45 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
                     return (
                         <div>
-                            {actor && actor.id != 'player' && (
-                                <div style={{
-                                    position: 'relative',
-                                    maxWidth: isVerticalLayout ? '30vw' : '15vw',
-                                    right: 0,
-                                    top: 0
-                                }}>
-                                    <ActorCard
-                                        actor={actor}
-                                        visitingFaction={undefined /* Don't display visiting status in skits. */}
-                                        role={getRole(actor, stage().getSave())}
-                                        collapsedSections={[ActorCardSection.STATS]}
-                                    />
-                                </div>
-                            )}
-                            {(accumulatedOutcomes.length > 0) && <SkitOutcomeDisplay outcomes={accumulatedOutcomes} stage={stage()} layout={stage().getSave().layout} />}
+                            <AnimatePresence mode="wait">
+                                {actor && actor.id != 'player' && (
+                                    <motion.div
+                                        key={`actor-card-${actor.id}`}
+                                        initial={{ opacity: 0, x: 56 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -56 }}
+                                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                                    >
+                                        <div style={{
+                                            position: 'relative',
+                                            maxWidth: isVerticalLayout ? '30vw' : '15vw',
+                                            right: 0,
+                                            top: 0
+                                        }}>
+                                            <ActorCard
+                                                actor={actor}
+                                                visitingFaction={undefined /* Don't display visiting status in skits. */}
+                                                role={getRole(actor, stage().getSave())}
+                                                collapsedSections={[ActorCardSection.STATS]}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <AnimatePresence>
+                                {accumulatedOutcomes.length > 0 && (
+                                    <motion.div
+                                        key="skit-outcomes"
+                                        initial={{ opacity: 0, x: 24 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 24 }}
+                                        transition={{ duration: 0.22, ease: 'easeInOut' }}
+                                    >
+                                        <SkitOutcomeDisplay outcomes={accumulatedOutcomes} stage={stage()} layout={stage().getSave().layout} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     );
                 }}
