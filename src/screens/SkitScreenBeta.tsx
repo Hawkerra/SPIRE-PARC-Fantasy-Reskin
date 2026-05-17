@@ -128,12 +128,13 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         themeFontFamily: `'Geologica', sans-serif`, // Player needs some nice default font.
     }};
 
+    /*
     const onSkitChange = useCallback((newSkit: SkitData) => {
         if (newSkit != skit) {
             setSkit(newSkit);
             stage().setSkit(newSkit);
         }
-    }, [stage, skit]);
+    }, [stage, skit]);*/
 
     const handleClose = useCallback(() => {
         // Remove length beyond current index.
@@ -271,7 +272,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
             <NovelVisualizer
                 skit={skit}
-                onSkitChange={onSkitChange}
                 loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
