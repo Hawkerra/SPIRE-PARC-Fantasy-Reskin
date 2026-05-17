@@ -180,7 +180,11 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     );
 
     return (
-        <div
+        <motion.div
+            initial={{ opacity: 0, x: 64 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 64 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             style={{
                 position: 'absolute',
                 top: '2vh',
@@ -470,7 +474,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     );
                 })}
             </Box>
-        </div>
+        </motion.div>
     );
     
 };

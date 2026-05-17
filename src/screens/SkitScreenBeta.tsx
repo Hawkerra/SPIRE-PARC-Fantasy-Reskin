@@ -378,17 +378,14 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                 )}
                             </AnimatePresence>
 
-                            <AnimatePresence mode="wait" initial={false}>
+                            <AnimatePresence mode="wait">
                                 {accumulatedOutcomes.length > 0 && (
-                                    <motion.div
+                                    <SkitOutcomeDisplay
                                         key={outcomesAnimationKey}
-                                        initial={{ opacity: 0, x: 100 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 100 }}
-                                        transition={{ duration: 0.28, ease: 'easeInOut' }}
-                                    >
-                                        <SkitOutcomeDisplay outcomes={accumulatedOutcomes} stage={stage()} layout={stage().getSave().layout} />
-                                    </motion.div>
+                                        outcomes={accumulatedOutcomes}
+                                        stage={stage()}
+                                        layout={stage().getSave().layout}
+                                    />
                                 )}
                             </AnimatePresence>
                         </div>
