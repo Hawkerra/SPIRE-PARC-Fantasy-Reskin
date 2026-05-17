@@ -129,7 +129,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     }};
 
     const onSkitChange = useCallback((newSkit: SkitData) => {
-        console.log('Skit updated:', newSkit);
         if (newSkit != skit) {
             setSkit(newSkit);
             stage().setSkit(newSkit);
