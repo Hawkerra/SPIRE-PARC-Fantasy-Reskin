@@ -164,9 +164,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         if (skit.script.length == 0) {
             setIsLoading(true);
             stage().continueSkit().then(() => {
-                const newSkit = {...stage().getSave().currentSkit as SkitData};
-                setSkit(newSkit);
                 setIsLoading(false);
+                stage().saveGame();
             });
         }
         const visibleScriptEntries = skit.script.slice(0, Math.min((skit.currentIndex || 0) + 1, skit.script.length));
