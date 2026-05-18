@@ -138,12 +138,16 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     }, [stage]);
 
     const handleClose = useCallback(() => {
-        // Remove length beyond current index.
-        setSkit(prev => {
-            const newScript = prev.script.slice(0, (prev.currentIndex || 0) + 1);
-            return {...prev, script: newScript};
-        });
-        stage().setSkit(skit);
+        const clampedCurrentIndex = Math.min(Math.max(skit.currentIndex || 0, 0), Math.max(skit.script.length - 1, 0));
+        const endedEarly = clampedCurrentIndex < skit.script.length - 1;
+        const finalizedSkit: SkitData = {
+            ...skit,
+            script: skit.script.slice(0, clampedCurrentIndex + 1),
+            outcomes: endedEarly ? [] : [...(skit.outcomes || [])]
+        };
+
+        setSkit(finalizedSkit);
+        stage().setSkit(finalizedSkit);
         stage().endSkit(setScreenType);
     }, [stage, setScreenType]);
 
@@ -168,7 +172,13 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 setIsLoading(false);
             });
         }
-        setAccumulatedOutcomes(accumulateOutcomes(skit.script.slice(0, Math.min((skit.currentIndex || 0) + 1, skit.script.length))) || []);
+        const visibleScriptEntries = skit.script.slice(0, Math.min((skit.currentIndex || 0) + 1, skit.script.length));
+        const isOnCurrentFinalEntry = skit.script.length > 0 && (skit.currentIndex || 0) >= skit.script.length - 1;
+        const visibleEntries = isOnCurrentFinalEntry && (skit.outcomes?.length || 0) > 0
+            ? [...visibleScriptEntries, { speaker: 'NARRATOR', message: '', speechUrl: '', outcomes: skit.outcomes }]
+            : visibleScriptEntries;
+
+        setAccumulatedOutcomes(accumulateOutcomes(visibleEntries) || []);
 
     }, [skit]);
 

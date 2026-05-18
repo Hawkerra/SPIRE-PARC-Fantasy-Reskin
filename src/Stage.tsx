@@ -954,7 +954,17 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
 
             // Handle all outcomes:
-            const outcomes = accumulateOutcomes(save.currentSkit.script) || [];
+            const endedOnCurrentFinalEntry = (save.currentSkit.currentIndex ?? (save.currentSkit.script.length - 1)) >= (save.currentSkit.script.length - 1);
+            const outcomeEntries: ScriptEntry[] = [...save.currentSkit.script];
+            if (endedOnCurrentFinalEntry && (save.currentSkit.outcomes?.length || 0) > 0) {
+                outcomeEntries.push({
+                    speaker: 'NARRATOR',
+                    message: '',
+                    speechUrl: '',
+                    outcomes: save.currentSkit.outcomes
+                });
+            }
+            const outcomes = accumulateOutcomes(outcomeEntries) || [];
             for (const outcome of outcomes) {
                 if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
                     if (save.actors[outcome.actorId]) {

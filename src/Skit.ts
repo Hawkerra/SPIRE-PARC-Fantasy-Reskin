@@ -55,6 +55,7 @@ export interface SkitData {
     currentIndex?: number;
     context: any;
     summary?: string;
+    outcomes?: Outcome[]; // Outcomes on the skit are implied results if the skit is ended after the current chunk of script. If the skit is continued or ended before the current final entry, these outcomes are discarded.
 
 }
 
@@ -658,6 +659,322 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     return fullPrompt;
 }
 
+function buildOutcomeTagRules(exampleActor: string): string {return `\n#Character Stat Changes:#\n` +
+                            `Identify any changes to character stats implied by this entry. For each change, output a line in the following format:\n` +
+                            `[<characterName>: <stat> +<value>(, ...)]` +
+                            `Where <stat> is the name of the stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
+                            `Multiple stat changes can be included in a single tag, separated by commas. Similarly, multiple character tags can be provided in the output.` +
+                            `Full Examples:\n` +
+                            `[${exampleActor}: brawn +1, charm +2]\n` +
+                            `[${exampleActor}: lust -1]\n` +
+
+                            `\n#Station Stat Changes:#\n` +
+                            `Identify any changes to PARC station stats implied or indicated by each entry. Ignore lines from the entry that simply illustrate the current stats, ` +
+                            `and instead focus on changes or developments in the PARC's situation or operations. For each change, output a line in the following format:\n` +
+                            `[STATION: <stat> +<value>(, ...)]` +
+                            `Where <stat> is the name of the station stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
+                            `Multiple stat changes can be included in a single tag, separated by commas.` +
+                            `Full Examples:\n` +
+                            `[STATION: Systems +2, Comfort +1]\n` +
+                            `[STATION: Security -1]\n` +
+
+                            `\n#Faction Reputation Changes:#\n` +
+                            `Identify any changes to the PARC's reputation with factions implied by each entry. For each change, output a line in the following format:\n` +
+                            `[FACTION: <factionName> +<value>]\n` +
+                            `Where <factionName> is the name of the faction with whom the PARC's reputation is changing, and <value> is the amount to increase or decrease the reputation by (positive or negative). ` +
+                            `Reputation is a value between 1 and 10, representing the faction's opinion of the PARC, and changes are incremental. If the faction is cutting ties with the PARC, provide a large negative value. ` +
+                            `Multiple faction tags can be provided in the output if, for instance, improving in the esteem of one faction inherently reduces the opinion of a rival.` +
+                            `Full Examples:\n` +
+                            `[FACTION: Stellar Concord +1]\n` +
+                            `[FACTION: Shadow Syndicate -2]\n` +
+
+                            `\n#Character Faction Change:#\n` +
+                            `If a character has changed faction affiliations in an entry, output a line in the following format:\n` +
+                            `[CHARACTER NAME: JOINED <factionName or PARC>]\n` +
+                            `Where <factionName or PARC> is the name of the faction the character has joined, or "PARC" if they have left a faction to join the station itself. ` +
+                            `Full Examples:\n` +
+                            `[${exampleActor}: JOINED Stellar Concord]\n` +
+                            `[${exampleActor}: JOINED PARC]` +
+                            `\n\nThis tag indicates an official change in allegiance/affiliation/ownership/possession of the named character. ` +
+                            `Consider this tag when the script depicts: ` +
+                            `\n - A patient taking a permanent position with a faction.` +
+                            `\n - A faction representative defecting to the PARC.` +
+                            `\n - A character being formally recruited or dismissed.` +
+                            `\n - A character being sold to or imprisoned by a faction.\n` +
+
+                            `\n#Character Role Change:#\n` +
+                            `If a character's role on the station changes as a result of this entry (e.g., a patient has been assigned to a staff position), output a line in the following format:\n` +
+                            `[CHARACTER NAME: ROLE <roleName>]\n` +
+                            `Where <roleName> is the name of the new role assigned to the character. ` +
+                            `Full Example:\n` +
+                            `[${exampleActor}: ROLE Liaison]\n` +
+                            `[${exampleActor}: ROLE None]\n` +
+                            `The role name must directly match an existing role defined by the station's current modules (or "None," if a character's role is being removed by this tag).\n` +
+
+                            `\n#Character Movement/Departure:#\n` +
+                            `If the entry depicts or implies that a character has departed the PARC or moved to a different faction (or such departure appears imminent), include final movement tags here.` +
+                            `[CHARACTER NAME moves to <module name|faction name>]\n` +
+                            `Full Example:\n` +
+                            `[${exampleActor} moves to Stellar Concord]\n` +
+                            `[${exampleActor} moves to Comms]\n` +
+                            `These tags ensure that the gamestate location data reflects the scene's events; it is especially important to include movement tags for any characters leaving on or returning from missions; ` +
+                            `remember that moving "to" a faction is an abstract location representing a task on that faction's behalf, whether that task is at the faction location or elsewhere entirely.` +
+
+                            `\n#New Module Definition:#\n` +
+                            `If the entry results in the conception of a new module for the station ` +
+                            `(e.g., a character requests a specific new space or a new role is being established, which requires a dedicated workspace), ` +
+                            `this tag is used to define the proposed module name and distinct, associated role:\n` +
+                            `[NEW MODULE: <moduleName> | ROLE <roleName> | DESCRIPTION <briefDescription>]\n` +
+                            `Full Example:\n` +
+                            `[NEW MODULE: MedBay | ROLE Medic | DESCRIPTION A small medical bay equipped for basic treatments and check-ups.]\n` +
+                            `[NEW MODULE: Lounge | ROLE Social Coordinator | DESCRIPTION A comfortable lounge area for relaxation and socialization among staff and patients.]\n` +
+                            `This tag allows the game engine to create new modules dynamically based on entry events, expanding the station's capabilities and accommodating character roles as needed.\n` +
+
+                            `\n#New Appearance Definition:#\n` +
+                            `If the entry establishes a new look for a character(s) (for example, a marked physical change) or suggests the need for an alternative appearance (such as a new uniform)—which is not represented in their current "Other Appearances" list—, utilize this tag for each new look:\n` +
+                            `[NEW APPEARANCE: <characterName> | NAME <appearanceName> | DESCRIPTION <physicalDescription>]\n` +
+                            `Full Example:\n` +
+                            `[NEW APPEARANCE: ${exampleActor} | NAME Mission Armor | DESCRIPTION Reinforced tactical plating over a dark undersuit with compact shoulder lights and weathered gloves.]\n` +
+                            `The DESCRIPTION should focus on concise physical details, including intrinsic character details: body type, skin tone, hair style, eye color, etc., in addition to clothing elements and accessories.\n` +
+
+                            `\n\n` +
+                            `Tags should be a fair representation of the entry's direct or implied events. ` +
+                            `Bear in mind the somewhat abstract nature of character and station stats when determining reasonable changes. ` +
+                            `All stats (station and character) exist on a scale of 1-10, with 1 being the lowest and 10 being the highest possible value; ` +
+                            `typically, changes should be minor (+/- 1 or 2) at a time, unless something dramatic occurs.`};
+
+function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | null {
+    const allActors = Object.values(stage.getSave().actors);
+    const allFactions = Object.values(stage.getSave().factions);
+    const currentSceneModuleForAnalysis = getCurrentSceneModuleId(skit, -1);
+    const presentActors: Actor[] = Object.values(stage.getSave().actors).filter(a => a.locationId === (currentSceneModuleForAnalysis || skit.moduleId || ''));
+
+    if (!text) return null;
+
+    if (text.toUpperCase().startsWith('[FACTION:')) {
+        const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
+        const factionMatch = factionTagRegex.exec(text);
+        if (factionMatch) {
+            const factionNameRaw = factionMatch[1].trim();
+            const reputationChange = parseInt(factionMatch[2].replace(/\s+/g, ''), 10) || 0;
+            const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
+            if (matchedFaction && reputationChange !== 0) {
+                return {
+                    type: 'factionReputation',
+                    factionId: matchedFaction.id,
+                    amount: reputationChange
+                };
+            }
+        }
+        return null;
+    }
+
+    const joinedRegex = /(.+?):\s*JOINED\s+(.+)/i;
+    const joinedMatch = joinedRegex.exec(text);
+    if (joinedMatch) {
+        const characterNameRaw = joinedMatch[1].trim();
+        const factionNameRaw = joinedMatch[2].trim();
+        const matchedActor = findBestNameMatch(characterNameRaw, allActors);
+        if (matchedActor) {
+            let newFactionId = '';
+            if (factionNameRaw.toUpperCase() !== 'PARC') {
+                const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
+                if (matchedFaction) {
+                    newFactionId = matchedFaction.id;
+                }
+            }
+            return {
+                type: 'factionChange',
+                actorId: matchedActor.id,
+                factionId: newFactionId
+            };
+        }
+        return null;
+    }
+
+    const roleRegex = /(.+?):\s*ROLE\s+(.+)/i;
+    const roleMatch = roleRegex.exec(text);
+    if (roleMatch) {
+        const characterNameRaw = roleMatch[1].trim();
+        const roleNameRaw = roleMatch[2].trim();
+        const matchedActor = findBestNameMatch(characterNameRaw, allActors);
+        const currentRole = matchedActor ? getRole(matchedActor, stage.getSave()) : null;
+        const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
+        const newRole = ['NONE', 'PATIENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';
+        if (matchedActor && currentRole !== newRole) {
+            return {
+                type: 'roleChange',
+                actorId: matchedActor.id,
+                role: newRole
+            };
+        }
+        return null;
+    }
+
+    if (text.toUpperCase().startsWith('[NEW MODULE:')) {
+        const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+        const newModuleMatch = newModuleRegex.exec(text);
+        if (newModuleMatch) {
+            const moduleName = newModuleMatch[1].trim();
+            const roleName = newModuleMatch[2].trim();
+            const description = newModuleMatch[3].trim();
+            if (moduleName && roleName && description) {
+                const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
+                const similarModule = findBestNameMatch(moduleName, existingModules);
+                if (!similarModule && !findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))])) {
+                    return {
+                        type: 'newModule',
+                        module: {
+                            id: generateUuid(),
+                            moduleName,
+                            roleName,
+                            description
+                        }
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    if (text.toUpperCase().startsWith('[NEW APPEARANCE:')) {
+        const newAppearanceRegex = /NEW APPEARANCE:\s*([^|]+)\|\s*NAME\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+        const newAppearanceMatch = newAppearanceRegex.exec(text);
+        if (newAppearanceMatch) {
+            const characterName = newAppearanceMatch[1].trim();
+            const appearanceName = newAppearanceMatch[2].trim();
+            const appearanceDescription = newAppearanceMatch[3].trim();
+            const matchedActor = findBestNameMatch(characterName, allActors);
+            if (matchedActor) {
+                const similarOutfit = findBestNameMatch(
+                    appearanceName,
+                    matchedActor.outfits.map(outfit => ({ name: outfit.name, outfit }))
+                );
+                if (!similarOutfit) {
+                    return {
+                        type: 'newOutfit',
+                        actorId: matchedActor.id,
+                        outfit: {
+                            id: generateUuid(),
+                            actorId: matchedActor.id,
+                            outfitName: appearanceName,
+                            description: appearanceDescription
+                        }
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    const statChangeRegex = /(.+?):\s*(.+)/i;
+    const statMatch = statChangeRegex.exec(text);
+    if (statMatch) {
+
+        const target = statMatch[1].trim();
+        const payload = statMatch[2].trim();
+        const adjustments = payload.split(',').map(p => p.trim());
+
+        if (target.toUpperCase() === 'STATION') {
+            for (const adj of adjustments) {
+                const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
+                if (!m) continue;
+                const statNameRaw = m[1].trim();
+                const num = parseInt(m[2].replace(/\s+/g, ''), 10) || 0;
+                let statKey = statNameRaw.toLowerCase().trim();
+                const enumMatch = Object.values(StationStat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
+                if (!enumMatch) continue;
+                statKey = enumMatch;
+                return {
+                    type: 'stationStat',
+                    stat: statKey as StationStat,
+                    amount: num
+                };
+            }
+            return null;
+        }
+
+        const matchedActor = findBestNameMatch(target, presentActors);
+        if (!matchedActor) return null;
+        for (const adj of adjustments) {
+            const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
+            if (!m) continue;
+            const statNameRaw = m[1].trim();
+            const num = parseInt(m[2].replace(/\s+/g, ''), 10) || 0;
+            let statKey = statNameRaw.toLowerCase().trim();
+            const enumMatch = Object.values(Stat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
+            if (!enumMatch) continue;
+            statKey = enumMatch;
+            return {
+                type: 'actorStat',
+                actorId: matchedActor.id,
+                stat: statKey as Stat,
+                amount: num
+            };
+        }
+    }
+    return null;
+}
+
+function parseOutcomeTagsFromText(text: string, stage: Stage, skit: SkitData): Outcome[] {
+    const outcomes: Outcome[] = [];
+ 
+    for (const tag of text.match(/\[[^\]]+\]/g) || []) {
+        const raw = tag.slice(1, -1).trim();
+        if (raw) {
+            const parsed = parseOutcomeTag(raw, stage, skit);
+            if (parsed) {
+                outcomes.push(parsed);
+            }
+        }
+    }
+
+    return outcomes;
+}
+
+async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: ScriptEntry[], stage: Stage): Promise<Outcome[]> {
+    const analysisSkit: SkitData = {
+        ...skit,
+        script: [...skit.script, ...newEntries]
+    };
+
+    let retries = 3
+
+    while (retries > 0) {
+        try {
+            const impliedOutcomePrompt = buildSkitPrompt(analysisSkit, stage, 0,
+                buildPromptSegment('Scene Script for Analysis', buildScriptLog(analysisSkit, [], stage)) +
+                buildPromptSegment('Instruction',
+                    `Analyze the scene depicting in this script as though it were complete. ` +
+                    `Apply the below rules to output outcome tags that are represent the direct or implied consequences of this scene. ` +
+                    `Bear in mind existing outcome tags within the skit, avoiding redundancy or overkill. ` +
+                    `When all relevant tags have been output, use an [END] tag before offering explanations for the chosen tags` +
+                    `If no outcomes seem relevant, output [NO OUTCOMES].`) +
+                buildPromptSegment('Outcome Tag Formatting',
+                    buildOutcomeTagRules('Some Character')));
+
+            const impliedResponse = await stage.makeText({
+                prompt: impliedOutcomePrompt,
+                min_tokens: 1,
+                max_tokens: 500,
+                include_history: true,
+                stop: ['[END]', 'OUTCOMES]'] // Just OUTCOMES] will allow some content, so the null check doesn't retry.
+            });
+
+            if (!impliedResponse) {
+                retries--;
+                continue;
+            }
+            return parseOutcomeTagsFromText(impliedResponse, stage, analysisSkit);
+        } catch(error) {
+            console.error('Error generating implied outcomes:', error);
+            retries--;
+        }
+    }
+
+    return [];
+}
+
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
     const summaryPrompt = buildSkitPrompt(skit, stage, 0,
             buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
@@ -750,90 +1067,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 buildPromptSegment(`Outcome Tags`, 
                             `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content; ` +
                             `typically, these are included at the tail end of the turn that triggers them. Weigh other outcome tags in the scene's script to avoid redundancy or overkill. ` +
-                            `\n#Character Stat Changes:#\n` +
-                            `Identify any changes to character stats implied by this entry. For each change, output a line in the following format:\n` +
-                            `[<characterName>: <stat> +<value>(, ...)]` +
-                            `Where <stat> is the name of the stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
-                            `Multiple stat changes can be included in a single tag, separated by commas. Similarly, multiple character tags can be provided in the output.` +
-                            `Full Examples:\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: brawn +1, charm +2]\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: lust -1]\n` +
-
-                            `\n#Station Stat Changes:#\n` +
-                            `Identify any changes to PARC station stats implied or indicated by each entry. Ignore lines from the entry that simply illustrate the current stats, ` +
-                            `and instead focus on changes or developments in the PARC's situation or operations. For each change, output a line in the following format:\n` +
-                            `[STATION: <stat> +<value>(, ...)]` +
-                            `Where <stat> is the name of the station stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
-                            `Multiple stat changes can be included in a single tag, separated by commas.` +
-                            `Full Examples:\n` +
-                            `[STATION: Systems +2, Comfort +1]\n` +
-                            `[STATION: Security -1]\n` +
-
-                            `\n#Faction Reputation Changes:#\n` +
-                            `Identify any changes to the PARC's reputation with factions implied by each entry. For each change, output a line in the following format:\n` +
-                            `[FACTION: <factionName> +<value>]\n` +
-                            `Where <factionName> is the name of the faction with whom the PARC's reputation is changing, and <value> is the amount to increase or decrease the reputation by (positive or negative). ` +
-                            `Reputation is a value between 1 and 10, representing the faction's opinion of the PARC, and changes are incremental. If the faction is cutting ties with the PARC, provide a large negative value. ` +
-                            `Multiple faction tags can be provided in the output if, for instance, improving in the esteem of one faction inherently reduces the opinion of a rival.` +
-                            `Full Examples:\n` +
-                            `[FACTION: Stellar Concord +1]\n` +
-                            `[FACTION: Shadow Syndicate -2]\n` +
-
-                            `\n#Character Faction Change:#\n` +
-                            `If a character has changed faction affiliations in an entry, output a line in the following format:\n` +
-                            `[CHARACTER NAME: JOINED <factionName or PARC>]\n` +
-                            `Where <factionName or PARC> is the name of the faction the character has joined, or "PARC" if they have left a faction to join the station itself. ` +
-                            `Full Examples:\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: JOINED Stellar Concord]\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: JOINED PARC]` +
-                            `\n\nThis tag indicates an official change in allegiance/affiliation/ownership/possession of the named character. ` +
-                            `Consider this tag when the script depicts: ` +
-                            `\n - A patient taking a permanent position with a faction.` +
-                            `\n - A faction representative defecting to the PARC.` +
-                            `\n - A character being formally recruited or dismissed.` +
-                            `\n - A character being sold to or imprisoned by a faction.\n` +
-
-                            `\n#Character Role Change:#\n` +
-                            `If a character's role on the station changes as a result of this entry (e.g., a patient has been assigned to a staff position), output a line in the following format:\n` +
-                            `[CHARACTER NAME: ROLE <roleName>]\n` +
-                            `Where <roleName> is the name of the new role assigned to the character. ` +
-                            `Full Example:\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: ROLE Liaison]\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name}: ROLE None]\n` +
-                            `The role name must directly match an existing role defined by the station's current modules (or "None," if a character's role is being removed by this tag).\n` +
-
-                            `\n#Character Movement/Departure:#\n` +
-                            `If the entry depicts or implies that a character has departed the PARC or moved to a different faction (or such departure appears imminent), include final movement tags here.` +
-                            `[CHARACTER NAME moves to <module name|faction name>]\n` +
-                            `Full Example:\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name} moves to Stellar Concord]\n` +
-                            `[${Object.values(stage.getSave().actors)[0].name} moves to Comms]\n` +
-                            `These tags ensure that the gamestate location data reflects the scene's events; it is especially important to include movement tags for any characters leaving on or returning from missions; ` +
-                            `remember that moving "to" a faction is an abstract location representing a task on that faction's behalf, whether that task is at the faction location or elsewhere entirely.` +
-
-                            `\n#New Module Definition:#\n` +
-                            `If the entry results in the conception of a new module for the station ` +
-                            `(e.g., a character requests a specific new space or a new role is being established, which requires a dedicated workspace), ` +
-                            `this tag is used to define the proposed module name and distinct, associated role:\n` +
-                            `[NEW MODULE: <moduleName> | ROLE <roleName> | DESCRIPTION <briefDescription>]\n` +
-                            `Full Example:\n` +
-                            `[NEW MODULE: MedBay | ROLE Medic | DESCRIPTION A small medical bay equipped for basic treatments and check-ups.]\n` +
-                            `[NEW MODULE: Lounge | ROLE Social Coordinator | DESCRIPTION A comfortable lounge area for relaxation and socialization among staff and patients.]\n` +
-                            `This tag allows the game engine to create new modules dynamically based on entry events, expanding the station's capabilities and accommodating character roles as needed.\n` +
-
-                            `\n#New Appearance Definition:#\n` +
-                            `If the entry establishes a new look for a character(s) (for example, a marked physical change) or suggests the need for an alternative appearance (such as a new uniform)—which is not represented in their current "Other Appearances" list—, utilize this tag for each new look:\n` +
-                            `[NEW APPEARANCE: <characterName> | NAME <appearanceName> | DESCRIPTION <physicalDescription>]\n` +
-                            `Full Example:\n` +
-                            `[NEW APPEARANCE: ${Object.values(stage.getSave().actors)[0].name} | NAME Mission Armor | DESCRIPTION Reinforced tactical plating over a dark undersuit with compact shoulder lights and weathered gloves.]\n` +
-                            `The DESCRIPTION should focus on concise physical details, including intrinsic character details: body type, skin tone, hair style, eye color, etc., in addition to clothing elements and accessories.\n` +
-
-                            `\n\n` +
-                            `For each entry, consider and output all suitable tags, avoiding redundant or unnecessary tags. ` +
-                            `Tags should be a fair representation of the entry's direct or implied events. ` +
-                            `Bear in mind the somewhat abstract nature of character and station stats when determining reasonable changes. ` +
-                            `All stats (station and character) exist on a scale of 1-10, with 1 being the lowest and 10 being the highest possible value; ` +
-                            `typically, changes should be minor (+/- 1 or 2) at a time, unless something dramatic occurs.`
+                             +
+                            `For each entry, consider and output all suitable tags, avoiding redundant or unnecessary tags. `
                 ) +
 
 
@@ -976,240 +1211,10 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
 
                         // Outcome tags:
-                        // Process faction reputation tags: [FACTION: <factionName> +<value>]
-                        if (tag.toUpperCase().startsWith('FACTION:')) {
-                            console.log('Processing faction reputation tag:', tag);
-                            const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
-                            const factionMatch = factionTagRegex.exec(tag);
-                            if (factionMatch) {
-                                const factionNameRaw = factionMatch[1].trim();
-                                const reputationChange = parseInt(factionMatch[2].replace(/\s+/g, ''), 10) || 0;
-
-                                // Find matching faction using findBestNameMatch
-                                const allFactions = Object.values(stage.getSave().factions);
-                                const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
-
-                                if (matchedFaction && reputationChange !== 0) {
-                                    newOutcomes.push({
-                                        type: 'factionReputation',
-                                        factionId: matchedFaction.id,
-                                        amount: reputationChange
-                                    });
-                                }
-                            }
+                        const maybeOutcome = parseOutcomeTag(tag, stage, skit);
+                        if (maybeOutcome) {
+                            newOutcomes.push(maybeOutcome);
                             continue;
-                        }
-
-                        // Process character faction change tags: [CHARACTER NAME: JOINED <factionName or PARC>]
-                        const joinedRegex = /(.+?):\s*JOINED\s+(.+)/i;
-                        const joinedMatch = joinedRegex.exec(tag);
-                        if (joinedMatch) {
-                            console.log('Processing JOINED tag:', tag);
-                            const characterNameRaw = joinedMatch[1].trim();
-                            const factionNameRaw = joinedMatch[2].trim();
-
-                            // Find matching actor using findBestNameMatch
-                            const allActors = Object.values(stage.getSave().actors);
-                            const matchedActor = findBestNameMatch(characterNameRaw, allActors);
-
-                            if (matchedActor) {
-                                let newFactionId = '';
-
-                                // Check if joining PARC (empty factionId) or a specific faction
-                                if (factionNameRaw.toUpperCase() === 'PARC') {
-                                    newFactionId = '';
-                                } else {
-                                    // Find matching faction using findBestNameMatch
-                                    const allFactions = Object.values(stage.getSave().factions);
-                                    const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
-
-                                    if (matchedFaction) {
-                                        newFactionId = matchedFaction.id;
-                                    }
-                                }
-
-                                // Store the faction change in factionChanges
-                                newOutcomes.push({
-                                    type: 'factionChange',
-                                    actorId: matchedActor.id,
-                                    factionId: newFactionId
-                                });
-                            }
-                            continue;
-                        }
-
-                        // Process character role change tags: [CHARACTER NAME: ROLE <roleName>]
-                        const roleRegex = /(.+?):\s*ROLE\s+(.+)/i;
-                        const roleMatch = roleRegex.exec(tag);
-                        if (roleMatch) {
-                            console.log('Processing ROLE tag:', tag);
-                            const characterNameRaw = roleMatch[1].trim();
-                            const roleNameRaw = roleMatch[2].trim();
-
-                            // Find matching actor using findBestNameMatch
-                            const allActors = Object.values(stage.getSave().actors);
-                            const matchedActor = findBestNameMatch(characterNameRaw, allActors);
-
-                            const currentRole = matchedActor ? getRole(matchedActor, stage.getSave()) : null;
-
-                            const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({name: m.getAttribute('role') || ''})));
-                            const newRole = ['NONE', 'PATIENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';
-
-                            if (matchedActor && currentRole !== newRole) {
-                                console.log(`Adding role change for ${matchedActor?.name}: ${newRole}`);
-                                newOutcomes.push({
-                                    type: 'roleChange',
-                                    actorId: matchedActor.id,
-                                    role: newRole
-                                });
-                            } else {
-                                console.log(`Skipping role change for ${matchedActor?.name}; current role is ${currentRole}; detected new role was ${newRole}.`);
-                            }
-                            continue;
-                        }
-
-                        // Process NEW MODULE tags: [NEW MODULE: <moduleName> | ROLE <roleName> | DESCRIPTION <description>]
-                        if (tag.toUpperCase().startsWith('NEW MODULE:')) {
-                            console.log('Processing NEW MODULE tag:', tag);
-                            const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
-                            const newModuleMatch = newModuleRegex.exec(tag);
-                            if (newModuleMatch) {
-                                const moduleName = newModuleMatch[1].trim();
-                                const roleName = newModuleMatch[2].trim();
-                                const description = newModuleMatch[3].trim();
-
-                                if (moduleName && roleName && description) {
-                                    // Skip this module if the name is too similar to an existing module
-                                    const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({name: m.name}));
-                                    const similarModule = findBestNameMatch(moduleName, existingModules);
-                                    if (similarModule) {
-                                        console.log(`Detected similar existing module "${similarModule.name}" for proposed new module "${moduleName}"; skipping addition.`);
-                                        continue;
-                                    }
-
-                                    // Skip if role is undefined or "none" or "not applicable" or "n/a" or matches an existing module role name, using best match
-                                    if (!roleName || findBestNameMatch(roleName, [{name: 'NONE'}, {name: 'NOT APPLICABLE'}, {name: 'N/A'}, ...Object.values(MODULE_TEMPLATES).map(m => ({name: m.role || 'NOT APPLICABLE'}))])) {
-                                        console.log(`Skipping new module "${moduleName}" due to invalid or duplicate role "${roleName}".`);
-                                        continue;
-                                    }
-                                    newOutcomes.push({
-                                        type: 'newModule',
-                                        module: {
-                                            id: generateUuid(),
-                                            moduleName: moduleName,
-                                            roleName: roleName,
-                                            description: description
-                                        }
-                                    });
-                                    console.log(`Adding new module: ${moduleName} (Role: ${roleName})`);
-                                }
-                            }
-                            continue;
-                        }
-
-                        // Process NEW APPEARANCE tags: [NEW APPEARANCE: <characterName> | NAME <appearanceName> | DESCRIPTION <description>]
-                        if (tag.toUpperCase().startsWith('NEW APPEARANCE:')) {
-                            console.log('Processing NEW APPEARANCE tag:', tag);
-                            const newAppearanceRegex = /NEW APPEARANCE:\s*([^|]+)\|\s*NAME\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
-                            const newAppearanceMatch = newAppearanceRegex.exec(tag);
-                            if (newAppearanceMatch) {
-                                const characterName = newAppearanceMatch[1].trim();
-                                const appearanceName = newAppearanceMatch[2].trim();
-                                const appearanceDescription = newAppearanceMatch[3].trim();
-
-                                const allActors = Object.values(stage.getSave().actors);
-                                const matchedActor = findBestNameMatch(characterName, allActors);
-                                if (!matchedActor) {
-                                    console.warn(`Could not find actor for NEW APPEARANCE tag: ${characterName}`);
-                                    continue;
-                                }
-
-                                const similarOutfit = findBestNameMatch(
-                                    appearanceName,
-                                    matchedActor.outfits.map(outfit => ({ name: outfit.name, outfit }))
-                                );
-                                if (similarOutfit) {
-                                    console.log(`Detected similar existing appearance "${similarOutfit.outfit.name}" for ${matchedActor.name}; skipping addition.`);
-                                    continue;
-                                }
-
-                                newOutcomes.push({
-                                    type: 'newOutfit',
-                                    actorId: matchedActor.id,
-                                    outfit: {
-                                        id: generateUuid(),
-                                        actorId: matchedActor.id,
-                                        outfitName: appearanceName,
-                                        description: appearanceDescription
-                                    }
-                                })
-                                console.log(`Adding new appearance "${appearanceName}" for ${matchedActor.name}`);
-                            }
-                            continue;
-                        }
-
-                        // Process stat change tags
-                        const statChangeRegex = /(.+?):\s*(.+)/i;
-                        const match = statChangeRegex.exec(tag);
-                        if (match) {
-                            const target = match[1].trim();
-                            const payload = match[2].trim();
-
-                            if (target.toUpperCase() === 'STATION') {
-                                // Station stat changes
-                                const adjustments = payload.split(',').map(p => p.trim());
-
-                                for (const adj of adjustments) {
-                                    const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
-                                    if (!m) continue;
-                                    const statNameRaw = m[1].trim();
-                                    const num = parseInt(m[2].replace(/\s+/g, ''), 10) || 0;
-
-                                    // Normalize stat name to possible Stat enum value if possible
-                                    let statKey = statNameRaw.toLowerCase().trim();
-                                    console.log(`Normalizing station stat name for matching:${statKey}.`);
-                                    const enumMatch = Object.values(StationStat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
-                                    if (enumMatch) statKey = enumMatch;
-                                    else continue; // Invalid station stat
-
-                                    newOutcomes.push({
-                                        type: 'stationStat',
-                                        stat: statKey as StationStat,
-                                        amount: num
-                                    });
-                                }
-                            } else {
-                                // Character stat changes
-                                // Find matching present actor using findBestNameMatch
-                                const currentSceneModuleForAnalysis = getCurrentSceneModuleId(skit, -1);
-                                const presentActors: Actor[] = Object.values(stage.getSave().actors).filter(a => a.locationId === (currentSceneModuleForAnalysis || skit.moduleId || ''));
-                                const matched = findBestNameMatch(target, presentActors);
-                                if (!matched) continue;
-
-                                const adjustments = payload.split(',').map(p => p.trim());
-                                for (const adj of adjustments) {
-                                    const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
-                                    if (!m) continue;
-                                    const statNameRaw = m[1].trim();
-                                    const num = parseInt(m[2].replace(/\s+/g, ''), 10) || 0;
-
-                                    // Normalize stat name to possible Stat enum value if possible
-                                    let statKey = statNameRaw.toLowerCase().trim();
-                                    const enumMatch = Object.values(Stat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
-                                    console.log(`Normalizing character stat name for matching: ${statKey}.`);
-                                    if (enumMatch) statKey = enumMatch;
-                                    else continue; // Invalid character stat
-
-                                    console.log(`Adding outcome for ${matched.name}: ${statKey} change of ${num}.`);
-
-                                    newOutcomes.push({
-                                        type: 'actorStat',
-                                        actorId: matched.id,
-                                        stat: statKey as Stat,
-                                        amount: num
-                                    });
-                                }
-                            }
                         }
                     }
 
@@ -1347,6 +1352,13 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 }
 
 
+                // Run implied-outcome analysis in parallel with TTS generation.
+                const impliedOutcomesPromise = generateImpliedOutcomesForCurrentEnd(skit, scriptEntries, stage)
+                    .catch((error) => {
+                        console.error('Error generating implied skit outcomes:', error);
+                        return [];
+                    });
+
                 // TTS for each entry's dialogue
                 const ttsPromises = scriptEntries.map(async (entry) => {
                     const actor = findBestNameMatch(entry.speaker, Object.values(stage.getSave().actors));
@@ -1374,8 +1386,13 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     }
                 });
 
-                // Wait for all TTS generation to complete
-                await Promise.all(ttsPromises);
+                // Wait for both TTS and implied outcomes.
+                const [, impliedOutcomes] = await Promise.all([
+                    Promise.all(ttsPromises),
+                    impliedOutcomesPromise
+                ]);
+
+                skit.outcomes = impliedOutcomes;
 
                 stage.pushMessage(text);
 
@@ -1388,6 +1405,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
     }
 
     stage.saveGame();
+    skit.outcomes = [];
     return [];
 }
 
