@@ -20,7 +20,8 @@ import {
     PlayArrow,
     Menu as MenuIcon,
     EditNote,
-    Close
+    Close,
+    Warning
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
@@ -108,6 +109,7 @@ const getActorOutfitsAtIndex = (skit: SkitData, scriptIndex: number, allActors: 
 export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, isVerticalLayout }) => {
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
+    const [, setSkitRevision] = React.useState(0);
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
     const [accumulatedOutcomes, setAccumulatedOutcomes] = React.useState<Outcome[]>([]);
     const [showContentManagement, setShowContentManagement] = React.useState(false);
@@ -128,13 +130,12 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         themeFontFamily: `'Geologica', sans-serif`, // Player needs some nice default font.
     }};
 
-    /*
+    
     const onSkitChange = useCallback((newSkit: SkitData) => {
-        if (newSkit != skit) {
-            setSkit(newSkit);
-            stage().setSkit(newSkit);
-        }
-    }, [stage, skit]);*/
+        stage().setSkit(newSkit);
+        // Keep skit object identity stable, but force this component to re-render.
+        setSkitRevision(prev => prev + 1);
+    }, [stage]);
 
     const handleClose = useCallback(() => {
         // Remove length beyond current index.
@@ -237,7 +238,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 </IconButton>
                 <IconButton
                     onClick={handleClose}
-                    onMouseEnter={() => setTooltip(shouldHighlightCloseButton ? 'Recommended: End Scene' : 'End Scene', Close)}
+                    onMouseEnter={() => setTooltip((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)'), shouldHighlightCloseButton ? Close : Warning)}
                     onMouseLeave={() => clearTooltip()}
                     disabled={isLoading || skit.script.length < 3}
                     sx={{
@@ -336,6 +337,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     };
                 }}
                 onSubmitInput={handleSkitSubmit}
+                onSkitChange={onSkitChange}
                 getSubmitButtonConfig={(_script, index, inputText) => {
                     return {
                         label: inputText.trim().length > 0 ? 'Send' : 'Continue',
