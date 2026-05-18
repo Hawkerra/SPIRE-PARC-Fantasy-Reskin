@@ -112,7 +112,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const [accumulatedOutcomes, setAccumulatedOutcomes] = React.useState<Outcome[]>([]);
     const [showContentManagement, setShowContentManagement] = React.useState(false);
     const currentScriptIndex = Math.min(Math.max(skit.currentIndex || 0, 0), Math.max(skit.script.length - 1, 0));
-    const shouldHighlightCloseButton = !isLoading && !!skit.script[currentScriptIndex]?.endScene;
+    const shouldHighlightCloseButton = !isLoading && skit.script.length >= 3 && currentScriptIndex >= skit.script.length - 1;
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');

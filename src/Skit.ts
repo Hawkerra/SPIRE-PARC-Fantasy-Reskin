@@ -160,6 +160,55 @@ export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing:
 }
 
 function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], stage?: Stage): string {
+    const formatSignedAmount = (amount?: number): string => {
+        const value = amount || 0;
+        return `${value >= 0 ? '+' : ''}${value}`;
+    };
+
+    const resolveActorName = (actorId?: string): string => {
+        if (!actorId) return 'Unknown Character';
+        if (actorId === 'player') return stage?.getSave().player.name || 'Player';
+        return stage?.getSave().actors[actorId]?.name || actorId;
+    };
+
+    const resolveFactionName = (factionId?: string): string => {
+        if (!factionId) return 'PARC';
+        return stage?.getSave().factions[factionId]?.name || factionId;
+    };
+
+    const formatOutcomeTag = (outcome: Outcome): string | null => {
+        switch (outcome.type) {
+            case 'actorStat': {
+                if (!outcome.stat) return null;
+                return `[${resolveActorName(outcome.actorId)}: ${String(outcome.stat)} ${formatSignedAmount(outcome.amount)}]`;
+            }
+            case 'stationStat': {
+                if (!outcome.stat) return null;
+                return `[STATION: ${String(outcome.stat)} ${formatSignedAmount(outcome.amount)}]`;
+            }
+            case 'factionReputation': {
+                return `[FACTION: ${resolveFactionName(outcome.factionId)} ${formatSignedAmount(outcome.amount)}]`;
+            }
+            case 'factionChange': {
+                return `[${resolveActorName(outcome.actorId)}: JOINED ${resolveFactionName(outcome.factionId)}]`;
+            }
+            case 'roleChange': {
+                const roleName = outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'None';
+                return `[${resolveActorName(outcome.actorId)}: ROLE ${roleName}]`;
+            }
+            case 'newModule': {
+                if (!outcome.module?.moduleName || !outcome.module?.roleName || !outcome.module?.description) return null;
+                return `[NEW MODULE: ${outcome.module.moduleName} | ROLE ${outcome.module.roleName} | DESCRIPTION ${outcome.module.description}]`;
+            }
+            case 'newOutfit': {
+                if (!outcome.outfit?.outfitName || !outcome.outfit?.description) return null;
+                return `[NEW APPEARANCE: ${resolveActorName(outcome.actorId || outcome.outfit.actorId)} | NAME ${outcome.outfit.outfitName} | DESCRIPTION ${outcome.outfit.description}]`;
+            }
+            default:
+                return null;
+        }
+    };
+
     return ((skit.script && skit.script.length > 0) || additionalEntries.length > 0) ?
         [...skit.script, ...additionalEntries].map(e => {
             // Find the best matching emotion key for this speaker
@@ -174,7 +223,13 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
                 const outfit = actor?.outfits.find(o => o.id === outfitId);
                 return actor && outfit ? ` [${actor.name} wears ${outfit.name}]` : '';
             }).join('');
-            return `[${speakerName} turn]${emotionText}${wearsText} ${e.message}`.trim();
+
+            const messageLine = `[${speakerName} turn]${emotionText}${wearsText} ${e.message}`.trim();
+            const outcomeTags = (e.outcomes || [])
+                .map(formatOutcomeTag)
+                .filter((tag): tag is string => !!tag);
+
+            return outcomeTags.length > 0 ? `${messageLine}\n${outcomeTags.join('\n')}` : messageLine;
         }).join('\n')
         : '(None so far)';
 }
@@ -683,9 +738,9 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         `or when a character moves to another faction, abstractly representing any faction mission or time away. ` +
                         `If "Scene" is used as the character name, it indicates that the scene itself is moving to a different location, and all present characters are moving with it. ` +
                         `[<characterName|"Scene"> moves to <locationName|factionName|"Here"|"Another module">]` +
-                    `\n\n#End Scene Tag:#\n` +
-                        `An end scene tag should be used to indicate the conclusion of the scene, if the scene has reached a natural conclusion or suspended moment in this chunk of the script.\n` +
-                        `[END SCENE]` +
+                    `\n\n#End Tag:#\n` +
+                        `An end tag should be used if the new chunk of script hits a conclusory moment, where continuing makes little sense.\n` +
+                        `[END]` +
                     `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
                     `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
                     `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
@@ -693,7 +748,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 ) +
                 
                 buildPromptSegment(`Outcome Tags`, 
-                            `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content. ` +
+                            `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content; ` +
+                            `typically, these are included at the tail end of the turn that triggers them. Weigh other outcome tags in the scene's script to avoid redundancy or overkill. ` +
                             `\n#Character Stat Changes:#\n` +
                             `Identify any changes to character stats implied by this entry. For each change, output a line in the following format:\n` +
                             `[<characterName>: <stat> +<value>(, ...)]` +
@@ -797,7 +853,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 min_tokens: 10,
                 max_tokens: 800,
                 include_history: true,
-                stop: ["[END SCENE]"]
+                stop: ["[END]"]
             });
             if (response && response.trim().length > 0) {
                 // First, detect and parse any tags that may be embedded in the response.
@@ -825,7 +881,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 let currentOutfitChanges: {[actorId: string]: string} = {};
                 let currentSceneMoveToModuleId: string | undefined;
                 let currentOutcomes: Outcome[] = [];
-                let currentEndScene = false;
 
                 let parsedSceneModuleId = getCurrentSceneModuleId(skit, -1);
                 const parsedCurrentLocations = getCurrentActorLocations(skit, -1);
@@ -845,7 +900,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     const newOutfitChanges: {[actorId: string]: string} = {};
                     const newOutcomes: Outcome[] = [];
                     let newSceneMoveToModuleId: string | undefined;
-                    let newEndScene = false;
 
                     // Prepare list of all actors (not just present)
                     const allActors: Actor[] = Object.values(stage.getSave().actors);
@@ -856,11 +910,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         if (!raw) continue;
 
                         console.log(`Processing tag: ${raw}`);
-
-                        if (/^end\s+scene$/i.test(raw)) {
-                            newEndScene = true;
-                            continue;
-                        }
                         
                         const sceneMoveModuleId = processSceneMovementTag(raw, stage);
                         if (sceneMoveModuleId) {
@@ -1185,7 +1234,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                                 outfitChanges: currentOutfitChanges,
                                 moveToModuleId: currentSceneMoveToModuleId,
                                 outcomes: currentOutcomes,
-                                endScene: currentEndScene
+                                endScene: false // Not currently used.
                             });
                         }
 
@@ -1197,7 +1246,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = newOutfitChanges;
                         currentSceneMoveToModuleId = newSceneMoveToModuleId;
                         currentOutcomes = newOutcomes;
-                        currentEndScene = newEndScene;
                     } else if (hasCurrentEntry) {
                         // Continuation of previous entry
                         if (trimmed) {
@@ -1208,7 +1256,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = {...currentOutfitChanges, ...newOutfitChanges};
                         currentSceneMoveToModuleId = newSceneMoveToModuleId || currentSceneMoveToModuleId;
                         currentOutcomes = [...currentOutcomes, ...newOutcomes];
-                        currentEndScene = currentEndScene || newEndScene;
                     } else if (trimmed) {
                         // If content appears before any explicit turn tag, attribute it to NARRATOR.
                         currentSpeaker = 'NARRATOR';
@@ -1219,7 +1266,6 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         currentOutfitChanges = newOutfitChanges;
                         currentSceneMoveToModuleId = newSceneMoveToModuleId;
                         currentOutcomes = newOutcomes;
-                        currentEndScene = newEndScene;
                     }
                 }
                 if (hasCurrentEntry) {
@@ -1230,7 +1276,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         outfitChanges: currentOutfitChanges,
                         moveToModuleId: currentSceneMoveToModuleId,
                         outcomes: currentOutcomes,
-                        endScene: currentEndScene
+                        endScene: false // Not currently used.
                     });
                 }
 
