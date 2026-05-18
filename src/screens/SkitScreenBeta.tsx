@@ -154,12 +154,9 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
         const nextEntries = await generateSkitScript(skitArg as SkitData, stage());
-        (skitArg as SkitData).script.push(...nextEntries);
-        const currentTimelineEvent = stage().getSave().timeline?.find(e => e.skit?.id === skitArg.id);
-        if (currentTimelineEvent) {
-            currentTimelineEvent.skit = skitArg as SkitData;
-            stage().saveGame();
-        }
+        skitArg.script.push(...nextEntries);
+        stage().saveGame();
+
         return skitArg;
 	}, [stage]);
 
