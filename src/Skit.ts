@@ -1441,7 +1441,7 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
     const factionReputationTotals = new Map<string, { outcome: Outcome; total: number; order: number }>();
     const roleHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
     const factionHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
-    const movementHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
+    const movementOutcomesByActor = new Map<string, { outcome: Outcome; order: number }>();
     const acceptedModules: { outcome: Outcome; order: number }[] = [];
     const acceptedModuleNames: { name: string; index: number }[] = [];
     const acceptedOutfitsByActor = new Map<string, { outcome: Outcome; order: number }[]>();
@@ -1518,23 +1518,14 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
                         break;
                     }
 
-                    const movementValue = outcome.factionId
-                        ? `faction:${outcome.factionId}`
-                        : outcome.moduleId
-                            ? `module:${outcome.moduleId}`
-                            : '';
-
-                    if (!movementValue) {
+                    if (!outcome.factionId && !outcome.moduleId) {
                         break;
                     }
 
-                    const currentHistory = movementHistories.get(actorKey)?.entries || [];
-                    const updatedHistory = appendNettingHistory(currentHistory, movementValue, outcome);
-                    if (updatedHistory.length === 0) {
-                        movementHistories.delete(actorKey);
-                    } else {
-                        movementHistories.set(actorKey, { entries: updatedHistory });
-                    }
+                    movementOutcomesByActor.set(actorKey, {
+                        outcome: { ...outcome },
+                        order: nextOrder()
+                    });
                     break;
                 }
                 case 'newModule': {
@@ -1595,19 +1586,8 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
         entries.forEach(entry => accumulated.push({ outcome: { ...entry.outcome, factionId: entry.value }, order: entry.order }));
     });
 
-    movementHistories.forEach(({ entries }) => {
-        entries.forEach(entry => {
-            const isFactionDestination = entry.value.startsWith('faction:');
-            const destinationId = entry.value.substring(isFactionDestination ? 'faction:'.length : 'module:'.length);
-            accumulated.push({
-                outcome: {
-                    ...entry.outcome,
-                    factionId: isFactionDestination ? destinationId : undefined,
-                    moduleId: isFactionDestination ? undefined : destinationId,
-                },
-                order: entry.order
-            });
-        });
+    movementOutcomesByActor.forEach(({ outcome, order }) => {
+        accumulated.push({ outcome: { ...outcome }, order });
     });
 
     acceptedModules.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));
