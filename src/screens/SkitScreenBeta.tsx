@@ -165,11 +165,13 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
-        const nextEntries = await generateSkitScript(skit, stage());
-        skit.script.push(...nextEntries);
+        const nextEntries = await generateSkitScript(skitArg, stage());
+        skitArg.script.push(...nextEntries);
+        // Update skit to match skitArg, which was updated in the generation.
+        skit.outcomes = skitArg.outcomes;
         stage().saveGame();
 
-        return skit;
+        return skitArg;
 	}, [stage]);
 
     useEffect(() => {
