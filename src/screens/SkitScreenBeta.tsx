@@ -109,7 +109,7 @@ const getActorOutfitsAtIndex = (skit: SkitData, scriptIndex: number, allActors: 
     return currentOutfits;
 };
 
-const clampHexColor = (color: string, minBrightness: number = 0.5, maxBrightness: number = 0.8): string => {
+const clampHexColor = (color: string, minBrightness: number = 0.3, maxBrightness: number = 0.6): string => {
     const match = /^#([0-9A-F]{6})([0-9A-F]{2})?$/i.exec(color);
     if (!match) {
         return color;
