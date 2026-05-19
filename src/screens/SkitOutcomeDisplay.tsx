@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { motion } from 'framer-motion';
 import { Paper, Typography, Box } from '@mui/material';
-import { TrendingUp, Handshake, TrendingDown, ContentCut } from '@mui/icons-material';
+import { TrendingUp, Handshake, TrendingDown, ContentCut, Work, DomainAdd, Output, Input } from '@mui/icons-material';
 import Actor, { Stat, ACTOR_STAT_ICONS } from '../actors/Actor';
 import Nameplate from '../components/Nameplate';
 import { scoreToGrade } from '../utils';
@@ -113,19 +113,40 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return statIcon || ((outcome.amount || 0) < 0 ? TrendingDown : TrendingUp);
             }
             case 'roleChange':
+                return Work;
             case 'factionChange':
             case 'factionReputation':
                 return Handshake;
             case 'newModule':
-                return TrendingUp;
+                return DomainAdd;
             case 'newOutfit':
                 return ContentCut;
             case 'movement':
-                return Handshake;
+                return outcome.factionId ? Output : Input;
             default:
                 return TrendingUp;
         }
     };
+
+    const getOutcomeTitle = (outcome: Outcome) => {
+        switch (outcome.type) {
+            case 'actorStat':
+            case 'stationStat':
+                return outcome.stat ? String(outcome.stat).toUpperCase() : 'STAT CHANGE';
+            case 'roleChange':
+                return 'Role Change';
+            case 'factionChange':
+                return 'Faction Change';
+            case 'factionReputation':
+                return 'Reputation';
+            case 'newModule':
+                return 'New Module';
+            case 'newOutfit':
+                return 'New Outfit';
+            case 'movement':
+                return outcome.factionId ? `Visiting ${outcome.factionId}` : 'Returning';
+        }
+    }
 
     if (currentOutcomes.length === 0) {
         return null;
@@ -361,6 +382,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 {otherOutcomes.map((outcome, outcomeIndex) => {
                     const accent = getAccent(outcome);
                     const OutcomeIcon = getOutcomeIcon(outcome);
+                    const cardTitle = getOutcomeTitle(outcome);
                     const cardIndex = actorStatGroups.length + (stationStatEntries.length > 0 ? 1 : 0) + outcomeIndex;
 
                     let content: React.ReactNode = null;
@@ -476,21 +498,15 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         <Box sx={{
                                             position: 'absolute',
                                             inset: 0,
-                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
+                                            backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: '50% 15%',
+                                            backgroundRepeat: 'no-repeat'
                                         }} />
                                         <Box sx={{
                                             position: 'absolute',
-                                            bottom: '8px',
-                                            left: '8px',
-                                            width: '96px',
-                                            height: '132px',
-                                            borderRadius: '10px',
-                                            border: '2px solid rgba(255,255,255,0.75)',
-                                            backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
-                                            backgroundSize: 'cover',
-                                            backgroundPosition: '50% 18%',
-                                            backgroundRepeat: 'no-repeat',
-                                            boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+                                            inset: 0,
+                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
                                         }} />
                                     </Box>
                                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
