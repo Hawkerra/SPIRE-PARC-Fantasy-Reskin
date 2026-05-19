@@ -55,6 +55,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             .filter(e => e.newValue !== e.oldValue);
     })();
 
+    console.log('currentOutcomes:', currentOutcomes);
     const otherOutcomes = currentOutcomes.filter(o => o.type !== 'actorStat' && o.type !== 'stationStat');
 
     const resolveActorName = (actorId?: string): string => {
