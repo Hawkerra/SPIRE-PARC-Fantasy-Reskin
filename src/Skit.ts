@@ -944,14 +944,15 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
         try {
             const impliedOutcomePrompt = buildSkitPrompt(analysisSkit, stage, 0,
                 buildPromptSegment('Scene Script for Analysis', buildScriptLog(analysisSkit, [], stage)) +
+                buildPromptSegment('Outcome Tag Rules',
+                    buildOutcomeTagRules('Some Character')) +
                 buildPromptSegment('Instruction',
-                    `Analyze the scene depicting in this script as though it were complete. ` +
-                    `Apply the below rules to output outcome tags that are represent the direct or implied consequences of this scene. ` +
+                    `Analyze the scene depicting in the above script. ` +
+                    `Apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
                     `Bear in mind existing outcome tags within the skit, avoiding redundancy or overkill. ` +
-                    `When all relevant tags have been output, use an [END] tag before offering explanations for the chosen tags` +
-                    `If no outcomes seem relevant, output [NO OUTCOMES].`) +
-                buildPromptSegment('Outcome Tag Formatting',
-                    buildOutcomeTagRules('Some Character')));
+                    `When all relevant tags have been output, output an [END] tag before offering explanations for the chosen tags` +
+                    `If no outcomes seem relevant, output [NO OUTCOMES].`)
+                );
 
             const impliedResponse = await stage.makeText({
                 prompt: impliedOutcomePrompt,

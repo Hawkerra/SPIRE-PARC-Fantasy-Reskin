@@ -13,6 +13,7 @@ import { BlurredBackground } from '../components/BlurredBackground';
 import { useTooltip } from '../contexts/TooltipContext';
 import ActorCard, { ActorCardSection } from '../components/ActorCard';
 import { ContentManagementScreen } from './ContentManagementScreen';
+import { colors } from './Theme';
 
 import {
     Send,
@@ -21,7 +22,9 @@ import {
     Menu as MenuIcon,
     EditNote,
     Close,
-    Warning
+    Warning,
+    VolumeUp,
+    VolumeOff
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
@@ -113,12 +116,22 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
     const [accumulatedOutcomes, setAccumulatedOutcomes] = React.useState<Outcome[]>([]);
     const [showContentManagement, setShowContentManagement] = React.useState(false);
+    const [isAudioEnabled, setIsAudioEnabled] = React.useState<boolean>(!stage().getSave().disableTextToSpeech);
+    const isTextToSpeechEnabled = !stage().getSave().disableTextToSpeech;
     const currentScriptIndex = Math.min(Math.max(skit.currentIndex || 0, 0), Math.max(skit.script.length - 1, 0));
     const shouldHighlightCloseButton = !isLoading && skit.script.length >= 3 && currentScriptIndex >= skit.script.length - 1;
 
     const currentSceneModuleId = getSceneModuleIdAtIndex(skit, skit.currentIndex || 0);
     const module = stage().getSave().layout.getModuleById(currentSceneModuleId || '');
     const decorImageUrl = module ? stage().getSave().actors[module.ownerId || '']?.decorImageUrls[module.type] || module.getAttribute('defaultImageUrl') : '';
+    const cornerButtonSx = {
+        color: colors.primary.main,
+        opacity: 0.8,
+        '&:hover': {
+            color: colors.primary.light,
+            backgroundColor: 'rgba(0, 255, 136, 0.12)'
+        }
+    };
     
     const actors = {...stage().getSave().actors, 'player': {
         id: 'player',
@@ -201,10 +214,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
     }, [accumulatedOutcomes]);
 
     return (
-		<BlurredBackground
-			imageUrl={decorImageUrl}
-			// overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
-		>
+        <BlurredBackground
+            imageUrl={decorImageUrl}
+            // overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
+        >
             {/* Top right control buttons */}
             <div style={{
                 position: 'absolute',
@@ -214,31 +227,32 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 gap: '0.5rem',
                 zIndex: 10
             }}>
-                <IconButton 
+                {isTextToSpeechEnabled && (
+                    <IconButton
+                        onClick={() => setIsAudioEnabled(prev => !prev)}
+                        onMouseEnter={() => setTooltip(isAudioEnabled ? 'Mute Audio' : 'Enable Audio', isAudioEnabled ? VolumeUp : VolumeOff)}
+                        onMouseLeave={() => clearTooltip()}
+                        sx={{
+                            ...cornerButtonSx,
+                            opacity: isAudioEnabled ? 0.95 : 0.55,
+                        }}
+                    >
+                        {isAudioEnabled ? <VolumeUp /> : <VolumeOff />}
+                    </IconButton>
+                )}
+                <IconButton
                     onClick={() => setShowContentManagement(true)}
                     onMouseEnter={() => setTooltip('Content Management', EditNote)}
                     onMouseLeave={() => clearTooltip()}
-                    sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        '&:hover': {
-                            color: 'rgba(255, 255, 255, 1)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                        }
-                    }}
+                    sx={cornerButtonSx}
                 >
                     <EditNote />
                 </IconButton>
-                <IconButton 
+                <IconButton
                     onClick={() => setScreenType(ScreenType.MENU)}
                     onMouseEnter={() => setTooltip('Menu', MenuIcon)}
                     onMouseLeave={() => clearTooltip()}
-                    sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        '&:hover': {
-                            color: 'rgba(255, 255, 255, 1)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                        }
-                    }}
+                    sx={cornerButtonSx}
                 >
                     <MenuIcon />
                 </IconButton>
@@ -248,10 +262,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     onMouseLeave={() => clearTooltip()}
                     disabled={isLoading || skit.script.length < 3}
                     sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        ...cornerButtonSx,
                         ...(shouldHighlightCloseButton ? {
-                            color: 'rgba(255, 255, 255, 1)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            color: colors.accent.warning,
+                            backgroundColor: 'rgba(255, 170, 0, 0.12)',
                             animation: 'closeButtonPulse 1.6s ease-in-out infinite',
                             '@keyframes closeButtonPulse': {
                                 '0%, 100%': {
@@ -264,10 +278,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                 }
                             }
                         } : {}),
-                        '&:hover': {
-                            color: 'rgba(255, 255, 255, 1)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                        },
                         '&.Mui-disabled': {
                             color: 'rgba(255, 255, 255, 0.25)'
                         }
@@ -282,22 +292,22 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 loading={isLoading}
                 renderNameplate={(actor: any) => {
                     if (!actor || !actor.name) return null;
-                    return <Nameplate 
-                                actor={actor} 
-                                size={isVerticalLayout ? "medium" : "large"}
-                                style={{ // center nameplate horizontally in parent container:
-                                    position: 'absolute',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    zIndex: 5
-                                }}
-                                role={(() => {
-                                    const roleModules = stage().getSave().layout.getModulesWhere((m: any) => 
-                                        m && m.type !== 'quarters' && m.ownerId === actor.id
-                                    );
-                                    return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
-                                })()}
-                                layout="inline"
+                    return <Nameplate
+                        actor={actor}
+                        size={isVerticalLayout ? 'medium' : 'large'}
+                        style={{
+                            position: 'absolute',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 5
+                        }}
+                        role={(() => {
+                            const roleModules = stage().getSave().layout.getModulesWhere((m: any) =>
+                                m && m.type !== 'quarters' && m.ownerId === actor.id
+                            );
+                            return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
+                        })()}
+                        layout="inline"
                     />;
                 }}
                 setTooltip={setTooltip}
@@ -309,9 +319,8 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 }
                 getActorImageUrl={(actor, _script, index) => {
                     let emotion = Emotion.neutral;
-                    
+
                     if (skit.script && skit.script.length > 0 && index < skit.script.length) {
-                        // scan backward through skit script to find most recent emotion for this actor:
                         for (let j = index; j >= 0; j--) {
                             const entry = skit.script[j];
                             if (entry.actorEmotions && entry.actorEmotions[actor.name]) {
@@ -320,11 +329,11 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                             }
                         }
                     }
+
                     const outfitId = getActorOutfitsAtIndex(_script, index, stage().getSave().actors)[actor.id] || actor.outfitId;
                     return actor.getEmotionImage(emotion, stage(), outfitId);
                 }}
                 getActorFilter={(actor, _script, index) => {
-                    // Get current location ID of this actor as of this index in the script (the actor may not be in the scene; if their location is not a module, then they should be a hologram):
                     const actorLocationId = (() => {
                         const locations = _script.initialActorLocations || {};
                         let currentLocationId = locations[actor.id] || '';
@@ -352,11 +361,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                         icon: inputText.trim().length > 0 ? <Send /> : <PlayArrow />,
                     };
                 }}
-                enableAudio={!stage().getSave().disableTextToSpeech}
+                enableAudio={isTextToSpeechEnabled && isAudioEnabled}
                 enablePopInSpeakers={true}
                 enableTalkingAnimation={true}
                 responsiveOverlay={(skit, actor) => {
-                    // place box on right; width is 30vw in horizontal layout, 40vw in vertical. The below is itself wrapped with an absolute positioned container, so this should be relative.
                     return (
                         <div>
                             <AnimatePresence mode="wait">
@@ -376,7 +384,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                                         }}>
                                             <ActorCard
                                                 actor={actor}
-                                                visitingFaction={undefined /* Don't display visiting status in skits. */}
+                                                visitingFaction={undefined}
                                                 role={getRole(actor, stage().getSave())}
                                                 collapsedSections={[ActorCardSection.STATS]}
                                             />
@@ -399,7 +407,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                     );
                 }}
             />
-            
+
             {/* Content Management Modal */}
             {showContentManagement && (
                 <ContentManagementScreen
