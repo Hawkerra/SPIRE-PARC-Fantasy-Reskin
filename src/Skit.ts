@@ -918,12 +918,15 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
 
 function parseOutcomeTagsFromText(text: string, stage: Stage, skit: SkitData): Outcome[] {
     const outcomes: Outcome[] = [];
+    console.log('Parsing outcome tags from text:', text);
  
     for (const tag of text.match(/\[[^\]]+\]/g) || []) {
         const raw = tag.slice(1, -1).trim();
+        console.log(`Found tag: ${tag}`);
         if (raw) {
             const parsed = parseOutcomeTag(raw, stage, skit);
             if (parsed) {
+                console.log('Parsed outcome:', parsed);
                 outcomes.push(parsed);
             }
         }
@@ -964,6 +967,7 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
 
             if (!impliedResponse) {
                 retries--;
+                console.log('No implied outcomes for skit.');
                 continue;
             }
             return parseOutcomeTagsFromText(impliedResponse, stage, analysisSkit);
