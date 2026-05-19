@@ -145,7 +145,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
     
     const onSkitChange = useCallback((newSkit: SkitData) => {
-        stage().setSkit(newSkit);
         // Keep skit object identity stable, but force this component to re-render.
         setSkitRevision(prev => prev + 1);
     }, [stage]);
@@ -166,11 +165,11 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
-        const nextEntries = await generateSkitScript(skitArg as SkitData, stage());
-        skitArg.script.push(...nextEntries);
+        const nextEntries = await generateSkitScript(skit, stage());
+        skit.script.push(...nextEntries);
         stage().saveGame();
 
-        return skitArg;
+        return skit;
 	}, [stage]);
 
     useEffect(() => {
@@ -188,6 +187,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
             : visibleScriptEntries;
 
         const outcomes = accumulateOutcomes(visibleEntries) || [];
+        console.log('Skit outcomes:', skit.outcomes);
         setAccumulatedOutcomes(outcomes);
         console.log('Updating accumualted outcomes:', outcomes);
 
