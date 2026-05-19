@@ -109,6 +109,31 @@ const getActorOutfitsAtIndex = (skit: SkitData, scriptIndex: number, allActors: 
     return currentOutfits;
 };
 
+const dimBrightHexColor = (color: string): string => {
+    const match = /^#([0-9A-F]{6})([0-9A-F]{2})?$/i.exec(color);
+    if (!match) {
+        return color;
+    }
+
+    const hex = match[1];
+    const alpha = match[2] || '';
+    const red = parseInt(hex.slice(0, 2), 16);
+    const green = parseInt(hex.slice(2, 4), 16);
+    const blue = parseInt(hex.slice(4, 6), 16);
+
+    const brightness = (red + green + blue) / (255 * 3);
+    if (brightness < 0.92) {
+        return color;
+    }
+
+    const dimFactor = 0.82;
+    const dimmedRed = Math.round(red * dimFactor).toString(16).padStart(2, '0');
+    const dimmedGreen = Math.round(green * dimFactor).toString(16).padStart(2, '0');
+    const dimmedBlue = Math.round(blue * dimFactor).toString(16).padStart(2, '0');
+
+    return `#${dimmedRed}${dimmedGreen}${dimmedBlue}${alpha}`;
+};
+
 export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, isVerticalLayout }) => {
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
@@ -350,9 +375,14 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                         return currentLocationId;
                     })();
 
+                    const holoColor = isHologram(actor, stage().getSave(), actorLocationId)
+                        ? dimBrightHexColor(actor.themeColor)
+                        : undefined;
+
+
                     return {
-                        filter: isHologram(actor, stage().getSave(), actorLocationId) ? 'hologram' : undefined,
-                        filterColor: isHologram(actor, stage().getSave(), actorLocationId) ? actor.themeColor : undefined
+                        filter: holoColor ? 'hologram' : undefined,
+                        filterColor: holoColor
                     };
                 }}
                 onSubmitInput={handleSkitSubmit}
