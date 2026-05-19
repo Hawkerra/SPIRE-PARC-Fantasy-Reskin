@@ -1241,9 +1241,9 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
 
                         // Outcome tags:
-                        const maybeOutcome = parseOutcomeTag(tag, stage, skit);
-                        if (maybeOutcome) {
-                            newOutcomes.push(maybeOutcome);
+                        const maybeOutcomes = parseOutcomeTag(tag, stage, skit);
+                        if (maybeOutcomes) {
+                            newOutcomes.push(...maybeOutcomes);
                             continue;
                         }
                     }
