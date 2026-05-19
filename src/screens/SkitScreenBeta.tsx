@@ -109,7 +109,7 @@ const getActorOutfitsAtIndex = (skit: SkitData, scriptIndex: number, allActors: 
     return currentOutfits;
 };
 
-const dimBrightHexColor = (color: string): string => {
+const clampHexColor = (color: string, minBrightness: number = 0.5, maxBrightness: number = 0.8): string => {
     const match = /^#([0-9A-F]{6})([0-9A-F]{2})?$/i.exec(color);
     if (!match) {
         return color;
@@ -122,14 +122,23 @@ const dimBrightHexColor = (color: string): string => {
     const blue = parseInt(hex.slice(4, 6), 16);
 
     const brightness = (red + green + blue) / (255 * 3);
-    if (brightness < 0.92) {
+    if (brightness >= minBrightness && brightness <= maxBrightness) {
         return color;
     }
 
-    const dimFactor = 0.82;
-    const dimmedRed = Math.round(red * dimFactor).toString(16).padStart(2, '0');
-    const dimmedGreen = Math.round(green * dimFactor).toString(16).padStart(2, '0');
-    const dimmedBlue = Math.round(blue * dimFactor).toString(16).padStart(2, '0');
+    const targetBrightness = brightness > maxBrightness ? maxBrightness : minBrightness;
+    if (brightness === 0) {
+        const channel = Math.round(targetBrightness * 255).toString(16).padStart(2, '0');
+        return `#${channel}${channel}${channel}${alpha}`;
+    }
+
+    const scale = targetBrightness / brightness;
+    const adjustChannel = (channel: number): string =>
+        Math.max(0, Math.min(255, Math.round(channel * scale))).toString(16).padStart(2, '0');
+
+    const dimmedRed = adjustChannel(red);
+    const dimmedGreen = adjustChannel(green);
+    const dimmedBlue = adjustChannel(blue);
 
     return `#${dimmedRed}${dimmedGreen}${dimmedBlue}${alpha}`;
 };
@@ -375,14 +384,11 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                         return currentLocationId;
                     })();
 
-                    const holoColor = isHologram(actor, stage().getSave(), actorLocationId)
-                        ? dimBrightHexColor(actor.themeColor)
-                        : undefined;
-
+                    const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
 
                     return {
-                        filter: holoColor ? 'hologram' : undefined,
-                        filterColor: holoColor
+                        filter: useHoloFilter ? 'hologram' : undefined,
+                        filterColor: useHoloFilter ? clampHexColor(actor.themeColor) : undefined,
                     };
                 }}
                 onSubmitInput={handleSkitSubmit}
