@@ -189,7 +189,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
         setAccumulatedOutcomes(accumulateOutcomes(visibleEntries) || []);
 
-    }, [skit]);
+    }, [skit, skit.currentIndex]);
 
     // Handle Escape key to open menu
     useEffect(() => {

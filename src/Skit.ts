@@ -970,7 +970,9 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
                 console.log('No implied outcomes for skit.');
                 continue;
             }
-            return parseOutcomeTagsFromText(impliedResponse, stage, analysisSkit);
+            const outcomes = parseOutcomeTagsFromText(impliedResponse, stage, analysisSkit);
+            console.log('Parsed outcomes:', outcomes);
+            return outcomes;
         } catch(error) {
             console.error('Error generating implied outcomes:', error);
             retries--;
@@ -1358,11 +1360,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
 
                 // Run implied-outcome analysis in parallel with TTS generation.
-                const impliedOutcomesPromise = generateImpliedOutcomesForCurrentEnd(skit, scriptEntries, stage)
-                    .catch((error) => {
-                        console.error('Error generating implied skit outcomes:', error);
-                        return [];
-                    });
+                const impliedOutcomesPromise = generateImpliedOutcomesForCurrentEnd(skit, scriptEntries, stage);
 
                 // TTS for each entry's dialogue
                 const ttsPromises = scriptEntries.map(async (entry) => {
@@ -1398,6 +1396,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 ]);
 
                 skit.outcomes = impliedOutcomes;
+                console.log(`Implied outcomes for current end of skit:`, skit.outcomes);
 
                 stage.pushMessage(text);
 
