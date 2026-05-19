@@ -187,7 +187,9 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
             ? [...visibleScriptEntries, { speaker: 'NARRATOR', message: '', speechUrl: '', outcomes: skit.outcomes }]
             : visibleScriptEntries;
 
-        setAccumulatedOutcomes(accumulateOutcomes(visibleEntries) || []);
+        const outcomes = accumulateOutcomes(visibleEntries) || [];
+        setAccumulatedOutcomes(outcomes);
+        console.log('Updating accumualted outcomes:', outcomes);
 
     }, [skit, skit.currentIndex]);
 
