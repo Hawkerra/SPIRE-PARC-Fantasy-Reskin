@@ -432,6 +432,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
                             if (!actor) {
                                 content = null;
+                                console.log('Actor not found for movement outcome:', outcome);
                                 break;
                             }
 
@@ -441,6 +442,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const isLeavingForFaction = actorIsNotAtFaction && !!outcome.factionId;
 
                             if (!isReturnToParc && !isLeavingForFaction) {
+                                console.log('No need to display; actor is not moving between PARC and a faction:', outcome);
                                 content = null;
                                 break;
                             }
