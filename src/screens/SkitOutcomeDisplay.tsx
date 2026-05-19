@@ -69,6 +69,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         return save.factions[factionId]?.name || factionId;
     };
 
+    const PARC_BACKGROUND_IMAGE = 'https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png';
+
     const formatAmount = (amount?: number): string => {
         const value = amount || 0;
         return value > 0 ? `+${value}` : `${value}`;
@@ -93,6 +95,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return { border: 'rgba(99,102,241,0.32)', background: 'linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(99,102,241,0.22) 50%, rgba(139,92,246,0.12) 100%)', color: '#a5b4fc' };
             case 'newOutfit':
                 return { border: 'rgba(16,185,129,0.32)', background: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(6,182,212,0.20) 50%, rgba(14,165,233,0.12) 100%)', color: '#10b981' };
+            case 'movement':
+                return { border: 'rgba(56,189,248,0.32)', background: 'linear-gradient(135deg, rgba(14,165,233,0.16) 0%, rgba(59,130,246,0.20) 50%, rgba(30,64,175,0.14) 100%)', color: '#38bdf8' };
             default:
                 return { border: 'rgba(255,255,255,0.16)', background: 'rgba(255,255,255,0.05)', color: '#fff' };
         }
@@ -116,6 +120,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return TrendingUp;
             case 'newOutfit':
                 return ContentCut;
+            case 'movement':
+                return Handshake;
             default:
                 return TrendingUp;
         }
@@ -329,7 +335,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         borderRadius: '12px',
                                         overflow: 'hidden',
                                         border: '2px solid rgba(0,255,136,0.4)',
-                                        backgroundImage: `url(https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png)`,
+                                        backgroundImage: `url(${PARC_BACKGROUND_IMAGE})`,
                                         backgroundSize: 'cover',
                                         backgroundPosition: '50% 15%',
                                         backgroundRepeat: 'no-repeat',
@@ -422,6 +428,76 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 </Box>
                             ) : null;
                             break;
+                        case 'movement': {
+                            const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
+                            if (!actor) {
+                                content = null;
+                                break;
+                            }
+
+                            const actorIsAtFaction = !!save.factions[actor.locationId];
+                            const actorIsNotAtFaction = !actorIsAtFaction;
+                            const isReturnToParc = actorIsAtFaction && !!outcome.moduleId;
+                            const isLeavingForFaction = actorIsNotAtFaction && !!outcome.factionId;
+
+                            if (!isReturnToParc && !isLeavingForFaction) {
+                                content = null;
+                                break;
+                            }
+
+                            const currentFaction = save.factions[actor.locationId];
+                            const destinationFaction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
+                            const message = isReturnToParc
+                                ? `${actor.name} returns from ${currentFaction?.name || 'Unknown Faction'}`
+                                : `${actor.name} Leaves for ${destinationFaction?.name || resolveFactionName(outcome.factionId)}`;
+
+                            const backgroundImage = isReturnToParc
+                                ? PARC_BACKGROUND_IMAGE
+                                : destinationFaction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE;
+
+                            content = (
+                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                    <Box sx={{
+                                        width: '100%',
+                                        height: '160px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        border: `2px solid ${accent.color}66`,
+                                        backgroundImage: `url(${backgroundImage})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                                        position: 'relative',
+                                        mb: 1.25
+                                    }}>
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
+                                        }} />
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            bottom: '8px',
+                                            left: '8px',
+                                            width: '96px',
+                                            height: '132px',
+                                            borderRadius: '10px',
+                                            border: '2px solid rgba(255,255,255,0.75)',
+                                            backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: '50% 18%',
+                                            backgroundRepeat: 'no-repeat',
+                                            boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+                                        }} />
+                                    </Box>
+                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                        {message}
+                                    </Typography>
+                                </Box>
+                            );
+                            break;
+                        }
                     }
 
                     if (!content) {

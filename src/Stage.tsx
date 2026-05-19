@@ -1106,6 +1106,12 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                             });
                         }
                     }
+                } else if (outcome.type === 'movement' && outcome.actorId && (outcome.factionId || outcome.moduleId)) {
+                    const actor = save.actors[outcome.actorId];
+                    if (actor) {
+                        const newLocationId = outcome.moduleId || outcome.factionId || actor.locationId;
+                        actor.locationId = newLocationId;
+                    }
                 }
             }
 

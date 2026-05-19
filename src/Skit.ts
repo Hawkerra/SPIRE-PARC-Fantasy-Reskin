@@ -20,12 +20,13 @@ export enum SkitType {
 }
 
 export interface Outcome {
-    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit';
-    actorId?: string; // Required for actorStat, roleChange, factionChange, and newOutfit
+    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit' | 'movement';
+    actorId?: string; // Required for actorStat, roleChange, factionChange, newOutfit, and movement
     stat?: Stat | StationStat; // Required for actorStat
     amount?: number; // Required for actorStat
     role?: string; // Required for roleChange (role name or '' for None)
-    factionId?: string; // Required for factionChange ('' for PARC)
+    factionId?: string; // Required for factionChange ('' for PARC), factionReputation, and movement (destination faction ID)
+    moduleId?: string; // Required for movement (destination module ID)
     module?: { id: string; moduleName: string; roleName: string; description: string }; // Required for new module
     outfit?: { id: string; actorId: string; outfitName: string; description: string }; // Required for new outfit
 }
@@ -413,7 +414,7 @@ function processWearTag(rawTag: string, stage: Stage): { actorId: string; outfit
  * @param skit - The current skit data
  * @returns An object with actorId and destinationId, or null if invalid
  */
-function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, currentSceneModuleId?: string): { actorId: string; destinationId: string } | null {
+function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undefined, currentSceneModuleId?: string): { actorId: string; destinationId: string } | null {
     // Look for movement tags: [Character Name moves to Module Name]
     const movementRegex = /^([^[\]]+?)\s+moves\s+to\s+(.+)$/i;
     const movementMatch = movementRegex.exec(rawTag);
@@ -462,7 +463,10 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData, curren
         } else {
             console.warn(`${matched.name} has no quarters assigned`);
         }
-    } else if (['here', 'this module', 'this location', 'this area', 'current module'].includes(destinationName.toLowerCase())) {
+    } else if (destinationName.toLowerCase() === 'parc') {
+        // Move to comms by default for vague "station" references
+        destinationModuleId = stage.getSave().layout.getModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
+    } else if (skit && ['here', 'this module', 'this location', 'this area', 'current module'].includes(destinationName.toLowerCase())) {
         // Move to current skit module
         destinationModuleId = currentSceneModuleId || getCurrentSceneModuleId(skit, -1) || skit.moduleId || '';
     } else {
@@ -743,7 +747,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `All stats (station and character) exist on a scale of 1-10, with 1 being the lowest and 10 being the highest possible value; ` +
                             `typically, changes should be minor (+/- 1 or 2) at a time, unless something dramatic occurs.`};
 
-function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | null {
+function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] | null {
     const allActors = Object.values(stage.getSave().actors);
     const allFactions = Object.values(stage.getSave().factions);
     const currentSceneModuleForAnalysis = getCurrentSceneModuleId(skit, -1);
@@ -755,15 +759,17 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
         const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
         const factionMatch = factionTagRegex.exec(text);
         if (factionMatch) {
+            console.log(`Parsing faction reputation change from tag: ${text}`);
             const factionNameRaw = factionMatch[1].trim();
             const reputationChange = parseInt(factionMatch[2].replace(/\s+/g, ''), 10) || 0;
             const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
+            console.log(`Matched faction: ${matchedFaction ? matchedFaction.name : 'None'}, Reputation change: ${reputationChange}`);
             if (matchedFaction && reputationChange !== 0) {
-                return {
+                return [{
                     type: 'factionReputation',
                     factionId: matchedFaction.id,
                     amount: reputationChange
-                };
+                }];
             }
         }
         return null;
@@ -783,11 +789,11 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                     newFactionId = matchedFaction.id;
                 }
             }
-            return {
+            return [{
                 type: 'factionChange',
                 actorId: matchedActor.id,
                 factionId: newFactionId
-            };
+            }];
         }
         return null;
     }
@@ -802,11 +808,11 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
         const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
         const newRole = ['NONE', 'PATIENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';
         if (matchedActor && currentRole !== newRole) {
-            return {
+            return [{
                 type: 'roleChange',
                 actorId: matchedActor.id,
                 role: newRole
-            };
+            }];
         }
         return null;
     }
@@ -822,7 +828,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                 const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
                 const similarModule = findBestNameMatch(moduleName, existingModules);
                 if (!similarModule && !findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))])) {
-                    return {
+                    return [{
                         type: 'newModule',
                         module: {
                             id: generateUuid(),
@@ -830,7 +836,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                             roleName,
                             description
                         }
-                    };
+                    }];
                 }
             }
         }
@@ -851,7 +857,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                     matchedActor.outfits.map(outfit => ({ name: outfit.name, outfit }))
                 );
                 if (!similarOutfit) {
-                    return {
+                    return [{
                         type: 'newOutfit',
                         actorId: matchedActor.id,
                         outfit: {
@@ -860,7 +866,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                             outfitName: appearanceName,
                             description: appearanceDescription
                         }
-                    };
+                    }];
                 }
             }
         }
@@ -876,6 +882,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
         const adjustments = payload.split(',').map(p => p.trim());
 
         if (target.toUpperCase() === 'STATION') {
+            const outcomes: Outcome[] = [];
             for (const adj of adjustments) {
                 const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
                 if (!m) continue;
@@ -885,17 +892,18 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
                 const enumMatch = Object.values(StationStat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
                 if (!enumMatch) continue;
                 statKey = enumMatch;
-                return {
+                outcomes.push({
                     type: 'stationStat',
                     stat: statKey as StationStat,
                     amount: num
-                };
+                });
             }
-            return null;
+            return outcomes.length > 0 ? outcomes : null;
         }
 
         const matchedActor = findBestNameMatch(target, presentActors);
         if (!matchedActor) return null;
+        const outcomes: Outcome[] = [];
         for (const adj of adjustments) {
             const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
             if (!m) continue;
@@ -905,14 +913,29 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome | 
             const enumMatch = Object.values(Stat).find(s => s.toLowerCase() === statKey || s.toLowerCase().includes(statKey) || statKey.includes(s.toLowerCase()));
             if (!enumMatch) continue;
             statKey = enumMatch;
-            return {
+            outcomes.push({
                 type: 'actorStat',
                 actorId: matchedActor.id,
                 stat: statKey as Stat,
                 amount: num
-            };
+            });
         }
+        return outcomes.length > 0 ? outcomes : null;
     }
+
+    // Parse a moves to tag.
+    const props = processMovementTag(text, stage, skit);
+    if (props) {
+        // props.destination could be a faction or a module; need to put it into the Outcome the right way:
+
+        return [{
+            type: 'movement',
+            actorId: props.actorId,
+            factionId: stage.getSave().factions[props.destinationId] ? props.destinationId : undefined,
+            moduleId: stage.getSave().layout.getModuleById(props.destinationId) ? props.destinationId : undefined
+        }];
+    }
+    
     return null;
 }
 
@@ -927,7 +950,7 @@ function parseOutcomeTagsFromText(text: string, stage: Stage, skit: SkitData): O
             const parsed = parseOutcomeTag(raw, stage, skit);
             if (parsed) {
                 console.log('Parsed outcome:', parsed);
-                outcomes.push(parsed);
+                outcomes.push(...parsed);
             }
         }
     }
@@ -1418,6 +1441,7 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
     const factionReputationTotals = new Map<string, { outcome: Outcome; total: number; order: number }>();
     const roleHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
     const factionHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
+    const movementHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
     const acceptedModules: { outcome: Outcome; order: number }[] = [];
     const acceptedModuleNames: { name: string; index: number }[] = [];
     const acceptedOutfitsByActor = new Map<string, { outcome: Outcome; order: number }[]>();
@@ -1488,6 +1512,31 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
                     }
                     break;
                 }
+                case 'movement': {
+                    const actorKey = outcome.actorId || '';
+                    if (!actorKey) {
+                        break;
+                    }
+
+                    const movementValue = outcome.factionId
+                        ? `faction:${outcome.factionId}`
+                        : outcome.moduleId
+                            ? `module:${outcome.moduleId}`
+                            : '';
+
+                    if (!movementValue) {
+                        break;
+                    }
+
+                    const currentHistory = movementHistories.get(actorKey)?.entries || [];
+                    const updatedHistory = appendNettingHistory(currentHistory, movementValue, outcome);
+                    if (updatedHistory.length === 0) {
+                        movementHistories.delete(actorKey);
+                    } else {
+                        movementHistories.set(actorKey, { entries: updatedHistory });
+                    }
+                    break;
+                }
                 case 'newModule': {
                     const moduleName = outcome.module?.moduleName?.trim() || '';
                     if (!moduleName) {
@@ -1544,6 +1593,21 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
 
     factionHistories.forEach(({ entries }) => {
         entries.forEach(entry => accumulated.push({ outcome: { ...entry.outcome, factionId: entry.value }, order: entry.order }));
+    });
+
+    movementHistories.forEach(({ entries }) => {
+        entries.forEach(entry => {
+            const isFactionDestination = entry.value.startsWith('faction:');
+            const destinationId = entry.value.substring(isFactionDestination ? 'faction:'.length : 'module:'.length);
+            accumulated.push({
+                outcome: {
+                    ...entry.outcome,
+                    factionId: isFactionDestination ? destinationId : undefined,
+                    moduleId: isFactionDestination ? undefined : destinationId,
+                },
+                order: entry.order
+            });
+        });
     });
 
     acceptedModules.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));

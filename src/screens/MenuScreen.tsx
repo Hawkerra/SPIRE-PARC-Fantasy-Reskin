@@ -286,7 +286,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     }}
                 >
                     {stage().isAuthenticated 
-                        ? 'v2026.05.16 - Lots of internal skit changes that will likely break things.'
+                        ? 'v2026.05.19 - I am still icing over some skit and outcome rewrites.'
                         : (
                             <>
                                 This is an unofficial bot; for the latest version for PARC, visit:{' '}
