@@ -214,7 +214,7 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
     return ((skit.script && skit.script.length > 0) || additionalEntries.length > 0) ?
         [...skit.script, ...additionalEntries].map(e => {
             // Find the best matching emotion key for this speaker
-            const speakerName = e.speaker || (stage?.getSave().actors[e.speakerId || '']?.name || (e.speakerId == 'player' ? stage?.getSave().player.name : '') || 'Unknown Speaker');
+            const speakerName = (stage?.getSave().actors[e.speakerId || '']?.name || (e.speakerId == 'player' ? stage?.getSave().player.name : '') || e.speaker || 'Unknown Speaker');
             const emotionKeys = Object.keys(e.actorEmotions || {});
             const candidates = emotionKeys.map(key => ({ name: key }));
             const bestMatch = findBestNameMatch(speakerName, candidates);
