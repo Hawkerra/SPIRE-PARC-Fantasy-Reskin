@@ -1081,14 +1081,15 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         `<appearanceName> must be found under the specified character—either their current appearance or one of their listed alternatives.\n` +
                         `[<characterName> wears <appearanceName>]` +
                     `\n\n#Movement Tag:#\n` +
-                        `A character movement tag must be used when an Absent Character enters the scene; when a present character leaves or moves to a different module on the station; ` +
+                        `A character movement tag must be used when an Absent Character enters the scene, a present character leaves or moves to a different module on the station, ` +
                         `or when a character moves to another faction, abstractly representing any faction mission or time away. ` +
-                        `If "Scene" is used as the character name, it indicates that the scene itself is moving to a different location, and all present characters are moving with it. ` +
+                        `If "Scene" is used as the character name, it indicates that the scene itself is moving to a different location, and all present characters are moving with it.\n` +
                         `[<characterName|"Scene"> moves to <locationName|factionName|"Here"|"Another module">]` +
                     `\n\n#End Tag:#\n` +
                         `An end tag should be used if the new chunk of script hits a conclusory moment, where continuing makes little sense.\n` +
                         `[END]` +
-                    `\n\nFor all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
+                    `\n\n#Cue Notes:#\n` +
+                    `For all Character movement tags, LOCATION should be the name of an existing module type (e.g., 'comms', 'infirmary', 'lounge'), a character's quarters (e.g., 'Susan's quarters' or just 'quarters' for their own), or simply "Here" to move to the scene's location or "Another module" to leave this area. ` +
                     `If a faction name is used for the LOCATION, it indicates that the character is departing from the PARC itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
                     `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
                     `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `
@@ -1097,8 +1098,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 buildPromptSegment(`Outcome Tags`, 
                             `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content; ` +
                             `typically, these are included at the tail end of the turn that triggers them. Weigh other outcome tags in the scene's script to avoid redundancy or overkill. ` +
-                             +
-                            `For each entry, consider and output all suitable tags, avoiding redundant or unnecessary tags. `
+                            `For each entry, consider and output particularly suitable tags, avoiding redundant or unnecessary tags. ` + buildOutcomeTagRules('Some Character')
                 ) +
 
 
