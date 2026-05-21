@@ -747,6 +747,17 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `All stats (station and character) exist on a scale of 1-10, with 1 being the lowest and 10 being the highest possible value; ` +
                             `typically, changes should be minor (+/- 1 or 2) at a time, unless something dramatic occurs.`};
 
+function shouldPreserveUnprocessedTag(rawTag: string): boolean {
+    // Keep empty reset tags (`[]`) and single-word text style tags (e.g. `[shout]`).
+    return rawTag.length === 0 || /^\w+$/.test(rawTag);
+}
+
+function stripNonStyleTags(text: string): string {
+    return text.replace(/\[([^\]]*)\]/g, (fullTag, rawTag) =>
+        shouldPreserveUnprocessedTag(rawTag.trim()) ? fullTag : ''
+    );
+}
+
 function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] | null {
     const allActors = Object.values(stage.getSave().actors);
     const allFactions = Object.values(stage.getSave().factions);
@@ -1051,7 +1062,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     `[NARRATOR turn][SOME CHARACTER expresses RELIEF] Descriptive content or other scene events occurring around you, the player, can be attributed to NARRATOR. Dialogue cannot be included in NARRATOR entries.\n` +
                     (stage.getSave().disableImpersonation ? '' : `[${stage.getSave().player.name.toUpperCase()} turn] "Hey, Some Character," I greet them warmly. I'm the player, and my entries use first-person narrative voice, while all other skit entries use second-person to refer to me.\n`) +
                     `[NARRATOR turn][SOME CHARACTER moves to OTHER MODULE NAME] Some Character ducks out with a smile. You hear their boots fade away down the corridor beyond.\n` +
-                    `[ANOTHER CHARACTER turn][SCENE moves to OTHER MODULE NAME][SOME CHARACTER wears FORMAL WEAR] You and Another Character follow Some Character to the other module, where they have changed into more formal attire.\n` +
+                    `[ANOTHER CHARACTER turn][SCENE moves to OTHER MODULE NAME][SOME CHARACTER wears FORMAL WEAR] You and Another Character follow Some Character to the other module, where they have changed into more formal attire. "[shout]We'll miss you, Some Character![]" cries Another Character, utilizing a text style tag.\n` +
                     `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step beyond the bulkhead, leaving the PARC to join Faction Name. You watch on-screen as their shuttle detaches from the station and disappears into the stars.` +
                     `Your dataslate pings as Faction Name's payment hits your account.[STATION: Wealth +1]\n`
                  ) +
@@ -1085,6 +1096,18 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         `or when a character moves to another faction, abstractly representing any faction mission or time away. ` +
                         `If "Scene" is used as the character name, it indicates that the scene itself is moving to a different location, and all present characters are moving with it.\n` +
                         `[<characterName|"Scene"> moves to <locationName|factionName|"Here"|"Another module">]` +
+                    `\n\n#Text Style Tags:#\n` +
+                        `Special style keywords can be included in a tag to indicate that the surrounded text should be styled in a particular way, such as shouting or whispering.\n` +
+                        `The game engine will style recognized tags appropriately. An empty tag can be used to reset the text style to default. All known styles:\n` +
+                        `shout - Text is emphasized with a bold, larger font and a bright color, conveying loudness or intensity.\n` +
+                        `whisper - Text is displayed in a smaller, italicized font with a muted color, suggesting secrecy or softness.\n` +
+                        `quake - Text shakes or vibrates on the screen, indicating fear, shock, or instability.\n` +
+                        `zalgo - Text is accented with archaic symbols and corrupted effects, often used for horror or arcana.\n` +
+                        `burning - Text appears to smolder with fiery colors and flickering effects, conveying heat or destruction.\n` +
+                        `tearful - Text is styled with a watery effect and soft colors, evoking sadness or emotional vulnerability.\n` +
+                        `spooky - Text bounces slowly in a wave patter, good for moments of suspense, eeriness, or simply awe.\n` +
+                        `glitch - Text is intermittently obscured by digital distortion and static effects, ideal for technological malfunctions or cyberpunk text.\n` +
+                        `[styleName]Text to be styled[]` +
                     `\n\n#End Tag:#\n` +
                         `An end tag should be used if the new chunk of script hits a conclusory moment, where continuing makes little sense.\n` +
                         `[END]` +
@@ -1255,8 +1278,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         .find(raw => turnTagRegex.test(raw));
                     const turnMatch = turnTag ? turnTagRegex.exec(turnTag) : null;
 
-                    // Remove all tags to get pure prose/dialogue content.
-                    trimmed = trimmed.replace(/\[([^\]]+)\]/g, '').trim();
+                    // Strip parsed/non-style tags but preserve text style tags and reset tags.
+                    trimmed = stripNonStyleTags(trimmed).trim();
 
                     const startsNewEntry = !!turnMatch;
 
@@ -1320,8 +1343,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     let speaker = parsedEntry.speaker || 'NARRATOR';
                     let message = parsedEntry.message || '';
                     
-                    // Remove any remaining tags
-                    message = message.replace(/\[([^\]]+)\]/g, '').trim();
+                    // Keep single-word style tags and empty reset tags in final text.
+                    message = stripNonStyleTags(message).trim();
                     
                     const entry: ScriptEntry = { speaker, message, speechUrl: '' };
                     const tagData = combinedTagData[index];

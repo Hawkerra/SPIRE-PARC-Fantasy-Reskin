@@ -71,11 +71,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
     const PARC_BACKGROUND_IMAGE = 'https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png';
 
-    const formatAmount = (amount?: number): string => {
-        const value = amount || 0;
-        return value > 0 ? `+${value}` : `${value}`;
-    };
-
     const getAccent = (outcome: Outcome) => {
         switch (outcome.type) {
             case 'actorStat':
@@ -413,14 +408,73 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             );
                             break;
                         case 'factionReputation':
+                            const faction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
+                            const representative = faction?.representativeId ? save.actors[faction.representativeId] : undefined;
+                            const oldReputation = Math.max(0, Math.min(10, faction?.reputation ?? 3));
+                            const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
+                            const isIncrease = newReputation > oldReputation;
+                            const isDecrease = newReputation < oldReputation;
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
                                     <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
                                         {resolveFactionName(outcome.factionId)}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
-                                        Reputation {formatAmount(outcome.amount)}
-                                    </Typography>
+                                    <Box sx={{
+                                        width: '100%',
+                                        height: '160px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        border: `2px solid ${accent.color}66`,
+                                        backgroundImage: `url(${faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                                        position: 'relative',
+                                        mb: 1.25
+                                    }}>
+                                        {representative && (
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                backgroundImage: `url(${representative.getEmotionImage(representative.getDefaultEmotion())})`,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: '50% 15%',
+                                                backgroundRepeat: 'no-repeat'
+                                            }} />
+                                        )}
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
+                                        }} />
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '8px 10px',
+                                            background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
+                                            borderRadius: '8px',
+                                            border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                                        }}
+                                    >
+                                        <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                            Reputation
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
+                                                {scoreToGrade(oldReputation)}
+                                            </span>
+                                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                                                {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
+                                            </Typography>
+                                            <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
+                                                {scoreToGrade(newReputation)}
+                                            </span>
+                                        </Box>
+                                    </Box>
                                 </Box>
                             );
                             break;
@@ -556,7 +610,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                                     textShadow: '0 2px 4px rgba(0,0,0,0.8)'
                                                 }}
                                             >
-                                                {outcome.type.replace(/([A-Z])/g, ' $1').trim()}
+                                                {cardTitle}
                                             </Typography>
                                         </Box>
                                         {content}
