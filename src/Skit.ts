@@ -60,6 +60,38 @@ export interface SkitData {
 
 }
 
+function splitScriptEntriesByLineBreaks(scriptEntries: ScriptEntry[]): ScriptEntry[] {
+    const splitEntries: ScriptEntry[] = [];
+
+    for (const entry of scriptEntries) {
+        const messageLines = (entry.message || '')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        if (messageLines.length <= 1) {
+            splitEntries.push(entry);
+            continue;
+        }
+
+        splitEntries.push({
+            ...entry,
+            message: messageLines[0]
+        });
+
+        for (let i = 1; i < messageLines.length; i++) {
+            splitEntries.push({
+                speaker: entry.speaker,
+                speakerId: entry.speakerId,
+                message: messageLines[i],
+                speechUrl: ''
+            });
+        }
+    }
+
+    return splitEntries;
+}
+
 export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing: boolean): string {
     const actor = stage.getSave().actors[skit.actorId || ''];
     const module = stage.getSave().layout.getModuleById(skit.moduleId || '');
@@ -1404,12 +1436,14 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     }
                 }
 
+                const normalizedScriptEntries = splitScriptEntriesByLineBreaks(scriptEntries);
+
 
                 // Run implied-outcome analysis in parallel with TTS generation.
-                const impliedOutcomesPromise = generateImpliedOutcomesForCurrentEnd(skit, scriptEntries, stage);
+                const impliedOutcomesPromise = generateImpliedOutcomesForCurrentEnd(skit, normalizedScriptEntries, stage);
 
                 // TTS for each entry's dialogue
-                const ttsPromises = scriptEntries.map(async (entry) => {
+                const ttsPromises = normalizedScriptEntries.map(async (entry) => {
                     const actor = findBestNameMatch(entry.speaker, Object.values(stage.getSave().actors));
                     // Only TTS if entry.speaker matches an actor from stage().getSave().actors and entry.message includes dialogue in quotes.
                     if (!actor || !entry.message.includes('"') || stage.getSave().disableTextToSpeech) {
@@ -1446,7 +1480,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
 
                 stage.pushMessage(text);
 
-                return scriptEntries;
+                return normalizedScriptEntries;
             }
         } catch (error) {
             console.error('Error generating skit script:', error);

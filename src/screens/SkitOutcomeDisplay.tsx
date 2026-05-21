@@ -301,7 +301,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         border: '2px solid rgba(0,255,136,0.4)',
                                         backgroundImage: group.actor ? `url(${group.actor.getEmotionImage(group.actor.getDefaultEmotion())})` : 'none',
                                         backgroundSize: 'cover',
-                                        backgroundPosition: '50% 15%',
+                                        backgroundPosition: '50% 10%',
                                         backgroundRepeat: 'no-repeat',
                                         filter: 'brightness(1.1)',
                                         boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
@@ -554,7 +554,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                             inset: 0,
                                             backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
                                             backgroundSize: 'cover',
-                                            backgroundPosition: '50% 15%',
+                                            backgroundPosition: '50% 10%',
                                             backgroundRepeat: 'no-repeat'
                                         }} />
                                         <Box sx={{
@@ -576,6 +576,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                         return null;
                     }
 
+                    const renderWithoutGenericWrapper = outcome.type === 'factionReputation';
+
                     return (
                         <div key={`${outcome.type}_${outcomeIndex}`}>
                             <motion.div
@@ -583,39 +585,43 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.55 + cardIndex * 0.14 }}
                             >
-                                <Paper
-                                    elevation={6}
-                                    sx={{
-                                        background: accent.background,
-                                        border: `2px solid ${accent.border}`,
-                                        borderRadius: 3,
-                                        p: 2,
-                                        backdropFilter: 'blur(8px)',
-                                        textAlign: 'center',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                >
-                                    <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 10, 20, 0.45)', zIndex: 0 }} />
-                                    <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                                            <OutcomeIcon sx={{ color: accent.color, fontSize: '1.8rem' }} />
-                                            <Typography
-                                                variant="h6"
-                                                sx={{
-                                                    fontWeight: 800,
-                                                    color: accent.color,
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '1px',
-                                                    textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-                                                }}
-                                            >
-                                                {cardTitle}
-                                            </Typography>
+                                {renderWithoutGenericWrapper ? (
+                                    content
+                                ) : (
+                                    <Paper
+                                        elevation={6}
+                                        sx={{
+                                            background: accent.background,
+                                            border: `2px solid ${accent.border}`,
+                                            borderRadius: 3,
+                                            p: 2,
+                                            backdropFilter: 'blur(8px)',
+                                            textAlign: 'center',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 10, 20, 0.45)', zIndex: 0 }} />
+                                        <Box sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+                                                <OutcomeIcon sx={{ color: accent.color, fontSize: '1.8rem' }} />
+                                                <Typography
+                                                    variant="h6"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: accent.color,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '1px',
+                                                        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                                                    }}
+                                                >
+                                                    {cardTitle}
+                                                </Typography>
+                                            </Box>
+                                            {content}
                                         </Box>
-                                        {content}
-                                    </Box>
-                                </Paper>
+                                    </Paper>
+                                )}
                             </motion.div>
                         </div>
                     );
