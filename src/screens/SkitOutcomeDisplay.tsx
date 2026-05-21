@@ -410,15 +410,13 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                         case 'factionReputation':
                             const faction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
                             const representative = faction?.representativeId ? save.actors[faction.representativeId] : undefined;
+                            const factionName = resolveFactionName(outcome.factionId);
                             const oldReputation = Math.max(0, Math.min(10, faction?.reputation ?? 3));
                             const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
                             const isIncrease = newReputation > oldReputation;
                             const isDecrease = newReputation < oldReputation;
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
-                                        {resolveFactionName(outcome.factionId)}
-                                    </Typography>
                                     <Box sx={{
                                         width: '100%',
                                         height: '160px',
@@ -448,6 +446,9 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                             inset: 0,
                                             background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
                                         }} />
+                                    </Box>
+                                    <Box sx={{ mb: 1.25 }}>
+                                        <Nameplate name={factionName} size="large" layout="inline" />
                                     </Box>
                                     <Box
                                         sx={{
