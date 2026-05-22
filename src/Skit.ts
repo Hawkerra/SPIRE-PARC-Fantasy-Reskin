@@ -1453,6 +1453,8 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     let transcript = entry.message.split('"').filter((_, i) => i % 2 === 1).join('.........').trim();
                     // Strip asterisks or other markdown-like emphasis characters
                     transcript = transcript.replace(/[\*_~`]+/g, '');
+                    // Strip tagged content like [shout], [whisper], etc.
+                    transcript = transcript.replace(/\[[^\]]+\]/g, '').trim();
                     try {
                         const ttsResponse = await stage.generator.speak({
                             transcript: transcript,
