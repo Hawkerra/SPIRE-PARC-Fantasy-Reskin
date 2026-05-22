@@ -218,7 +218,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         }
         const visibleScriptEntries = skit.script.slice(0, Math.min((skit.currentIndex || 0) + 1, skit.script.length));
         const isOnCurrentFinalEntry = skit.script.length > 0 && (skit.currentIndex || 0) >= skit.script.length - 1;
-        const visibleEntries = isOnCurrentFinalEntry && (skit.outcomes?.length || 0) > 0
+        const visibleEntries = isOnCurrentFinalEntry && !isLoading && (skit.outcomes?.length || 0) > 0
             ? [...visibleScriptEntries, { speaker: 'NARRATOR', message: '', speechUrl: '', outcomes: skit.outcomes }]
             : visibleScriptEntries;
 
@@ -227,7 +227,7 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         setAccumulatedOutcomes(outcomes);
         console.log('Updating accumualted outcomes:', outcomes);
 
-    }, [skit, skit.currentIndex]);
+    }, [skit, skit.currentIndex, isLoading]);
 
     // Handle Escape key to open menu
     useEffect(() => {
@@ -296,12 +296,12 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
                 </IconButton>
                 <IconButton
                     onClick={handleClose}
-                    onMouseEnter={() => setTooltip((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)'), shouldHighlightCloseButton ? Close : Warning)}
+                    onMouseEnter={() => setTooltip(isLoading ? 'Cannot close while content is generating' : ((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)')), shouldHighlightCloseButton ? Close : Warning)}
                     onMouseLeave={() => clearTooltip()}
                     disabled={isLoading || skit.script.length < 3}
                     sx={{
                         ...cornerButtonSx,
-                        ...(shouldHighlightCloseButton ? {
+                        ...(!isLoading && shouldHighlightCloseButton ? {
                             color: colors.accent.warning,
                             backgroundColor: 'rgba(255, 170, 0, 0.12)',
                             animation: 'closeButtonPulse 1.6s ease-in-out infinite',
