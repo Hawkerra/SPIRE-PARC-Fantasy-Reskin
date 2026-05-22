@@ -10,7 +10,9 @@ import ModuleCard from '../components/ModuleCard';
 import FactionCard from '../components/FactionCard';
 import { TurnIndicator as SharedTurnIndicator } from '../components/UIComponents';
 import { useTooltip } from '../contexts/TooltipContext';
+import { ContentManagementScreen } from './ContentManagementScreen';
 import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete } from '@mui/icons-material';
+import { EditNote } from '@mui/icons-material';
 import { SkitType } from '../Skit';
 import { generateActorDecor, getRole, isHologram } from '../actors/Actor';
 import { scoreToGrade, assignActorToRole } from '../utils';
@@ -47,6 +49,7 @@ interface StationScreenProps {
 export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isVerticalLayout}) => {
     const [expandedMenu, setExpandedMenu] = React.useState<string | null>('patients');
     const [previousExpandedMenu, setPreviousExpandedMenu] = React.useState<string | null>(null);
+    const [showContentManagement, setShowContentManagement] = React.useState(false);
     const [day, setDay] = React.useState<number>(stage().getSave().day);
     const [turn, setTurn] = React.useState<number>(stage().getSave().turn);
 
@@ -419,14 +422,14 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
     // Handle Escape key to open menu
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && !showContentManagement) {
                 setScreenType(ScreenType.MENU);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [setScreenType]);
+    }, [setScreenType, showContentManagement]);
 
     // Check if drag position is over delete zone
     React.useEffect(() => {
@@ -1057,27 +1060,56 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                     </div>
 
                     {/* Menu Button - Right Column */}
-                    <motion.button
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => {setScreenType(ScreenType.MENU)}}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '0',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#00ff88',
-                            minWidth: '40px',
-                            marginLeft: '0.8vh',
-                        }}
-                        onMouseEnter={() => setTooltip('Open Menu', Menu)}
-                        onMouseLeave={() => clearTooltip()}
-                    >
-                        <Menu style={{ fontSize: '28px' }} />
-                    </motion.button>
+                    {/* Top-right icon buttons */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        gap: '0.6vh',
+                        minWidth: '40px',
+                        marginLeft: '0.8vh',
+                    }}>
+                        <motion.button
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {setScreenType(ScreenType.MENU)}}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                padding: '0',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: '#00ff88',
+                            }}
+                            onMouseEnter={() => setTooltip('Open Menu', Menu)}
+                            onMouseLeave={() => clearTooltip()}
+                        >
+                            <Menu style={{ fontSize: '28px' }} />
+                        </motion.button>
+
+                        <motion.button
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setShowContentManagement(true)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                padding: '0',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: '#00ff88',
+                            }}
+                            onMouseEnter={() => setTooltip('Content Management', EditNote)}
+                            onMouseLeave={() => clearTooltip()}
+                        >
+                            <EditNote style={{ fontSize: '28px' }} />
+                        </motion.button>
+                    </div>
                 </motion.div>
                 
                 {/* Grid wrapper - takes remaining space */}
@@ -1887,6 +1919,13 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {showContentManagement && (
+                <ContentManagementScreen
+                    stage={stage}
+                    onClose={() => setShowContentManagement(false)}
+                />
+            )}
         </div>
     );
 }

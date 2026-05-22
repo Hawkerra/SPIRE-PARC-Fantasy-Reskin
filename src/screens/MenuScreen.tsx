@@ -174,15 +174,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
             enabled: !disableAllButtons,
             tooltip: disableAllButtons ? 'Currently unavailable' : 'Adjust game settings and preferences',
             icon: Settings
-        },
-        ...(saveExists() && stage().isAuthenticated ? [{
-            key: 'manage-content',
-            label: 'Manage Content',
-            onClick: () => setShowContentManagement(true),
-            enabled: !disableAllButtons && stage().isAuthenticated,
-            tooltip: disableAllButtons ? 'Currently unavailable' : 'View and edit generative content',
-            icon: EditNote,
-        }] : []),
+        }
     ];
 
     return (
@@ -286,7 +278,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     }}
                 >
                     {stage().isAuthenticated 
-                        ? 'v2026.05.19 - I am still icing over some skit and outcome rewrites.'
+                        ? 'v2026.05.21 - I am still ironing out some generation rewrites, but most features should be working again.'
                         : (
                             <>
                                 This is an unofficial bot; for the latest version for PARC, visit:{' '}
