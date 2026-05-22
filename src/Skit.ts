@@ -1051,7 +1051,7 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
     const summaryPrompt = buildSkitPrompt(skit, stage, 0,
             buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
-            buildPromptSegment('Instruction', `Analyze the preceding scene script output a "[SUMMARY: ...]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
+            buildPromptSegment('Instruction', `Analyze the preceding scene script output a "[SUMMARY: <textSummary>]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
         buildPromptSegment('Example Response',
             `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`);
      let endResponse = await stage.makeText({
@@ -1659,16 +1659,18 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
 
 export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Actor): Promise<void> {
     const analysisPrompt = buildSkitPrompt(skit, stage, 0,
-        `Scene Script for Analysis:\n${buildScriptLog(skit, [], stage)}` +
-        `${actor.name}'s Current Character Arc:\n${actor.characterArc || 'No established character arc.'}` +
-        `\n\nInstruction:\nAnalyze the preceding scene script ${actor.name}'s character arc, then output a revised character arc paragraph that reflects any significant developments from the latest scene script. ` +
-        `The character arc should be a concise summary of the character's growth, challenges, and changes experienced so far in the PARC. ` +
-        `Focus on key emotional beats, relationships, and personal growth that have occurred up to this point. ` +
-        `The output should be a single paragraph, maintaining the same tone and style as the existing character arc.` +
-        `If there are no significant developments, simply repeat the existing character arc without changes. ` +
-        `\n\nFull Examples:\n` +
-        `Revised Character Arc: John Smith has yet to find their footing in the PARC; they can't seem to make friends with the other patients—beyond the StationAide—, and the director hasn't proven trustworthy.\n[END]\n\n` +
-        `Revised Character Arc: Jane Doe has started to open up to others, forming tentative friendships. She feels a bit out of her depth in her role as Custodian, but appreciates the trust the director has placed in her and hopes to prove that faith justified.\n[END]\n`);
+        buildPromptSegment(`Scene Script for Analysis`, `${buildScriptLog(skit, [], stage)}`) +
+        buildPromptSegment(`${actor.name}'s Current Character Arc`, `${actor.characterArc || 'No established character arc.'}`) +
+        buildPromptSegment(`Instruction`, 
+            `Analyze the preceding scene script and ${actor.name}'s character arc, then output a revised character arc paragraph that reflects any significant developments from the latest scene script. ` +
+            `The character arc should be a concise summary of the character's growth, challenges, and changes experienced so far on the PARC. ` +
+            `Focus on key emotional beats, relationships, and personal growth that have occurred up to this point. ` +
+            `The output should be a single paragraph, maintaining the same tone and style as the existing character arc.` +
+            `If there are no significant developments, simply repeat the existing character arc without changes. `) +
+        buildPromptSegment(`Full Examples`, 
+            `Revised Character Arc: John Smith has yet to find their footing in the PARC; they can't seem to make friends with the other patients—beyond the StationAide—, and the director hasn't proven trustworthy.\n[END]\n\n` +
+            `Revised Character Arc: Jane Doe has started to open up to others, forming tentative friendships. She feels a bit out of her depth in her role as Custodian, but appreciates the trust the director has placed in her and hopes to prove that faith justified.\n[END]\n`)
+        );
     
     const requestAnalysis = await stage.makeText({
         prompt: analysisPrompt,
@@ -1678,11 +1680,7 @@ export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Ac
         stop: ['[END]']
     });
     if (requestAnalysis) {
-        // trim may have a System: and or "Revised Character Arc" or similar prefix; remove these.
         let analysisText = requestAnalysis.trim();
-        if (analysisText.startsWith("System:")) {
-            analysisText = analysisText.substring("System:".length).trim();
-        }
         // Some prefix ending with "Arc:" may be present; remove it.
         const arcPrefixMatch = analysisText.match(/^(.*Arc:)/i);
         if (arcPrefixMatch) {
