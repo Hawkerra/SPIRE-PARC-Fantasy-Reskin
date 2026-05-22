@@ -203,7 +203,9 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
+        setIsLoading(true);
         const nextEntries = await generateSkitScript(skitArg, stage());
+        setIsLoading(false);
         skitArg.script.push(...nextEntries);
         // Update skit to match skitArg, which was updated in the generation.
         skit.outcomes = skitArg.outcomes;
@@ -229,7 +231,6 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         const outcomes = accumulateOutcomes(visibleEntries) || [];
         console.log('Skit outcomes:', skit.outcomes);
         setAccumulatedOutcomes(outcomes);
-        console.log('Updating accumualted outcomes:', outcomes);
 
     }, [skit, skit.currentIndex, isLoading]);
 
