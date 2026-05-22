@@ -183,6 +183,10 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
         setSkitRevision(prev => prev + 1);
     }, [stage]);
 
+    useEffect(() => {
+        setSkitRevision(prev => prev + 1);
+    }, [isLoading]);
+
     const handleClose = useCallback(() => {
         const clampedCurrentIndex = Math.min(Math.max(skit.currentIndex || 0, 0), Math.max(skit.script.length - 1, 0));
         const endedEarly = clampedCurrentIndex < skit.script.length - 1;
