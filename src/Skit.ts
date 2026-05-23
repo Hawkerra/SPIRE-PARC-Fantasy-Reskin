@@ -1131,14 +1131,19 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     `\n\n#Text Style Tags:#\n` +
                         `Special style keywords can be included in a tag to indicate that the surrounded text should be styled in a particular way, such as shouting or whispering.\n` +
                         `The game engine will style recognized tags appropriately. An empty tag can be used to reset the text style to default. All known styles:\n` +
-                        `shout - Text is emphasized with a bold, larger font and a bright color, conveying loudness or intensity.\n` +
-                        `whisper - Text is displayed in a smaller, italicized font with a muted color, suggesting secrecy or softness.\n` +
-                        `quake - Text shakes or vibrates on the screen, indicating fear, shock, or instability.\n` +
-                        `zalgo - Text is accented with archaic symbols and corrupted effects, often used for horror or arcana.\n` +
-                        `burning - Text appears to smolder with fiery colors and flickering effects, conveying heat or destruction.\n` +
-                        `tearful - Text is styled with a watery effect and soft colors, evoking sadness or emotional vulnerability.\n` +
-                        `spooky - Text bounces slowly in a wave patter, good for moments of suspense, eeriness, or simply awe.\n` +
-                        `glitch - Text is intermittently obscured by digital distortion and static effects, ideal for technological malfunctions or cyberpunk text.\n` +
+                        `arcane - Adorned with mystical symbols and a shimmering effect, ideal for magical or mysterious dialogue.\n` +
+                        `burn - Smoldering, flickering effect, conveying heat or destruction.\n` +
+                        `flutter - A light, airy effect with gentle movement, perfect for whimsical or romantic moments.\n` +
+                        `glitch - Digital distortion and static effects, ideal for technological malfunctions or cyberpunk text.\n` +
+                        `hologram - A glowing scanline effect for AI or digital communications.\n` +
+                        `quake - Shaking text, indicating fear, danger, shock, or instability.\n` +
+                        `shine - A radiant glow and sparkling effect, perfect for moments of awe, beauty, or revelation.\n` +
+                        `shout - A bold, larger font and a bright color, conveying loudness or intensity.\n` +
+                        `sigh - A soft, fading effect, ideal for sighs, tiredness, or resignation.\n` +
+                        `spooky - Wavy, bouncy text, ideal for moments of suspense, eeriness, or simply awe.\n` +
+                        `tears - A watery effect and soft colors, evoking sadness or emotional vulnerability.\n` +
+                        `whisper - A smaller, italicized font with a muted color, suggesting secrecy or softness.\n` +
+                        `zalgo - Accented with archaic symbols and corrupted effects, often used for horror or demonic themes.\n` +
                         `[styleName]Text to be styled[]` +
                     `\n\n#End Tag:#\n` +
                         `An end tag should be used if the new chunk of script hits a conclusory moment, where continuing makes little sense.\n` +
