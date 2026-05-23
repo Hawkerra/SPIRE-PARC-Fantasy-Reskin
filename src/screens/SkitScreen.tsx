@@ -30,7 +30,7 @@ import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
 import { AnimatePresence, motion } from 'framer-motion';
 
-interface SkitScreenBetaProps {
+interface SkitScreenProps {
     stage: () => Stage;
     setScreenType: (type: ScreenType) => void;
     isVerticalLayout: boolean;
@@ -143,7 +143,7 @@ const clampHexColor = (color: string, minBrightness: number = 0.3, maxBrightness
     return `#${dimmedRed}${dimmedGreen}${dimmedBlue}${alpha}`;
 };
 
-export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, isVerticalLayout }) => {
+export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVerticalLayout }) => {
     const { setTooltip, clearTooltip } = useTooltip();
     const [skit, setSkit] = React.useState<SkitData>(stage().getSave().currentSkit as SkitData);
     const [, setSkitRevision] = React.useState(0);
@@ -465,4 +465,4 @@ export const SkitScreenBeta: FC<SkitScreenBetaProps> = ({ stage, setScreenType, 
 
 }
 
-export default SkitScreenBeta;
+export default SkitScreen;
