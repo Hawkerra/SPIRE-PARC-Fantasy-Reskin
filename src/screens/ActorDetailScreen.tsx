@@ -381,6 +381,23 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         return false;
     };
 
+    const persistOrGenerateEmotionPrompt = async (emotion: Emotion, promptDraft: string): Promise<boolean> => {
+        const trimmedPrompt = promptDraft.trim();
+        if (trimmedPrompt) {
+            return persistEmotionPrompt(emotion, trimmedPrompt);
+        }
+
+        const generatedPrompt = (await generateOutfitEmotionPrompt(actor, emotion, stage(), selectedOutfitId)).trim();
+        if (!generatedPrompt) {
+            stage().showPriorityMessage('Failed to generate an emotion prompt. Please try again.');
+            return false;
+        }
+
+        syncEditedOutfitsFromActor();
+        setEmotionPromptDraft(generatedPrompt);
+        return true;
+    };
+
     const handleOpenImageDialog = (target: ImageTarget) => {
         setImageDialog({ open: true, target });
         if (target === 'base') {
@@ -1740,13 +1757,13 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                 </div>
                             )}
                             <Button
-                                onClick={() => {
+                                onClick={async () => {
                                     const target = imageDialog.target;
                                     if (!target) return;
                                     if (target === 'base') {
                                         handleRegenerateBase(baseRegenSource);
                                     } else {
-                                        if (!persistEmotionPrompt(target, emotionPromptDraft)) {
+                                        if (!await persistOrGenerateEmotionPrompt(target, emotionPromptDraft)) {
                                             return;
                                         }
                                         handleRegenerateEmotion(target);

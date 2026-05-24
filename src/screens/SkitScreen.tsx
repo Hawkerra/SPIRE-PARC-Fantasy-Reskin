@@ -445,6 +445,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                                         outcomes={accumulatedOutcomes}
                                         stage={stage()}
                                         layout={stage().getSave().layout}
+                                        inputText={skit ? skit.script[skit.currentIndex || 0]?.message || '' : ''}
                                     />
                                 )}
                             </AnimatePresence>
