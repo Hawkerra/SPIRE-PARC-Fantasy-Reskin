@@ -562,6 +562,7 @@ export async function generateBaseActorImage(
 ): Promise<void> {
     const targetOutfitId = outfitId || actor.outfitId;
     console.log(`Populating images for actor ${actor.name} (ID: ${actor.id})`);
+    console.log(`Force regeneration: ${force}, From avatar: ${fromAvatar}, Source image URL: ${sourceImageUrl}`);
     // If the actor has no neutral emotion image in their emotion pack, generate one based on their description or from the existing avatar image
     if (!actor.getEmotionImageUrl('neutral', targetOutfitId) || force) {
         console.log(`Generating neutral emotion image for actor ${actor.name}`);
@@ -569,6 +570,8 @@ export async function generateBaseActorImage(
         if (force) {
             actor.setEmotionPack({}, targetOutfitId);
             delete stage.imageGenerationPromises[`actor/${actor.id}`];
+        } else if (Object.keys(stage.imageGenerationPromises).includes(`actor/${actor.id}`)) {
+            return; // Don't generate if there's already a generation in progress for this actor, unless we're forcing regeneration
         }
         let imageUrl = '';
         let baseSourceImage = sourceImageUrl || actor.avatarImageUrl || '';
@@ -678,7 +681,7 @@ export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion
         return existingGeneration as Promise<string>;
     }
 
-    if (stage.betaMode) {
+    /*if (stage.betaMode) {
         const promptRequest = stage.generator.textGen({
                 prompt: buildEmotionPromptGenerationInstruction(actor, outfit, emotion),
                 stop: ['#END'],
@@ -697,7 +700,7 @@ export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion
 
             stage.imageGenerationPromises[generationKey] = promptRequest;
             return promptRequest;
-    }
+    }*/
 
     // Temporary.
     return EMOTION_PROMPTS[emotion];
