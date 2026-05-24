@@ -3,6 +3,7 @@ import { v4 as generateUuid } from 'uuid';
 import Actor, { generateBaseActorImage, loadReserveActor } from "../actors/Actor";
 import { AspectRatio } from "@chub-ai/stages-ts";
 import { Module, MODULE_TEMPLATES, ModuleIntrinsic, registerFactionModule } from "../Module";
+import { buildPromptSegment } from "../Skit";
 
 class Faction {
     id: string;
@@ -130,35 +131,34 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
     // Generate faction distillation using AI
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
-            `\n\nBackground: This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-            `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-            `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
-            `Some roles are above board, while others may involve morally ambiguous or covert activities; many may even be illicit, sexual, or compulsory (essentially human trafficking). ` +
-            `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. ` +
-            `\n\nNarrative Tone:\n${stage.getSave().tone || stage.TONE_MAP['Original']}` +
-            (Object.values(stage.getSave().factions).length > 0 ? `\n\nEstablished Factions:\n${Object.values(stage.getSave().factions).map(faction => `- ${faction.name}: ${faction.description}. Representative: ${stage.getSave().actors[faction.representativeId || '']}`).join('\n')}` : '') +
-            `\n\nThe Original Details below describe a character, faction, organization, or setting (${data.name}) from another universe. ` +
-            `This request and response must digest and distill these details into a new faction that suits the game's narrative scenario, ` +
-            `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied sci-fi setting. ` +
-            (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
-            `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from and lean into the dominant themes found in the details. ` +
-            `\n\nOriginal Details about ${data.name}:\n${data.personality}` +
-            `\n\nInstructions: After carefully considering this description, generate a concise breakdown for a faction based upon these details in the following strict format:\n` +
-            `NAME: The faction's simple name\n` +
-            `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
-            `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
-            `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
-            `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
-            `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
-            `#END#\n\n` +
-            `Example Response:\n` +
-            `NAME: The Stellar Concord\n` +
-            `DESCRIPTION: A diplomatic federation of peaceful worlds dedicated to preserving knowledge and fostering cooperation across the galaxy. They value education, cultural exchange, and peaceful resolution of conflicts.\n` +
-            `ROLES: Ambassador, Researcher, Bodyguard, Negotiator\n` +
-            `VISUALSTYLE: Clean, elegant architecture with flowing curves and abundant natural light. Members wear formal robes in soft pastels with subtle geometric patterns. Spaces feature living plants and water features.\n` +
-            `COLOR: #2a4a7c\n` +
-            `FONT: Georgia, serif\n` +
-            `#END#`,
+            buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
+                `Some roles are above board, while others may involve morally ambiguous or covert activities; many may even be illicit, sexual, or compulsory (essentially human trafficking). ` +
+                `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
+            buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
+            (Object.values(stage.getSave().factions).length > 0 ? buildPromptSegment(`Established Factions`, `${Object.values(stage.getSave().factions).map(faction => `- ${faction.name}: ${faction.description}. Representative: ${stage.getSave().actors[faction.representativeId || '']}`).join('\n')}`) : '') +
+            buildPromptSegment(`Original Details`, `The Original Details below describe a character, faction, organization, or setting (${data.name}) from another universe. ` +
+                `This request and response must digest and distill these details into a new faction that suits the game's narrative scenario, ` +
+                `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied sci-fi setting. ` +
+                (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
+                `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from the dominant themes found in the details and lean into some of the quirks to create something truly unique. `) +
+            buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
+            buildPromptSegment(`Instructions`, `After carefully considering this description, generate a concise breakdown for a faction based upon these details in the following strict format:\n` +
+                `NAME: The faction's simple name\n` +
+                `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
+                `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
+                `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
+                `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
+                `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
+                `#END#`) +
+            buildPromptSegment(`Example Response`, `NAME: The Stellar Concord\n` +
+                `DESCRIPTION: A diplomatic federation of peaceful worlds dedicated to preserving knowledge and fostering cooperation across the galaxy. They value education, cultural exchange, and peaceful resolution of conflicts.\n` +
+                `ROLES: Ambassador, Researcher, Bodyguard, Negotiator\n` +
+                `VISUALSTYLE: Clean, elegant architecture with flowing curves and abundant natural light. Members wear formal robes in soft pastels with subtle geometric patterns. Spaces feature living plants and water features.\n` +
+                `COLOR: #2a4a7c\n` +
+                `FONT: Georgia, serif\n` +
+                `#END#`),
         stop: ['#END'],
         include_history: true,
         max_tokens: 600,
@@ -269,31 +269,28 @@ export async function generateFactionModule(faction: Faction, stage: Stage): Pro
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content. The goal is to define a faction-themed module/room for a space station management game. ` +
             // Provide existing module names/roles to avoid overly similar suggestions
-            `\n\nExisting Modules:\n${Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')}` +
-            `\n\nNew Module Faction: ${faction.name}\n` +
-            `Faction Description: ${faction.description}\n` +
-            `Faction Aesthetic: ${faction.visualStyle}\n\n` +
-            `Background: This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-            `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-            `with the goal of placing these characters into a new role in this universe.` +
-            `\n\nNarrative Tone:\n${stage.getSave().tone || stage.TONE_MAP['Original']}` +
-            `\n\nModules:\nModules are rooms and facilities that make up the station; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
-            `Each of the game's factions can offer the player a unique module to unlock for their station, generally following the themes of that faction, while avoiding content that is too similar to the Existing Modules. ` +
-            `Every module similarly offers a crew-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.\n\n` +
-            `Instructions: After carefully considering this faction's description, generate a formatted definition for a distinct and inspired station module that reflects the faction's aesthetic and values in the following strict format:\n` +
-            `MODULE NAME: The module's simple name (1-2 words)\n` +
-            `PURPOSE: A brief summary of the module's function and role on the station, as well as how that role might affect the station's patients or inform skits at this location.\n` +
-            `DESCRIPTION: A vivid visual description of the module's appearance, to be fed into image generation.\n` +
-            `ROLE NAME: The simple title of the role associated with this module (1-2 words).\n` +
-            `ROLE DESCRIPTION: A brief summary of the responsibilities and duties associated with this role.\n` +
-            `#END#\n\n` +
-            `Example Response:\n` +
-            `MODULE NAME: Cryo Bank\n` +
-            `PURPOSE: The cryo bank is where patients are placed in cryogenic stasis for long-term preservation. Scenes in this room often involve the ethical dilemmas of cryo-sleep, emergencies during stasis, or interactions with newly awakened patients.\n` +
-            `DESCRIPTION: A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.\n` +
-            `ROLE NAME: Keeper\n` +
-            `ROLE DESCRIPTION: Responsible for managing the cryo bank, overseeing patient stasis, and ensuring the proper functioning of cryogenic equipment.\n` +
-            `#END#`,
+            buildPromptSegment(`Existing Modules`,`${Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')}`) +
+            buildPromptSegment(`New Module Faction`,`${faction.name}\n${faction.description}\n${faction.visualStyle}`) +
+            buildPromptSegment(`Background`,`This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this universe.`) +
+            buildPromptSegment(`Narrative Tone`,`${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
+            buildPromptSegment(`Modules`,`Modules are rooms and facilities that make up the station; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
+                `Each of the game's factions can offer the player a unique module to unlock for their station, generally following the themes of that faction, while avoiding content that is too similar to the Existing Modules. ` +
+                `Every module similarly offers a crew-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.\n\n`) +
+            buildPromptSegment(`Instructions`,`After carefully considering this faction's description, generate a formatted definition for a distinct and inspired station module that reflects the faction's aesthetic and values in the following strict format:\n` +
+                `MODULE NAME: The module's simple name (1-2 words)\n` +
+                `PURPOSE: A brief summary of the module's function and role on the station, as well as how that role might affect the station's patients or inform skits at this location.\n` +
+                `DESCRIPTION: A vivid visual description of the module's appearance, to be fed into image generation.\n` +
+                `ROLE NAME: The simple title of the role associated with this module (1-2 words).\n` +
+                `ROLE DESCRIPTION: A brief summary of the responsibilities and duties associated with this role.\n` +
+                `#END#\n\n`) +
+            buildPromptSegment(`Example Response`,`MODULE NAME: Cryo Bank\n` +
+                `PURPOSE: The cryo bank is where patients are placed in cryogenic stasis for long-term preservation. Scenes in this room often involve the ethical dilemmas of cryo-sleep, emergencies during stasis, or interactions with newly awakened patients.\n` +
+                `DESCRIPTION: A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.\n` +
+                `ROLE NAME: Keeper\n` +
+                `ROLE DESCRIPTION: Responsible for managing the cryo bank, overseeing patient stasis, and ensuring the proper functioning of cryogenic equipment.\n` +
+                `#END#`),
         stop: ['#END'],
         include_history: true,
         max_tokens: 500,

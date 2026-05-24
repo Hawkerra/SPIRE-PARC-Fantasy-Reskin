@@ -7,6 +7,7 @@ import { FlashOn, Forum,
     FitnessCenter, Construction, Lightbulb, 
     Whatshot, SentimentVerySatisfied, Handshake 
 } from '@mui/icons-material';
+import { buildPromptSegment } from "../Skit";
 
 // Core character stats as an enum so other parts of the app can reference them safely
 // Using single-syllable words, each starting with a different letter
@@ -385,59 +386,59 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
     // Take this data and use text generation to get an updated distillation of this character, including a physical description.
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
-            `\n\nBackground: This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-            `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-            `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
-            `Some roles are above board, while others may involve morally ambiguous or covert activities; some may even be illicit or compulsary. ` +
-            `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. ` +
-            `\n\nNarrative Tone:\n${stage.getSave().tone || stage.TONE_MAP['Original']}` +
-            `\n\nThe Original Details below describe a character or scenario (${data.name}) from another universe. This request and response must digest and distill these details to suit the game's narrative scenario, ` +
-            `crafting a character who has been rematerialized into this universe through an "echo chamber," their essence reconstituted from the whispers of a black hole. ` +
-            `As a result of this process, many of this character's traits may have changed, including the loss of most supernatural or arcane abilities, which functioned only within the rules of their former universe. ` +
-            `Their new description and profile should reflect these possible changes and their impact.\n\n` +
-            `The provided Original Details reference 'Individual X' who no longer exists in this timeline; ` +
-            `if Individual X remains relevant to this character, Individual X should be replaced with an appropriate name in the distillation.\n\n` +
-            `In addition to the simple display name, physical description, and personality profile, ` +
-            `score the character on a scale of 1-10 for the following traits: BRAWN, SKILL, NERVE, WITS, CHARM, LUST, JOY, and TRUST.\n` +
-            `Bear in mind the character's current, diminished state—as a newly reconstituted and relatively powerless individual—and not their original potential when scoring these traits (but omit your reasons from the response structure); ` +
-            `some characters may not respond well to being essentially resurrected into a new timeline, losing much of what they once had. Others may be grateful for a new beginning.\n\n` +
-            `Original Details about ${data.name}:\n ${data.personality}\n\n` +
-            `Available Voices:\n` +
-            Object.entries(VOICE_MAP).map(([voiceId, voiceDesc]) => '  - ' + voiceId + ': ' + voiceDesc).join('\n') +
-            `Instructions: After carefully considering this description and the rules provided, generate a concise breakdown for a character based upon these details in the following strict format:\n` +
-            `NAME: Their simple name\n` +
-            `DESCRIPTION: A vivid description of the character's physical appearance, attire, and any distinguishing features.\n` +
-            `OUTFIT: A one- to two-word name for the character's current outfit that matches the description.\n` +
-            `PROFILE: A brief summary of the character's key personality traits and behaviors.\n` +
-            `STYLE: A concise description of the character's sense of overall style, mood, interests, or aesthetic, to be applied to the way they decorate their space.\n` +
-            `VOICE: Output the specific voice ID from the Available Voices section that best matches the character's apparent gender (foremost) and personality.\n` +
-            `COLOR: A hex color that reflects the character's theme or mood—use darker or richer colors that will contrast with white text.\n` +
-            `FONT: A font stack, or font family that reflects the character's personality; this will be embedded in a CSS font-family property.\n` +
-            Object.entries(Stat).map(([key, value]) => {
-                return `${key.toUpperCase()}: 1-10 scoring of ${getStatDescription(value).toLowerCase()}\n`;
-            }).join('\n') +
-            `#END#\n\n` +
-            `Example Response:\n` +
-            `NAME: Jane Doe\n` +
-            `DESCRIPTION: A tall, athletic woman with short, dark hair and piercing blue eyes. She wears a simple, utilitarian outfit made from durable materials.\n` +
-            `OUTFIT: Utility Gear\n` +
-            `PROFILE: Jane is confident and determined, with a strong sense of justice. She is quick to anger but also quick to forgive. She is fiercely independent and will do whatever it takes to protect those she cares about.\n` +
-            `STYLE: Practical and no-nonsense, favoring functionality over fashion. Prefers muted colors and simple designs that allow freedom and comfort.\n` +
-            `VOICE: 03a438b7-ebfa-4f72-9061-f086d8f1fca6\n` +
-            `COLOR: #333333\n` +
-            `FONT: Calibri, sans-serif\n` +
-            `BRAWN: 5\n` +
-            `SKILL: 5\n` +
-            `NERVE: 7\n` +
-            `WITS: 6\n` +
-            `CHARM: 4\n` +
-            `LUST: 2\n` +
-            `JOY: 3\n` +
-            `TRUST: 2\n` +
-            `#END#` +
+            buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
+                `Some roles are above board, while others may involve morally ambiguous or covert activities; some may even be illicit or compulsary. ` +
+                `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
+            buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
+            buildPromptSegment(`Original Details`, `The Original Details below describe a character or scenario (${data.name}) from another universe. This request and response must digest and distill these details to suit the game's narrative scenario, ` +
+                `crafting a character who has been rematerialized into this universe through an "echo chamber," their essence reconstituted from the whispers of a black hole. ` +
+                `As a result of this process, many of this character's traits may have changed, including the loss of most supernatural or arcane abilities, which functioned only within the rules of their former universe. ` +
+                `Their new description and profile should reflect these possible changes and their impact.\n\n` +
+                `The provided Original Details reference 'Individual X' who no longer exists in this timeline; ` +
+                `if Individual X remains relevant to this character, Individual X should be replaced with an appropriate name in the distillation.\n\n` +
+                `In addition to the simple display name, physical description, and personality profile, ` +
+                `score the character on a scale of 1-10 for the following traits: BRAWN, SKILL, NERVE, WITS, CHARM, LUST, JOY, and TRUST.\n` +
+                `Bear in mind the character's current, diminished state—as a newly reconstituted and relatively powerless individual—and not their original potential when scoring these traits (but omit your reasons from the response structure); ` +
+                `some characters may not respond well to being essentially resurrected into a new timeline, losing much of what they once had. Others may be grateful for a new beginning.\n\n` +
+            buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
+            buildPromptSegment(`Available Voices`, `${Object.entries(VOICE_MAP).map(([voiceId, voiceDesc]) => '  - ' + voiceId + ': ' + voiceDesc).join('\n')}`) +
+            buildPromptSegment(`Instructions`, `After carefully considering this description and the rules provided, generate a concise breakdown for a character based upon these details in the following strict format:\n` +
+                `NAME: Their simple name\n` +
+                `DESCRIPTION: A vivid description of the character's physical appearance, attire, and any distinguishing features.\n` +
+                `OUTFIT: A one- to two-word name for the character's current outfit that matches the description.\n` +
+                `PROFILE: A brief summary of the character's key personality traits and behaviors.\n` +
+                `STYLE: A concise description of the character's sense of overall style, mood, interests, or aesthetic, to be applied to the way they decorate their space.\n` +
+                `VOICE: Output the specific voice ID from the Available Voices section that best matches the character's apparent gender (foremost) and personality.\n` +
+                `COLOR: A hex color that reflects the character's theme or mood—use darker or richer colors that will contrast with white text.\n` +
+                `FONT: A font stack, or font family that reflects the character's personality; this will be embedded in a CSS font-family property.\n` +
+                Object.entries(Stat).map(([key, value]) => {
+                    return `${key.toUpperCase()}: 1-10 scoring of ${getStatDescription(value).toLowerCase()}\n`;
+                }).join('\n') +
+                `#END#`) +
+            buildPromptSegment(`Example Response`, 
+                `NAME: Jane Doe\n` +
+                `DESCRIPTION: A tall, athletic woman with short, dark hair and piercing blue eyes. She wears a simple, utilitarian outfit made from durable materials.\n` +
+                `OUTFIT: Utility Gear\n` +
+                `PROFILE: Jane is confident and determined, with a strong sense of justice. She is quick to anger but also quick to forgive. She is fiercely independent and will do whatever it takes to protect those she cares about.\n` +
+                `STYLE: Practical and no-nonsense, favoring functionality over fashion. Prefers muted colors and simple designs that allow freedom and comfort.\n` +
+                `VOICE: 03a438b7-ebfa-4f72-9061-f086d8f1fca6\n` +
+                `COLOR: #333333\n` +
+                `FONT: Calibri, sans-serif\n` +
+                `BRAWN: 5\n` +
+                `SKILL: 5\n` +
+                `NERVE: 7\n` +
+                `WITS: 6\n` +
+                `CHARM: 4\n` +
+                `LUST: 2\n` +
+                `JOY: 3\n` +
+                `TRUST: 2\n` +
+                `#END#`) +
             (stage.getSave().attenuation ? 
-                `\n\nThe station is currently tuned to modify this character; take the following additional context into account while forming this distillation:\n${stage.getSave().attenuation}` : 
-                ''),
+                buildPromptSegment(`Attenuation`, 
+                    `The station is currently tuned to modify the resulting character; take the following additional context into account while forming this distillation:\n${stage.getSave().attenuation}`) : 
+                '')),
         stop: ['#END'],
         include_history: true, // There won't be any history, but if this is true, the front-end doesn't automatically apply pre-/post-history prompts.
         max_tokens: 600,
