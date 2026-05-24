@@ -383,27 +383,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         }
         // Use smart rehydration to automatically detect and restore all nested objects
         const hydrated = smartRehydrate(save) as SaveType;
-        if (hydrated) {
-            hydrated.emotionPrompts = this.normalizeEmotionPromptMap(hydrated.emotionPrompts);
-        }
+
         return hydrated;
     }
 
-    private normalizeEmotionPromptMap(emotionPrompts?: Partial<EmotionPromptMap>): EmotionPromptMap {
-        const defaultMap = getDefaultEmotionPromptMap();
-        if (!emotionPrompts || typeof emotionPrompts !== 'object') {
-            return defaultMap;
-        }
-
-        for (const emotion of Object.values(Emotion)) {
-            const savedPrompt = emotionPrompts[emotion];
-            if (typeof savedPrompt === 'string' && savedPrompt.trim()) {
-                defaultMap[emotion] = savedPrompt;
-            }
-        }
-
-        return defaultMap;
-    }
 
     buildSaves(): ChatStateType {
         return {

@@ -29,6 +29,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 id: actor.outfitId || generateUuid(),
                 name: ORIGINAL_OUTFIT_NAME,
                 description: actor.getDescription(),
+                prompts: {},
                 emotionPack: { ...actor.getEmotionPack() },
             }];
 
@@ -219,6 +220,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 id: generateUuid(),
                 name: ORIGINAL_OUTFIT_NAME,
                 description: '',
+                prompts: {},
                 emotionPack: {},
             }];
 
