@@ -647,19 +647,16 @@ export async function generateEmotionImage(actor: Actor, emotion: Emotion, stage
 function buildEmotionPromptGenerationInstruction(actor: Actor, outfit: Outfit, emotion: Emotion): string {
 
     return `{{messages}}This is a preparatory request for a single image-edit instruction for character art generation.\n\n` +
-        `Character details: ${actor.profile}\n` +
-        `Current outfit: ${outfit.description}\n` +
-        `Personality and public persona: ${actor.profile}\n` +
-        `Target mood: ${emotion} (${EMOTION_PROMPTS[emotion]})\n\n` +
-        `Write exactly one concise prompt for an image editing model to revise a base image of this character already in this outfit. ` +
-        `The prompt is intended to guide the model in adjusting an image to suit the target mood by visually describing changes to this character's expression, posture, gesture, ` +
-        `and demeanor in a way that takes their style, personality, and outfit into account where appropriate. ` +
-        `Only describe elements that are relevant to the target image.\n\n` +
-        `Output only the final prompt text and then #END#\n\n` +
-        `Example response:\n` +
-        `This woman is now in a flirty, playful mood. She smiles and leans forward slightly, with a glint in her half-lidded eyes. She blushes and plays with her hair.\n#END#\n` +
-        `Example response:\n` +
-        `This man is now in a somber, reflective mood. He looks downcast, with slumped shoulders and a frown. His eyes look down and away, and he appears lost in thought.\n#END#\n`;
+        buildPromptSegment(`Character details`, actor.profile) +
+        buildPromptSegment(`Current outfit`, outfit.description) +
+        buildPromptSegment(`Personality and public persona`, actor.profile) +
+        buildPromptSegment(`Target mood`, `${emotion} (${EMOTION_PROMPTS[emotion]})`) +
+        buildPromptSegment(`Instruction`, `Write exactly one concise prompt for an image editing model to revise a base image of this character already in this outfit. ` +
+            `The prompt is intended to guide the model in adjusting an image to suit the target mood by visually describing changes to this character's expression, posture, gesture, ` +
+            `and demeanor in a way that takes their style, personality, and outfit into account where appropriate. ` +
+            `Only describe elements that are relevant to the target image. Output only the final prompt text and then #END#`) +
+        buildPromptSegment(`Example response`, `This woman is now in a flirty, playful mood. She smiles and leans forward slightly, with a glint in her half-lidded eyes. She blushes and plays with her hair.\n#END#\n`) +
+        buildPromptSegment(`Example response`, `This man is now in a somber, reflective mood. He looks downcast, with slumped shoulders and a frown. His eyes look down and away, and he appears lost in thought.\n#END#\n`);
 }
 
 async function ensureOutfitEmotionPrompt(actor: Actor, emotion: Emotion, stage: Stage, outfitId: string = ''): Promise<string> {
