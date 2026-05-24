@@ -656,7 +656,8 @@ function buildEmotionPromptGenerationInstruction(actor: Actor, outfit: Outfit, e
             `and demeanor in a way that takes their style, personality, and outfit into account where appropriate. ` +
             `Only describe elements that are relevant to the target image. Output only the final prompt text and then #END#`) +
         buildPromptSegment(`Example response`, `This woman is now in a flirty, playful mood. She smiles and leans forward slightly, with a glint in her half-lidded eyes. She blushes and plays with her hair.\n#END#\n`) +
-        buildPromptSegment(`Example response`, `This man is now in a somber, reflective mood. He looks downcast, with slumped shoulders and a frown. His eyes look down and away, and he appears lost in thought.\n#END#\n`);
+        buildPromptSegment(`Example response`, `This man is now in a somber, reflective mood. He looks downcast, with slumped shoulders and a frown. His eyes look down and away, and he appears lost in thought.\n#END#\n`) +
+        buildPromptSegment(`Prompt`, `Output the new emotion image prompt.`);
 }
 
 async function ensureOutfitEmotionPrompt(actor: Actor, emotion: Emotion, stage: Stage, outfitId: string = ''): Promise<string> {
@@ -677,27 +678,29 @@ export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion
         return existingGeneration as Promise<string>;
     }
 
+    if (stage.betaMode) {
+        const promptRequest = stage.generator.textGen({
+                prompt: buildEmotionPromptGenerationInstruction(actor, outfit, emotion),
+                stop: ['#END'],
+                include_history: true,
+                max_tokens: 150,
+            }).then((response: any) => {
+                const generatedPrompt = response?.result?.trim() || '';
+                if (generatedPrompt) {
+                    outfit.prompts[emotion] = generatedPrompt;
+                    stage.saveGame();
+                }
+                return generatedPrompt;
+            }).finally(() => {
+                delete stage.imageGenerationPromises[generationKey];
+            });
+
+            stage.imageGenerationPromises[generationKey] = promptRequest;
+            return promptRequest;
+    }
+
     // Temporary.
     return EMOTION_PROMPTS[emotion];
-
-    const promptRequest = stage.generator.textGen({
-        prompt: buildEmotionPromptGenerationInstruction(actor, outfit, emotion),
-        stop: ['#END'],
-        include_history: true,
-        max_tokens: 150,
-    }).then((response: any) => {
-        const generatedPrompt = response?.result?.trim() || '';
-        if (generatedPrompt) {
-            outfit.prompts[emotion] = generatedPrompt;
-            stage.saveGame();
-        }
-        return generatedPrompt;
-    }).finally(() => {
-        delete stage.imageGenerationPromises[generationKey];
-    });
-
-    stage.imageGenerationPromises[generationKey] = promptRequest;
-    return promptRequest;
 }
 
 export async function generateActorDecor(actor: Actor, module: Module, stage: Stage, force: boolean = false): Promise<string> {
