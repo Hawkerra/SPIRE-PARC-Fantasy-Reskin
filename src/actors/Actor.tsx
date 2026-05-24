@@ -677,6 +677,9 @@ export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion
         return existingGeneration as Promise<string>;
     }
 
+    // Temporary.
+    return EMOTION_PROMPTS[emotion];
+
     const promptRequest = stage.generator.textGen({
         prompt: buildEmotionPromptGenerationInstruction(actor, outfit, emotion),
         stop: ['#END'],
