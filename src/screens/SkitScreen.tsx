@@ -293,7 +293,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                 </IconButton>
                 <IconButton
                     onClick={() => setScreenType(ScreenType.MENU)}
-                    onMouseEnter={() => setTooltip('Menu', MenuIcon)}
+                    onMouseEnter={() => setTooltip('Main Menu', MenuIcon)}
                     onMouseLeave={() => clearTooltip()}
                     sx={cornerButtonSx}
                 >

@@ -14,9 +14,10 @@ interface SkitOutcomeDisplayProps {
     outcomes: Outcome[];
     stage: Stage;
     layout?: any;
+    inputText?: string;
 }
 
-const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout }) => {
+const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, inputText }) => {
     // Calculate bottom position based on message box top
 
     const currentOutcomes: Outcome[] = outcomes || [];
@@ -273,7 +274,20 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 mt: 0.5
                             }}
                         >
-                            Closing the skit will accept these outcomes.
+                            {inputText && (
+                            <span 
+                                style={{ 
+                                    color: '#ffaa00',
+                                    fontSize: '1.1em',
+                                    fontWeight: 900
+                                }}
+                                title="Submitting input will discard these outcomes"
+                            >
+                                ⚠
+                            </span>
+                            )}
+                            {inputText ? 'Continuing will forfeit some outcomes.' : 'Closing the skit will accept these outcomes.'}
+
                         </Typography>
                     </Paper>
                 </div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
 import { Stage } from '../Stage';
 import { v4 as generateUuid } from 'uuid';
-import Actor, { Stat, ACTOR_STAT_ICONS, generateBaseActorImage, generateEmotionImage, generateActorDecor, VOICE_MAP, Outfit, ORIGINAL_OUTFIT_NAME } from '../actors/Actor';
+import Actor, { Stat, ACTOR_STAT_ICONS, generateBaseActorImage, generateEmotionImage, generateActorDecor, generateOutfitEmotionPrompt, VOICE_MAP, Outfit, ORIGINAL_OUTFIT_NAME } from '../actors/Actor';
 import { Emotion, EMOTION_PROMPTS } from '../actors/Emotion';
 import { GlassPanel, Title, Button, TextInput, Chip } from '../components/UIComponents';
 import { Close, Save, Image as ImageIcon, PlayArrow } from '@mui/icons-material';
@@ -34,6 +34,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
 
         return sourceOutfits.map((outfit) => ({
             ...outfit,
+            prompts: { ...(outfit.prompts || {}) },
             emotionPack: { ...(outfit.emotionPack || {}) },
         }));
     };
@@ -100,8 +101,24 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
     const syncEditedOutfitsFromActor = () => {
         setEditedOutfits(actor.outfits.map((outfit) => ({
             ...outfit,
+            prompts: { ...(outfit.prompts || {}) },
             emotionPack: { ...(outfit.emotionPack || {}) },
         })));
+    };
+
+    const ensureEmotionPromptForSelectedOutfit = async (emotion: Emotion): Promise<string> => {
+        const outfit = actor.getOutfitById(selectedOutfitId);
+        const existingPrompt = typeof outfit?.prompts?.[emotion] === 'string' ? outfit.prompts[emotion].trim() : '';
+        if (existingPrompt) {
+            return existingPrompt;
+        }
+
+        const generatedPrompt = (await generateOutfitEmotionPrompt(actor, emotion, stage(), selectedOutfitId)).trim();
+        if (generatedPrompt) {
+            syncEditedOutfitsFromActor();
+            setEmotionPromptDraft(generatedPrompt);
+        }
+        return generatedPrompt;
     };
 
     async function generateDemoSpeech(voiceId: string, transcript: string) {
@@ -216,10 +233,12 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         actor.locationId = editedActor.locationId;
         actor.outfits = nextOutfits.map((outfit) => ({
             ...outfit,
+            prompts: { ...(outfit.prompts || {}) },
             emotionPack: { ...(outfit.emotionPack || {}) },
         }));
         initialOutfitsRef.current = actor.outfits.map((outfit) => ({
             ...outfit,
+            prompts: { ...(outfit.prompts || {}) },
             emotionPack: { ...(outfit.emotionPack || {}) },
         }));
 
@@ -268,6 +287,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
             id: generateUuid(),
             name: getNextOutfitName(),
             description: '',
+            prompts: {},
             emotionPack: {},
         };
         setEditedOutfits((prev) => [...prev, newOutfit]);
@@ -318,6 +338,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 setRegeneratingImages(prev => new Set(prev).add(emotion));
                 
                 try {
+                    await ensureEmotionPromptForSelectedOutfit(emotion);
                     await generateEmotionImage(actor, emotion, stage(), true, selectedOutfitId);
                     syncEditedOutfitsFromActor();
                     // Force a re-render to show the new image
@@ -337,7 +358,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
     };
 
     const getEmotionPrompt = (emotion: Emotion): string => {
-        return stage().getSave().emotionPrompts?.[emotion] || EMOTION_PROMPTS[emotion];
+        const outfit = actor.getOutfitById(selectedOutfitId);
+        return outfit?.prompts[emotion] || '';
     };
 
     const persistEmotionPrompt = (emotion: Emotion, prompt: string) => {
@@ -348,12 +370,13 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         }
 
         const save = stage().getSave();
-        save.emotionPrompts = {
-            ...(save.emotionPrompts || EMOTION_PROMPTS),
-            [emotion]: trimmedPrompt,
-        };
-        stage().saveGame();
-        return true;
+        const outfit = actor.getOutfitById(selectedOutfitId);
+        if (outfit) {
+            outfit.prompts[emotion] = trimmedPrompt;
+            stage().saveGame();
+            return true;
+        }
+        return false;
     };
 
     const handleOpenImageDialog = (target: ImageTarget) => {
@@ -400,6 +423,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
             setEditedOutfits(nextOutfits);
             actor.outfits = nextOutfits.map((outfit) => ({
                 ...outfit,
+                prompts: { ...(outfit.prompts || {}) },
                 emotionPack: { ...(outfit.emotionPack || {}) },
             }));
             stage().saveGame();

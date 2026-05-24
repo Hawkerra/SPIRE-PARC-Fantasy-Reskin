@@ -55,7 +55,6 @@ export type SaveType = {
     language?: string;
     tone?: string;
     disableImpersonation?: boolean;
-    emotionPrompts?: EmotionPromptMap;
 }
 
 export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateType, ConfigType> {
@@ -204,7 +203,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 description: `Your holographic assistant is acutely familiar with the technical details of your Post-Apocalypse Rehabilitation Center, so you don't have to be! ` +
                 `Your StationAide™ comes pre-programmed with a friendly and non-condescending demeanor that will leave you feeling empowered and never patronized; ` +
                 `your bespoke projection comes with an industry-leading feminine form in a pleasing shade of default blue, but, as always, StationAide™ remains infinitely customizable to suit your tastes.`}, 
-            echoes: [], actors: {}, factions: {}, layout: layout, day: 1, turn: 0, currentSkit: undefined, typeOutSpeed: this.DEFAULT_TYPE_OUT_SPEED, reserveActors: [], emotionPrompts: getDefaultEmotionPromptMap() };
+            echoes: [], actors: {}, factions: {}, layout: layout, day: 1, turn: 0, currentSkit: undefined, typeOutSpeed: this.DEFAULT_TYPE_OUT_SPEED, reserveActors: [] };
 
         // ensure at least one save exists and has a layout
         if (!this.saves.length) {
@@ -1093,6 +1092,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                                 id: newOutfitId,
                                 name: outfit.outfitName,
                                 description: outfit.description,
+                                prompts: {},
                                 emotionPack: {},
                             });
 

@@ -52,6 +52,7 @@ export type Outfit = {
     name: string;
     description: string;
     emotionPack: EmotionPack;
+    prompts: EmotionPack;
 }
 
 export const ORIGINAL_OUTFIT_NAME = 'Original';
@@ -98,6 +99,7 @@ class Actor {
                 name: outfit.name || ORIGINAL_OUTFIT_NAME,
                 description: typeof outfit.description === 'string' ? outfit.description : '',
                 emotionPack: (outfit.emotionPack && typeof outfit.emotionPack === 'object') ? outfit.emotionPack : {},
+                prompts: (outfit.prompts && typeof outfit.prompts === 'object') ? outfit.prompts : {},
             }));
         }
 
@@ -116,12 +118,13 @@ class Actor {
         return actor;
     }
 
-    private static createOutfit(name: string, description: string, emotionPack: EmotionPack): Outfit {
+    private static createOutfit(name: string, description: string, emotionPack: EmotionPack, prompts: EmotionPack = {}): Outfit {
         return {
             id: generateUuid(),
             name,
             description: description || '',
             emotionPack: emotionPack || {},
+            prompts: prompts || {},
         };
     }
 
@@ -136,6 +139,12 @@ class Actor {
             this.outfitId = fallbackOutfit.id;
             return;
         }
+
+        this.outfits = this.outfits.map((outfit) => ({
+            ...outfit,
+            emotionPack: (outfit.emotionPack && typeof outfit.emotionPack === 'object') ? outfit.emotionPack : {},
+            prompts: (outfit.prompts && typeof outfit.prompts === 'object') ? outfit.prompts : {},
+        }));
 
         if (!this.outfitId || !this.outfits.some((outfit) => outfit.id === this.outfitId)) {
             const originalOutfit = this.outfits.find((outfit) => outfit.name === ORIGINAL_OUTFIT_NAME);
@@ -618,7 +627,8 @@ export async function generateEmotionImage(actor: Actor, emotion: Emotion, stage
     const targetOutfitId = outfitId || actor.outfitId;
     if (actor.getEmotionImageUrl('base', targetOutfitId) && (!stage.imageGenerationPromises[`actor/${actor.id}`] || force) && (emotion == 'neutral' || !stage.getSave().disableEmotionImages)) {
         console.log(`Generating ${emotion} emotion image for actor ${actor.name}`);
-        const emotionPrompt = stage.getSave().emotionPrompts?.[emotion] || EMOTION_PROMPTS[emotion];
+        const outfit = actor.getOutfitById(targetOutfitId);
+        const emotionPrompt = await ensureOutfitEmotionPrompt(actor, emotion, stage, targetOutfitId) || EMOTION_PROMPTS[emotion];
         stage.imageGenerationPromises[`actor/${actor.id}`] = stage.makeImageFromImage({
             image: actor.getEmotionImageUrl('base', targetOutfitId) || '',
             prompt: `${emotionPrompt}`,
@@ -632,6 +642,62 @@ export async function generateEmotionImage(actor: Actor, emotion: Emotion, stage
         return imageUrl || '';
     }
     return '';
+}
+
+function buildEmotionPromptGenerationInstruction(actor: Actor, outfit: Outfit, emotion: Emotion): string {
+
+    return `{{messages}}This is a preparatory request for a single image-edit instruction for character art generation.\n\n` +
+        `Character details: ${actor.profile}\n` +
+        `Current outfit: ${outfit.description}\n` +
+        `Personality and public persona: ${actor.profile}\n` +
+        `Target mood: ${emotion} (${EMOTION_PROMPTS[emotion]})\n\n` +
+        `Write exactly one concise prompt for an image editing model to revise a base image of this character already in this outfit. ` +
+        `The prompt is intended to guide the model in adjusting an image to suit the target mood by visually describing changes to this character's expression, posture, gesture, ` +
+        `and demeanor in a way that takes their style, personality, and outfit into account where appropriate. ` +
+        `Only describe elements that are relevant to the target image.\n\n` +
+        `Output only the final prompt text and then #END#\n\n` +
+        `Example response:\n` +
+        `This woman is now in a flirty, playful mood. She smiles and leans forward slightly, with a glint in her half-lidded eyes. She blushes and plays with her hair.\n#END#\n` +
+        `Example response:\n` +
+        `This man is now in a somber, reflective mood. He looks downcast, with slumped shoulders and a frown. His eyes look down and away, and he appears lost in thought.\n#END#\n`;
+}
+
+async function ensureOutfitEmotionPrompt(actor: Actor, emotion: Emotion, stage: Stage, outfitId: string = ''): Promise<string> {
+    const outfit = actor.getOutfitById(outfitId) || actor.getActiveOutfit();
+    const existingPrompt = typeof outfit?.prompts?.[emotion] === 'string' ? outfit.prompts[emotion].trim() : '';
+    if (existingPrompt) {
+        return existingPrompt;
+    }
+
+    return (await generateOutfitEmotionPrompt(actor, emotion, stage, outfit.id)).trim();
+}
+
+export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion, stage: Stage, outfitId: string = ''): Promise<string> {
+    const outfit = actor.getOutfitById(outfitId) || actor.getActiveOutfit();
+    const generationKey = `actor-prompt/${actor.id}/${outfit.id}/${emotion}`;
+    const existingGeneration = stage.imageGenerationPromises[generationKey];
+    if (existingGeneration) {
+        return existingGeneration as Promise<string>;
+    }
+
+    const promptRequest = stage.generator.textGen({
+        prompt: buildEmotionPromptGenerationInstruction(actor, outfit, emotion),
+        stop: ['#END'],
+        include_history: true,
+        max_tokens: 150,
+    }).then((response: any) => {
+        const generatedPrompt = response?.result?.trim() || '';
+        if (generatedPrompt) {
+            outfit.prompts[emotion] = generatedPrompt;
+            stage.saveGame();
+        }
+        return generatedPrompt;
+    }).finally(() => {
+        delete stage.imageGenerationPromises[generationKey];
+    });
+
+    stage.imageGenerationPromises[generationKey] = promptRequest;
+    return promptRequest;
 }
 
 export async function generateActorDecor(actor: Actor, module: Module, stage: Stage, force: boolean = false): Promise<string> {

@@ -1084,7 +1084,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 cursor: 'pointer',
                                 color: '#00ff88',
                             }}
-                            onMouseEnter={() => setTooltip('Open Menu', Menu)}
+                            onMouseEnter={() => setTooltip('Main Menu', Menu)}
                             onMouseLeave={() => clearTooltip()}
                         >
                             <Menu style={{ fontSize: '28px' }} />
