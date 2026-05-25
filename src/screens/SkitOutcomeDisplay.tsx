@@ -14,10 +14,10 @@ interface SkitOutcomeDisplayProps {
     outcomes: Outcome[];
     stage: Stage;
     layout?: any;
-    inputText?: string;
+    isOutcomeTransient?: boolean;
 }
 
-const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, inputText }) => {
+const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, isOutcomeTransient }) => {
     // Calculate bottom position based on message box top
 
     const currentOutcomes: Outcome[] = outcomes || [];
@@ -274,7 +274,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 mt: 0.5
                             }}
                         >
-                            {inputText && (
+                            {isOutcomeTransient && (
                             <span 
                                 style={{ 
                                     color: '#ffaa00',
@@ -286,8 +286,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 ⚠
                             </span>
                             )}
-                            {inputText ? 'Continuing will forfeit some outcomes.' : 'Closing the skit will accept these outcomes.'}
-
+                            {isOutcomeTransient ? 'Continuing may forfeit some outcomes.' : 'Closing the skit will accept these outcomes.'}
                         </Typography>
                     </Paper>
                 </div>
