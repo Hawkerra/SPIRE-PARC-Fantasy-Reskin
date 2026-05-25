@@ -401,7 +401,27 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         setIsImageDropActive(false);
     };
 
+    const persistEmotionPromptDraftForTarget = (target: ImageTarget | null) => {
+        if (!target || target === 'base' || !selectedOutfitId) {
+            return;
+        }
+
+        const trimmedPrompt = emotionPromptDraft.trim();
+        setEditedOutfits((prev) => prev.map((outfit) => (
+            outfit.id === selectedOutfitId
+                ? {
+                    ...outfit,
+                    prompts: {
+                        ...(outfit.prompts || {}),
+                        [target]: trimmedPrompt,
+                    },
+                }
+                : outfit
+        )));
+    };
+
     const handleCloseImageDialog = () => {
+        persistEmotionPromptDraftForTarget(imageDialog.target);
         setImageDialog({ open: false, target: null });
         setIsImageDropActive(false);
     };
