@@ -278,7 +278,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     }}
                 >
                     {stage().isAuthenticated 
-                        ? 'v2026.05.23 - I am still ironing out some generation rewrites, but most features should be working again.'
+                        ? 'v2026.05.25 - I am doing what I can, but the game is still a bit unstable with Soji due to changes in the way Chub sends requests.'
                         : (
                             <>
                                 This is an unofficial bot; for the latest version for PARC, visit:{' '}
