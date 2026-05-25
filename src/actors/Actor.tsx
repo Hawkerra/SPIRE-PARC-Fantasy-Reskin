@@ -414,11 +414,11 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
             buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
             buildPromptSegment(`Available Voices`, `${Object.entries(VOICE_MAP).map(([voiceId, voiceDesc]) => '  - ' + voiceId + ': ' + voiceDesc).join('\n')}`) +
             buildPromptSegment(`Instructions`, `After carefully considering this description and the rules provided, generate a concise breakdown for a character based upon these details in the following strict format:\n` +
-                `NAME: Their simple name\n` +
                 `DESCRIPTION: A vivid description of the character's physical appearance, attire, and any distinguishing features.\n` +
                 `OUTFIT: A one- to two-word name for the character's current outfit that matches the description.\n` +
                 `PROFILE: A brief summary of the character's key personality traits and behaviors.\n` +
                 `STYLE: A concise description of the character's sense of overall style, mood, interests, or aesthetic, to be applied to the way they decorate their space.\n` +
+                `NAME: Their simple name\n` +
                 `VOICE: Output the specific voice ID from the Available Voices section that best matches the character's apparent gender (foremost) and personality.\n` +
                 `COLOR: A hex color that reflects the character's theme or mood—use darker or richer colors that will contrast with white text.\n` +
                 `FONT: A font stack, or font family that reflects the character's personality; this will be embedded in a CSS font-family property.\n` +
@@ -427,11 +427,11 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
                 }).join('\n') +
                 `#END#`) +
             buildPromptSegment(`Example Response`, 
-                `NAME: Jane Doe\n` +
                 `DESCRIPTION: A tall, athletic woman with short, dark hair and piercing blue eyes. She wears a simple, utilitarian outfit made from durable materials.\n` +
                 `OUTFIT: Utility Gear\n` +
                 `PROFILE: Jane is confident and determined, with a strong sense of justice. She is quick to anger but also quick to forgive. She is fiercely independent and will do whatever it takes to protect those she cares about.\n` +
                 `STYLE: Practical and no-nonsense, favoring functionality over fashion. Prefers muted colors and simple designs that allow freedom and comfort.\n` +
+                `NAME: Jane Doe\n` +
                 `VOICE: 03a438b7-ebfa-4f72-9061-f086d8f1fca6\n` +
                 `COLOR: #333333\n` +
                 `FONT: Calibri, sans-serif\n` +

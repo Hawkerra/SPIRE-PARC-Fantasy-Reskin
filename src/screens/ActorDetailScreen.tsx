@@ -4,7 +4,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } f
 import { Stage } from '../Stage';
 import { v4 as generateUuid } from 'uuid';
 import Actor, { Stat, ACTOR_STAT_ICONS, generateBaseActorImage, generateEmotionImage, generateActorDecor, generateOutfitEmotionPrompt, VOICE_MAP, Outfit, ORIGINAL_OUTFIT_NAME } from '../actors/Actor';
-import { Emotion, EMOTION_PROMPTS } from '../actors/Emotion';
+import { Emotion } from '../actors/Emotion';
 import { GlassPanel, Title, Button, TextInput, Chip } from '../components/UIComponents';
 import { Close, Save, Image as ImageIcon, PlayArrow } from '@mui/icons-material';
 import { scoreToGrade } from '../utils';
@@ -366,14 +366,10 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
 
     const persistEmotionPrompt = (emotion: Emotion, prompt: string) => {
         const trimmedPrompt = prompt.trim();
-        if (!trimmedPrompt) {
-            stage().showPriorityMessage('Emotion prompt cannot be empty.');
-            return false;
-        }
 
-        const save = stage().getSave();
         const outfit = actor.getOutfitById(selectedOutfitId);
         if (outfit) {
+            console.log(`Saving prompt for emotion "${emotion}" on outfit "${outfit.name}":`, trimmedPrompt);
             outfit.prompts[emotion] = trimmedPrompt;
             stage().saveGame();
             return true;
@@ -388,10 +384,6 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         }
 
         const generatedPrompt = (await generateOutfitEmotionPrompt(actor, emotion, stage(), selectedOutfitId)).trim();
-        if (!generatedPrompt) {
-            stage().showPriorityMessage('Failed to generate an emotion prompt. Please try again.');
-            return false;
-        }
 
         syncEditedOutfitsFromActor();
         setEmotionPromptDraft(generatedPrompt);
