@@ -413,7 +413,7 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
                 `some characters may not respond well to being essentially resurrected into a new timeline, losing much of what they once had. Others may be grateful for a new beginning.\n\n` +
             buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
             buildPromptSegment(`Available Voices`, `${Object.entries(VOICE_MAP).map(([voiceId, voiceDesc]) => '  - ' + voiceId + ': ' + voiceDesc).join('\n')}`) +
-            buildPromptSegment(`Instructions`, `After carefully considering this description and the rules provided, generate a concise breakdown for a character based upon these details in the following strict format:\n` +
+            buildPromptSegment(`Instructions`, `After carefully considering this description and the rules provided, the System will generate a concise breakdown for a character based upon these details in the following strict format:\n` +
                 `DESCRIPTION: A vivid description of the character's physical appearance, attire, and any distinguishing features.\n` +
                 `OUTFIT: A one- to two-word name for the character's current outfit that matches the description.\n` +
                 `PROFILE: A brief summary of the character's key personality traits and behaviors.\n` +

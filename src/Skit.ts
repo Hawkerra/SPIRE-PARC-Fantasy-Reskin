@@ -1017,7 +1017,7 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
                     buildOutcomeTagRules('Some Character')) +
                 buildPromptSegment('Instruction',
                     `Analyze the scene depicting in the above script. ` +
-                    `Apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
+                    `The System will apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
                     `Bear in mind existing outcome tags within the skit, avoiding redundancy or overkill. ` +
                     `When all relevant tags have been output, output an [END] tag before offering explanations for the chosen tags` +
                     `If no outcomes seem relevant, output [NO OUTCOMES].`)
@@ -1051,7 +1051,7 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
     const summaryPrompt = buildSkitPrompt(skit, stage, 0,
             buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
-            buildPromptSegment('Instruction', `Analyze the preceding scene script output a "[SUMMARY: <textSummary>]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
+            buildPromptSegment('Instruction', `The System will analyze the preceding scene script output a "[SUMMARY: <textSummary>]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
         buildPromptSegment('Example Response',
             `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`);
      let endResponse = await stage.makeText({
@@ -1672,7 +1672,7 @@ export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Ac
             `Analyze the preceding scene script and ${actor.name}'s character arc, then output a revised character arc paragraph that reflects any significant developments from the latest scene script. ` +
             `The character arc should be a concise summary of the character's growth, challenges, and changes experienced so far on the PARC. ` +
             `Focus on key emotional beats, relationships, and personal growth that have occurred up to this point. ` +
-            `The output should be a single paragraph, maintaining the same tone and style as the existing character arc.` +
+            `The System output should be a single paragraph, maintaining the same tone and style as the existing character arc.` +
             `If there are no significant developments, simply repeat the existing character arc without changes. `) +
         buildPromptSegment(`Full Examples`, 
             `Revised Character Arc: John Smith has yet to find their footing in the PARC; they can't seem to make friends with the other patients—beyond the StationAide—, and the director hasn't proven trustworthy.\n[END]\n\n` +
