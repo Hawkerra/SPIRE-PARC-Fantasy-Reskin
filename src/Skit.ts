@@ -798,7 +798,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
 
     if (!text) return null;
 
-    if (text.toUpperCase().startsWith('[FACTION:')) {
+    if (text.toUpperCase().startsWith('FACTION:')) {
         const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
         const factionMatch = factionTagRegex.exec(text);
         if (factionMatch) {
@@ -860,7 +860,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         return null;
     }
 
-    if (text.toUpperCase().startsWith('[NEW MODULE:')) {
+    if (text.toUpperCase().startsWith('NEW MODULE:')) {
         const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
         const newModuleMatch = newModuleRegex.exec(text);
         if (newModuleMatch) {
@@ -886,7 +886,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         return null;
     }
 
-    if (text.toUpperCase().startsWith('[NEW APPEARANCE:')) {
+    if (text.toUpperCase().startsWith('NEW APPEARANCE:')) {
         const newAppearanceRegex = /NEW APPEARANCE:\s*([^|]+)\|\s*NAME\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
         const newAppearanceMatch = newAppearanceRegex.exec(text);
         if (newAppearanceMatch) {
