@@ -798,24 +798,21 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
 
     if (!text) return null;
 
-    if (text.toUpperCase().startsWith('FACTION:')) {
-        const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
-        const factionMatch = factionTagRegex.exec(text);
-        if (factionMatch) {
-            console.log(`Parsing faction reputation change from tag: ${text}`);
-            const factionNameRaw = factionMatch[1].trim();
-            const reputationChange = parseInt(factionMatch[2].replace(/\s+/g, ''), 10) || 0;
-            const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
-            console.log(`Matched faction: ${matchedFaction ? matchedFaction.name : 'None'}, Reputation change: ${reputationChange}`);
-            if (matchedFaction && reputationChange !== 0) {
-                return [{
-                    type: 'factionReputation',
-                    factionId: matchedFaction.id,
-                    amount: reputationChange
-                }];
-            }
+    const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
+    const factionMatch = factionTagRegex.exec(text);
+    if (factionMatch) {
+        console.log(`Parsing faction reputation change from tag: ${text}`);
+        const factionNameRaw = factionMatch[1].trim();
+        const reputationChange = parseInt(factionMatch[2].replace(/\s+/g, ''), 10) || 0;
+        const matchedFaction = findBestNameMatch(factionNameRaw, allFactions);
+        console.log(`Matched faction: ${matchedFaction ? matchedFaction.name : 'None'}, Reputation change: ${reputationChange}`);
+        if (matchedFaction && reputationChange !== 0) {
+            return [{
+                type: 'factionReputation',
+                factionId: matchedFaction.id,
+                amount: reputationChange
+            }];
         }
-        return null;
     }
 
     const joinedRegex = /(.+?):\s*JOINED\s+(.+)/i;
@@ -860,60 +857,54 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         return null;
     }
 
-    if (text.toUpperCase().startsWith('NEW MODULE:')) {
-        const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
-        const newModuleMatch = newModuleRegex.exec(text);
-        if (newModuleMatch) {
-            const moduleName = newModuleMatch[1].trim();
-            const roleName = newModuleMatch[2].trim();
-            const description = newModuleMatch[3].trim();
-            if (moduleName && roleName && description) {
-                const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
-                const similarModule = findBestNameMatch(moduleName, existingModules);
-                if (!similarModule && !findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))])) {
-                    return [{
-                        type: 'newModule',
-                        module: {
-                            id: generateUuid(),
-                            moduleName,
-                            roleName,
-                            description
-                        }
-                    }];
-                }
+    const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+    const newModuleMatch = newModuleRegex.exec(text);
+    if (newModuleMatch) {
+        const moduleName = newModuleMatch[1].trim();
+        const roleName = newModuleMatch[2].trim();
+        const description = newModuleMatch[3].trim();
+        if (moduleName && roleName && description) {
+            const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
+            const similarModule = findBestNameMatch(moduleName, existingModules);
+            if (!similarModule && !findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))])) {
+                return [{
+                    type: 'newModule',
+                    module: {
+                        id: generateUuid(),
+                        moduleName,
+                        roleName,
+                        description
+                    }
+                }];
             }
         }
-        return null;
     }
 
-    if (text.toUpperCase().startsWith('NEW APPEARANCE:')) {
-        const newAppearanceRegex = /NEW APPEARANCE:\s*([^|]+)\|\s*NAME\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
-        const newAppearanceMatch = newAppearanceRegex.exec(text);
-        if (newAppearanceMatch) {
-            const characterName = newAppearanceMatch[1].trim();
-            const appearanceName = newAppearanceMatch[2].trim();
-            const appearanceDescription = newAppearanceMatch[3].trim();
-            const matchedActor = findBestNameMatch(characterName, allActors);
-            if (matchedActor) {
-                const similarOutfit = findBestNameMatch(
-                    appearanceName,
-                    matchedActor.outfits.map(outfit => ({ name: outfit.name, outfit }))
-                );
-                if (!similarOutfit) {
-                    return [{
-                        type: 'newOutfit',
+    const newAppearanceRegex = /NEW APPEARANCE:\s*([^|]+)\|\s*NAME\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+    const newAppearanceMatch = newAppearanceRegex.exec(text);
+    if (newAppearanceMatch) {
+        const characterName = newAppearanceMatch[1].trim();
+        const appearanceName = newAppearanceMatch[2].trim();
+        const appearanceDescription = newAppearanceMatch[3].trim();
+        const matchedActor = findBestNameMatch(characterName, allActors);
+        if (matchedActor) {
+            const similarOutfit = findBestNameMatch(
+                appearanceName,
+                matchedActor.outfits.map(outfit => ({ name: outfit.name, outfit }))
+            );
+            if (!similarOutfit) {
+                return [{
+                    type: 'newOutfit',
+                    actorId: matchedActor.id,
+                    outfit: {
+                        id: generateUuid(),
                         actorId: matchedActor.id,
-                        outfit: {
-                            id: generateUuid(),
-                            actorId: matchedActor.id,
-                            outfitName: appearanceName,
-                            description: appearanceDescription
-                        }
-                    }];
-                }
+                        outfitName: appearanceName,
+                        description: appearanceDescription
+                    }
+                }];
             }
         }
-        return null;
     }
 
     const statChangeRegex = /(.+?):\s*(.+)/i;
