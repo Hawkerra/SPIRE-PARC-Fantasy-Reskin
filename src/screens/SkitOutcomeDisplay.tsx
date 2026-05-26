@@ -140,7 +140,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             case 'newOutfit':
                 return 'New Outfit';
             case 'movement':
-                return outcome.factionId ? `Visiting ${outcome.factionId}` : 'Returning';
+                return outcome.factionId ? `Leaving` : 'Returning';
         }
     }
 
