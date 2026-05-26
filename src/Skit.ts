@@ -1019,8 +1019,8 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
                     `Analyze the scene depicted in the above script. ` +
                     `The System will apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
                     `Bear in mind existing outcome tags within the skit, avoiding redundancy or overkill. ` +
-                    `Consider the implications of these interactions, and infer outcomes involving character movements/departures/arrivals (particularly for missions or other faction arrangements), impending trade or exchanges, or other developments that may be reasonably suggested by the scene's context. ` +
-                    `When all relevant tags have been output, output an [END] tag before offering explanations for the chosen tags` +
+                    `Tacitly consider the implications of these interactions, and infer outcomes involving character movements/departures/arrivals (particularly for missions or other faction arrangements), impending trade or exchanges, or other developments that may be reasonably suggested by the scene's context. ` +
+                    `When all relevant tags have been output by System, include an [END] tag before including any explanations for the chosen tags. ` +
                     `If no outcomes seem relevant, output [NO OUTCOMES].`)
                 );
 
