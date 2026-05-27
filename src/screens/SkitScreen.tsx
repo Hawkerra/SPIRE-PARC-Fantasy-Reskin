@@ -264,8 +264,8 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
             {/* Top right control buttons */}
             <div style={{
                 position: 'relative',
-                top: '1rem',
-                right: '1rem',
+                float: 'right',
+                padding: '1rem',
                 display: 'flex',
                 gap: '0.5rem',
                 zIndex: 10
