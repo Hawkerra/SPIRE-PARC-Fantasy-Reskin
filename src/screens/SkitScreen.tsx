@@ -263,7 +263,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
         >
             {/* Top right control buttons */}
             <div style={{
-                position: 'relative',
+                width: '100%',
                 float: 'right',
                 padding: '1rem',
                 display: 'flex',
@@ -329,7 +329,10 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                     <Close />
                 </IconButton>
             </div>
-            <div>
+            <div style={{
+                width: '100%',
+                height: 'auto'
+            }}>
                 <NovelVisualizer
                     skit={skit}
                     loading={isLoading}
