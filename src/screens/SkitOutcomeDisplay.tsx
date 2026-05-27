@@ -495,9 +495,9 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             style={{
                 position: 'absolute',
-                top: '2vh',
-                right: '2vh',
-                bottom: `2vh`,
+                top: '0',
+                right: '0',
+                bottom: `1rem`,
                 zIndex: 3,
                 display: 'flex',
                 flexDirection: 'row-reverse',
