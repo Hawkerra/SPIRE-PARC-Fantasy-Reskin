@@ -261,201 +261,211 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
             imageUrl={decorImageUrl}
             // overlay="linear-gradient(130deg, rgba(5, 24, 34, 0.78) 0%, rgba(18, 47, 32, 0.72) 50%, rgba(37, 24, 57, 0.78) 100%)"
         >
-            {/* Top right control buttons */}
             <div style={{
-                width: '100%',
-                justifyContent: 'flex-end',
-                padding: '1rem',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 display: 'flex',
-                gap: '0.5rem',
-                zIndex: 10
+                flexDirection: 'column'
             }}>
-                {isTextToSpeechEnabled && (
+                {/* Top right control buttons */}
+                <div style={{
+                    width: '100%',
+                    justifyContent: 'flex-end',
+                    padding: '1rem',
+                    display: 'flex',
+                    gap: '0.5rem',
+                    zIndex: 10
+                }}>
+                    {isTextToSpeechEnabled && (
+                        <IconButton
+                            onClick={() => setIsAudioEnabled(prev => !prev)}
+                            onMouseEnter={() => setTooltip(isAudioEnabled ? 'Mute Audio' : 'Enable Audio', isAudioEnabled ? VolumeUp : VolumeOff)}
+                            onMouseLeave={() => clearTooltip()}
+                            sx={{
+                                ...cornerButtonSx,
+                                opacity: isAudioEnabled ? 0.95 : 0.55,
+                            }}
+                        >
+                            {isAudioEnabled ? <VolumeUp /> : <VolumeOff />}
+                        </IconButton>
+                    )}
                     <IconButton
-                        onClick={() => setIsAudioEnabled(prev => !prev)}
-                        onMouseEnter={() => setTooltip(isAudioEnabled ? 'Mute Audio' : 'Enable Audio', isAudioEnabled ? VolumeUp : VolumeOff)}
+                        onClick={() => setShowContentManagement(true)}
+                        onMouseEnter={() => setTooltip('Content Management', EditNote)}
                         onMouseLeave={() => clearTooltip()}
+                        sx={cornerButtonSx}
+                    >
+                        <EditNote />
+                    </IconButton>
+                    <IconButton
+                        onClick={() => setScreenType(ScreenType.MENU)}
+                        onMouseEnter={() => setTooltip('Main Menu', MenuIcon)}
+                        onMouseLeave={() => clearTooltip()}
+                        sx={cornerButtonSx}
+                    >
+                        <MenuIcon />
+                    </IconButton>
+                    <IconButton
+                        onClick={handleClose}
+                        onMouseEnter={() => setTooltip(isLoading ? 'Cannot close while content is generating' : ((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)')), shouldHighlightCloseButton ? Close : Warning)}
+                        onMouseLeave={() => clearTooltip()}
+                        disabled={isLoading || skit.script.length < 3}
                         sx={{
                             ...cornerButtonSx,
-                            opacity: isAudioEnabled ? 0.95 : 0.55,
+                            ...(!isLoading && shouldHighlightCloseButton ? {
+                                color: colors.accent.warning,
+                                backgroundColor: 'rgba(255, 170, 0, 0.12)',
+                                animation: 'closeButtonPulse 1.6s ease-in-out infinite',
+                                '@keyframes closeButtonPulse': {
+                                    '0%, 100%': {
+                                        transform: 'scale(1)',
+                                        boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.35)'
+                                    },
+                                    '50%': {
+                                        transform: 'scale(1.08)',
+                                        boxShadow: '0 0 0 8px rgba(255, 255, 255, 0)'
+                                    }
+                                }
+                            } : {}),
+                            '&.Mui-disabled': {
+                                color: 'rgba(255, 255, 255, 0.25)'
+                            }
                         }}
                     >
-                        {isAudioEnabled ? <VolumeUp /> : <VolumeOff />}
+                        <Close />
                     </IconButton>
-                )}
-                <IconButton
-                    onClick={() => setShowContentManagement(true)}
-                    onMouseEnter={() => setTooltip('Content Management', EditNote)}
-                    onMouseLeave={() => clearTooltip()}
-                    sx={cornerButtonSx}
-                >
-                    <EditNote />
-                </IconButton>
-                <IconButton
-                    onClick={() => setScreenType(ScreenType.MENU)}
-                    onMouseEnter={() => setTooltip('Main Menu', MenuIcon)}
-                    onMouseLeave={() => clearTooltip()}
-                    sx={cornerButtonSx}
-                >
-                    <MenuIcon />
-                </IconButton>
-                <IconButton
-                    onClick={handleClose}
-                    onMouseEnter={() => setTooltip(isLoading ? 'Cannot close while content is generating' : ((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)')), shouldHighlightCloseButton ? Close : Warning)}
-                    onMouseLeave={() => clearTooltip()}
-                    disabled={isLoading || skit.script.length < 3}
-                    sx={{
-                        ...cornerButtonSx,
-                        ...(!isLoading && shouldHighlightCloseButton ? {
-                            color: colors.accent.warning,
-                            backgroundColor: 'rgba(255, 170, 0, 0.12)',
-                            animation: 'closeButtonPulse 1.6s ease-in-out infinite',
-                            '@keyframes closeButtonPulse': {
-                                '0%, 100%': {
-                                    transform: 'scale(1)',
-                                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.35)'
-                                },
-                                '50%': {
-                                    transform: 'scale(1.08)',
-                                    boxShadow: '0 0 0 8px rgba(255, 255, 255, 0)'
-                                }
-                            }
-                        } : {}),
-                        '&.Mui-disabled': {
-                            color: 'rgba(255, 255, 255, 0.25)'
+                </div>
+                <div style={{
+                    width: '100%',
+                    height: 'auto'
+                }}>
+                    <NovelVisualizer
+                        skit={skit}
+                        loading={isLoading}
+                        renderNameplate={(actor: any) => {
+                            if (!actor || !actor.name) return null;
+                            return <Nameplate
+                                actor={actor}
+                                size={isVerticalLayout ? 'medium' : 'large'}
+                                style={{
+                                    position: 'absolute',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 5
+                                }}
+                                role={(() => {
+                                    const roleModules = stage().getSave().layout.getModulesWhere((m: any) =>
+                                        m && m.type !== 'quarters' && m.ownerId === actor.id
+                                    );
+                                    return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
+                                })()}
+                                layout="inline"
+                            />;
+                        }}
+                        setTooltip={setTooltip}
+                        isVerticalLayout={isVerticalLayout}
+                        actors={actors}
+                        playerActorId={'player'}
+                        getPresentActors={(_script, _index) =>
+                            getActorsAtIndex(_script, _index, stage().getSave().actors) || []
                         }
-                    }}
-                >
-                    <Close />
-                </IconButton>
-            </div>
-            <div style={{
-                width: '100%',
-                height: 'auto'
-            }}>
-                <NovelVisualizer
-                    skit={skit}
-                    loading={isLoading}
-                    renderNameplate={(actor: any) => {
-                        if (!actor || !actor.name) return null;
-                        return <Nameplate
-                            actor={actor}
-                            size={isVerticalLayout ? 'medium' : 'large'}
-                            style={{
-                                position: 'absolute',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                zIndex: 5
-                            }}
-                            role={(() => {
-                                const roleModules = stage().getSave().layout.getModulesWhere((m: any) =>
-                                    m && m.type !== 'quarters' && m.ownerId === actor.id
-                                );
-                                return roleModules.length > 0 ? roleModules[0].getAttribute('role') : undefined;
-                            })()}
-                            layout="inline"
-                        />;
-                    }}
-                    setTooltip={setTooltip}
-                    isVerticalLayout={isVerticalLayout}
-                    actors={actors}
-                    playerActorId={'player'}
-                    getPresentActors={(_script, _index) =>
-                        getActorsAtIndex(_script, _index, stage().getSave().actors) || []
-                    }
-                    getActorImageUrl={(actor, _script, index) => {
-                        let emotion = Emotion.neutral;
+                        getActorImageUrl={(actor, _script, index) => {
+                            let emotion = Emotion.neutral;
 
-                        if (skit.script && skit.script.length > 0 && index < skit.script.length) {
-                            for (let j = index; j >= 0; j--) {
-                                const entry = skit.script[j];
-                                if (entry.actorEmotions && entry.actorEmotions[actor.name]) {
-                                    emotion = entry.actorEmotions[actor.name];
-                                    break;
+                            if (skit.script && skit.script.length > 0 && index < skit.script.length) {
+                                for (let j = index; j >= 0; j--) {
+                                    const entry = skit.script[j];
+                                    if (entry.actorEmotions && entry.actorEmotions[actor.name]) {
+                                        emotion = entry.actorEmotions[actor.name];
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        const outfitId = getActorOutfitsAtIndex(_script, index, stage().getSave().actors)[actor.id] || actor.outfitId;
-                        return actor.getEmotionImage(emotion, stage(), outfitId);
-                    }}
-                    getActorFilter={(actor, _script, index) => {
-                        const actorLocationId = (() => {
-                            const locations = _script.initialActorLocations || {};
-                            let currentLocationId = locations[actor.id] || '';
-                            for (let i = 0; i <= index && i < _script.script.length; i++) {
-                                const entry = _script.script[i];
-                                if (entry.movements && entry.movements[actor.id]) {
-                                    currentLocationId = entry.movements[actor.id];
+                            const outfitId = getActorOutfitsAtIndex(_script, index, stage().getSave().actors)[actor.id] || actor.outfitId;
+                            return actor.getEmotionImage(emotion, stage(), outfitId);
+                        }}
+                        getActorFilter={(actor, _script, index) => {
+                            const actorLocationId = (() => {
+                                const locations = _script.initialActorLocations || {};
+                                let currentLocationId = locations[actor.id] || '';
+                                for (let i = 0; i <= index && i < _script.script.length; i++) {
+                                    const entry = _script.script[i];
+                                    if (entry.movements && entry.movements[actor.id]) {
+                                        currentLocationId = entry.movements[actor.id];
+                                    }
                                 }
-                            }
-                            return currentLocationId;
-                        })();
+                                return currentLocationId;
+                            })();
 
-                        const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
+                            const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
 
-                        return {
-                            filter: useHoloFilter ? 'hologram' : undefined,
-                            filterColor: useHoloFilter ? clampHexColor(actor.themeColor) : undefined,
-                        };
-                    }}
-                    onSubmitInput={handleSkitSubmit}
-                    onSkitChange={onSkitChange}
-                    getSubmitButtonConfig={(_script, index, inputText) => {
-                        return {
-                            label: inputText.trim().length > 0 ? 'Send' : 'Continue',
-                            enabled: true,
-                            colorScheme: inputText.trim().length > 0 ? 'secondary' : 'primary',
-                            icon: inputText.trim().length > 0 ? <Send /> : <PlayArrow />,
-                        };
-                    }}
-                    enableAudio={isTextToSpeechEnabled && isAudioEnabled}
-                    enablePopInSpeakers={true}
-                    enableTalkingAnimation={true}
-                    responsiveOverlay={(skit, actor) => {
-                        return (
-                            <div>
-                                <AnimatePresence mode="wait">
-                                    {actor && actor.id != 'player' && (
-                                        <motion.div
-                                            key={`actor-card-${actor.id}`}
-                                            initial={{ opacity: 0, x: -100 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -100 }}
-                                            transition={{ duration: 0.28, ease: 'easeInOut' }}
-                                        >
-                                            <div style={{
-                                                position: 'relative',
-                                                maxWidth: isVerticalLayout ? '30vw' : '15vw',
-                                                right: 0,
-                                                top: 0
-                                            }}>
-                                                <ActorCard
-                                                    actor={actor}
-                                                    visitingFaction={undefined}
-                                                    role={getRole(actor, stage().getSave())}
-                                                    collapsedSections={[ActorCardSection.STATS]}
-                                                />
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                            return {
+                                filter: useHoloFilter ? 'hologram' : undefined,
+                                filterColor: useHoloFilter ? clampHexColor(actor.themeColor) : undefined,
+                            };
+                        }}
+                        onSubmitInput={handleSkitSubmit}
+                        onSkitChange={onSkitChange}
+                        getSubmitButtonConfig={(_script, index, inputText) => {
+                            return {
+                                label: inputText.trim().length > 0 ? 'Send' : 'Continue',
+                                enabled: true,
+                                colorScheme: inputText.trim().length > 0 ? 'secondary' : 'primary',
+                                icon: inputText.trim().length > 0 ? <Send /> : <PlayArrow />,
+                            };
+                        }}
+                        enableAudio={isTextToSpeechEnabled && isAudioEnabled}
+                        enablePopInSpeakers={true}
+                        enableTalkingAnimation={true}
+                        responsiveOverlay={(skit, actor) => {
+                            return (
+                                <div>
+                                    <AnimatePresence mode="wait">
+                                        {actor && actor.id != 'player' && (
+                                            <motion.div
+                                                key={`actor-card-${actor.id}`}
+                                                initial={{ opacity: 0, x: -100 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -100 }}
+                                                transition={{ duration: 0.28, ease: 'easeInOut' }}
+                                            >
+                                                <div style={{
+                                                    position: 'relative',
+                                                    maxWidth: isVerticalLayout ? '30vw' : '15vw',
+                                                    right: 0,
+                                                    top: 0
+                                                }}>
+                                                    <ActorCard
+                                                        actor={actor}
+                                                        visitingFaction={undefined}
+                                                        role={getRole(actor, stage().getSave())}
+                                                        collapsedSections={[ActorCardSection.STATS]}
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
-                                <AnimatePresence mode="wait">
-                                    {accumulatedOutcomes.length > 0 && (
-                                        <SkitOutcomeDisplay
-                                            key={outcomesAnimationKey}
-                                            outcomes={accumulatedOutcomes}
-                                            stage={stage()}
-                                            layout={stage().getSave().layout}
-                                            isOutcomeTransient={(skit && skit.script && skit.currentIndex === skit.script.length - 1 && skit.outcomes && skit.outcomes.length > 0) || false}
-                                        />
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    }}
-                />
+                                    <AnimatePresence mode="wait">
+                                        {accumulatedOutcomes.length > 0 && (
+                                            <SkitOutcomeDisplay
+                                                key={outcomesAnimationKey}
+                                                outcomes={accumulatedOutcomes}
+                                                stage={stage()}
+                                                layout={stage().getSave().layout}
+                                                isOutcomeTransient={(skit && skit.script && skit.currentIndex === skit.script.length - 1 && skit.outcomes && skit.outcomes.length > 0) || false}
+                                            />
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            );
+                        }}
+                    />
+                </div>
             </div>
 
             {/* Content Management Modal */}
