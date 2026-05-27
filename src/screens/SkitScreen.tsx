@@ -338,10 +338,6 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                         <Close />
                     </IconButton>
                 </div>
-                <div style={{
-                    width: '100%',
-                    height: 'auto'
-                }}>
                     <NovelVisualizer
                         skit={skit}
                         loading={isLoading}
@@ -465,7 +461,6 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                             );
                         }}
                     />
-                </div>
             </div>
 
             {/* Content Management Modal */}
