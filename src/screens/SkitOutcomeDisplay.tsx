@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { motion } from 'framer-motion';
 import { Paper, Typography, Box } from '@mui/material';
 import { TrendingUp, Handshake, TrendingDown, ContentCut, Work, DomainAdd, Output, Input } from '@mui/icons-material';
-import Actor, { Stat, ACTOR_STAT_ICONS } from '../actors/Actor';
+import Actor, { Stat, ACTOR_STAT_ICONS, getRole } from '../actors/Actor';
 import Nameplate from '../components/Nameplate';
 import { scoreToGrade } from '../utils';
 import { StationStat, STATION_STAT_ICONS } from '../Module';
@@ -17,32 +17,130 @@ interface SkitOutcomeDisplayProps {
     isOutcomeTransient?: boolean;
 }
 
+interface OutcomePortraitBoxProps {
+    border: string;
+    baseImageUrl?: string;
+    overlayImageUrl?: string;
+    height?: string;
+    basePosition?: string;
+    overlayPosition?: string;
+    filter?: string;
+    boxShadow?: string;
+    showGradient?: boolean;
+    mb?: number;
+}
+
+const OutcomePortraitBox: FC<OutcomePortraitBoxProps> = ({
+    border,
+    baseImageUrl,
+    overlayImageUrl,
+    height = '160px',
+    basePosition = 'center',
+    overlayPosition = '50% 10%',
+    filter,
+    boxShadow = '0 8px 24px rgba(0,0,0,0.5)',
+    showGradient = false,
+    mb
+}) => (
+    <Box
+        sx={{
+            width: '100%',
+            height,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border,
+            backgroundImage: baseImageUrl ? `url(${baseImageUrl})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: basePosition,
+            backgroundRepeat: 'no-repeat',
+            filter,
+            boxShadow,
+            position: overlayImageUrl || showGradient ? 'relative' : undefined,
+            mb
+        }}
+    >
+        {overlayImageUrl && (
+            <Box
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundImage: `url(${overlayImageUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: overlayPosition,
+                    backgroundRepeat: 'no-repeat'
+                }}
+            />
+        )}
+        {showGradient && (
+            <Box
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
+                }}
+            />
+        )}
+    </Box>
+);
+
 const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, isOutcomeTransient }) => {
     // Calculate bottom position based on message box top
 
     const currentOutcomes: Outcome[] = outcomes || [];
     const save = stage.getSave();
 
-    // --- Stat grouping ---
+    // --- Actor and stat grouping ---
     interface StatEntry { stat: Stat | StationStat; oldValue: number; newValue: number; }
-    interface ActorStatGroup { actorId: string; actor: Actor | undefined; entries: StatEntry[]; }
+    interface ActorOutcomeGroup {
+        actorId: string;
+        actor: Actor | undefined;
+        entries: StatEntry[];
+        outcomes: Array<{ outcome: Outcome; order: number }>;
+        firstOrder: number;
+    }
 
-    const actorStatGroups: ActorStatGroup[] = (() => {
-        const map = new Map<string, ActorStatGroup>();
-        currentOutcomes.filter(o => o.type === 'actorStat' && o.actorId && o.stat != null).forEach(o => {
-            const actorId = o.actorId!;
+    const actorOutcomeGroups: ActorOutcomeGroup[] = (() => {
+        const map = new Map<string, ActorOutcomeGroup>();
+        const ensureGroup = (actorId: string, order: number): ActorOutcomeGroup => {
             if (!map.has(actorId)) {
-                const actor: Actor | undefined = save.actors[actorId];
-                map.set(actorId, { actorId, actor, entries: [] });
+                map.set(actorId, {
+                    actorId,
+                    actor: save.actors[actorId],
+                    entries: [],
+                    outcomes: [],
+                    firstOrder: order
+                });
             }
-            const actor = map.get(actorId)!.actor;
-            const currentValue: number = actor?.stats?.[o.stat as Stat] ?? 5;
-            const newValue = Math.max(1, Math.min(10, currentValue + (o.amount ?? 0)));
-            if (newValue !== currentValue) {
-                map.get(actorId)!.entries.push({ stat: o.stat!, oldValue: currentValue, newValue });
+            const group = map.get(actorId)!;
+            group.firstOrder = Math.min(group.firstOrder, order);
+            return group;
+        };
+
+        currentOutcomes.forEach((outcome, order) => {
+            if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat != null) {
+                const group = ensureGroup(outcome.actorId, order);
+                const currentValue: number = group.actor?.stats?.[outcome.stat as Stat] ?? 5;
+                const newValue = Math.max(1, Math.min(10, currentValue + (outcome.amount ?? 0)));
+                if (newValue !== currentValue) {
+                    group.entries.push({ stat: outcome.stat, oldValue: currentValue, newValue });
+                }
+                return;
+            }
+
+            const actorId = outcome.actorId || outcome.outfit?.actorId;
+            if (!actorId) {
+                return;
+            }
+
+            if (outcome.type === 'roleChange' || outcome.type === 'factionChange' || outcome.type === 'movement' || outcome.type === 'newOutfit') {
+                const group = ensureGroup(actorId, order);
+                group.outcomes.push({ outcome, order });
             }
         });
-        return Array.from(map.values()).filter(g => g.entries.length > 0);
+
+        return Array.from(map.values())
+            .filter(group => group.entries.length > 0 || group.outcomes.length > 0)
+            .sort((left, right) => left.firstOrder - right.firstOrder);
     })();
 
     const stationStatEntries: StatEntry[] = (() => {
@@ -56,7 +154,17 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             .filter(e => e.newValue !== e.oldValue);
     })();
 
-    const otherOutcomes = currentOutcomes.filter(o => o.type !== 'actorStat' && o.type !== 'stationStat');
+    const parcModuleEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newModule' && !!o.module);
+
+    const otherOutcomes = currentOutcomes.filter(o => {
+        if (o.type === 'actorStat' || o.type === 'stationStat') {
+            return false;
+        }
+        if (o.type === 'roleChange' || o.type === 'factionChange' || o.type === 'movement' || o.type === 'newOutfit' || o.type === 'newModule') {
+            return false;
+        }
+        return true;
+    });
 
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
@@ -144,6 +252,40 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         }
     }
 
+    const getMovementPresentation = (outcome: Outcome) => {
+        const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
+        if (!actor) {
+            return null;
+        }
+
+        const actorIsAtFaction = !!save.factions[actor.locationId];
+        const actorIsNotAtFaction = !actorIsAtFaction;
+        const isReturnToParc = actorIsAtFaction && !!outcome.moduleId;
+        const isLeavingForFaction = actorIsNotAtFaction && !!outcome.factionId;
+
+        if (!isReturnToParc && !isLeavingForFaction) {
+            return null;
+        }
+
+        const currentFaction = save.factions[actor.locationId];
+        const destinationFaction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
+        const message = isReturnToParc
+            ? `${actor.name} returns from ${currentFaction?.name || 'Unknown Faction'}`
+            : `${actor.name} leaves for ${destinationFaction?.name || resolveFactionName(outcome.factionId)}`;
+
+        const backgroundImage = isReturnToParc
+            ? PARC_BACKGROUND_IMAGE
+            : destinationFaction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE;
+
+        return {
+            actor,
+            message,
+            backgroundImage,
+            isLeavingForFaction,
+            isReturnToParc
+        };
+    };
+
     if (currentOutcomes.length === 0) {
         return null;
     }
@@ -199,6 +341,149 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     </motion.div>
                 );
             })}
+        </Box>
+    );
+
+    const renderActorOutcomeEntries = (group: ActorOutcomeGroup) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: group.entries.length > 0 ? 1 : 0 }}>
+            {group.outcomes.map(({ outcome }, index) => {
+                switch (outcome.type) {
+                    case 'roleChange': {
+                        const previousRole = group.actor ? getRole(group.actor, save).trim() : '';
+                        const previousRoleLabel = previousRole.length > 0 ? previousRole : 'Patient';
+                        const newRoleLabel = outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient';
+                        return (
+                            <Box
+                                key={`role_${index}`}
+                                sx={{
+                                    padding: '8px 10px',
+                                    background: 'rgba(100,180,255,0.12)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(100,180,255,0.35)',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#64b4ff', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                    Role
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Box component="span" sx={{ textDecoration: 'line-through', textDecorationThickness: '2px', opacity: 0.75 }}>
+                                        {previousRoleLabel}
+                                    </Box>
+                                    <Box component="span" sx={{ mx: 1, color: '#64b4ff', fontWeight: 900 }}>
+                                        {'→'}
+                                    </Box>
+                                    <Box component="span" sx={{ color: '#64b4ff', fontWeight: 900 }}>
+                                        {newRoleLabel}
+                                    </Box>
+                                </Typography>
+                            </Box>
+                        );
+                    }
+                    case 'factionChange':
+                        return (
+                            <Box
+                                key={`faction_${index}`}
+                                sx={{
+                                    padding: '8px 10px',
+                                    background: 'rgba(255,200,0,0.10)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255,200,0,0.35)',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffc800', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                    Faction
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    Changed to {resolveFactionName(outcome.factionId)}
+                                </Typography>
+                            </Box>
+                        );
+                    case 'newOutfit':
+                        return outcome.outfit ? (
+                            <Box
+                                key={`outfit_${index}`}
+                                sx={{
+                                    padding: '8px 10px',
+                                    background: 'rgba(16,185,129,0.10)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(16,185,129,0.35)',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                    New Outfit
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#d1fae5', lineHeight: 1.35, mb: 0.2, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    {outcome.outfit.outfitName}
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.88rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    {outcome.outfit.description}
+                                </Typography>
+                            </Box>
+                        ) : null;
+                    case 'movement': {
+                        const movement = getMovementPresentation(outcome);
+                        if (!movement) {
+                            return null;
+                        }
+                        return (
+                            <Box
+                                key={`movement_${index}`}
+                                sx={{
+                                    padding: '8px 10px',
+                                    background: 'rgba(56,189,248,0.10)',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(56,189,248,0.35)',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                    Movement
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    {movement.message}
+                                </Typography>
+                            </Box>
+                        );
+                    }
+                    default:
+                        return null;
+                }
+            })}
+        </Box>
+    );
+
+    const renderParcModuleEntries = (entries: Outcome[]) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: stationStatEntries.length > 0 ? 1 : 0 }}>
+            {entries.map((entry, index) => (
+                entry.module ? (
+                    <Box
+                        key={`parc_module_${entry.module.id || index}`}
+                        sx={{
+                            padding: '8px 10px',
+                            background: 'rgba(99,102,241,0.10)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(99,102,241,0.35)',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                            New Module
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#e0e7ff', lineHeight: 1.35, mb: 0.2, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                            {entry.module.moduleName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#bfdbfe', lineHeight: 1.35, mb: 0.25, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                            Role: {entry.module.roleName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.88rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                            {entry.module.description}
+                        </Typography>
+                    </Box>
+                ) : null
+            ))}
         </Box>
     );
 
@@ -291,9 +576,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     </Paper>
                 </div>
 
-                {/* Actor stat groups — one card per actor */}
-                {actorStatGroups.map((group, groupIndex) => (
-                    <div key={`actorStat_${group.actorId}`}>
+                {/* Actor outcome groups — one card per actor */}
+                {actorOutcomeGroups.map((group, groupIndex) => {
+                    const movementForPortrait = [...group.outcomes]
+                        .reverse()
+                        .map(({ outcome }) => outcome)
+                        .find(outcome => outcome.type === 'movement');
+                    const movementPresentation = movementForPortrait ? getMovementPresentation(movementForPortrait) : null;
+
+                    return (
+                    <div key={`actorOutcome_${group.actorId}`}>
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -306,19 +598,17 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     transition={{ duration: 0.5, delay: 0.6 + groupIndex * 0.2 }}
                                     style={{ marginBottom: '12px' }}
                                 >
-                                    <Box sx={{
-                                        width: '100%',
-                                        height: '150px',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: '2px solid rgba(0,255,136,0.4)',
-                                        backgroundImage: group.actor ? `url(${group.actor.getEmotionImage(group.actor.getDefaultEmotion())})` : 'none',
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: '50% 10%',
-                                        backgroundRepeat: 'no-repeat',
-                                        filter: 'brightness(1.1)',
-                                        boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
-                                    }} />
+                                    <OutcomePortraitBox
+                                        border="2px solid rgba(0,255,136,0.4)"
+                                        baseImageUrl={movementPresentation?.backgroundImage || (group.actor ? group.actor.getEmotionImage(group.actor.getDefaultEmotion()) : undefined)}
+                                        overlayImageUrl={movementPresentation ? group.actor?.getEmotionImage(group.actor.getDefaultEmotion()) : undefined}
+                                        height="150px"
+                                        basePosition={movementPresentation ? 'center' : '50% 10%'}
+                                        overlayPosition="50% 10%"
+                                        filter="brightness(1.1)"
+                                        boxShadow="0 8px 24px rgba(0,0,0,0.6)"
+                                        showGradient={!!movementPresentation}
+                                    />
                                 </motion.div>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -337,50 +627,48 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         layout="inline"
                                     />
                                 </motion.div>
-                                {renderStatEntries(group.entries, groupIndex, false)}
+                                {group.entries.length > 0 && renderStatEntries(group.entries, groupIndex, false)}
+                                {group.outcomes.length > 0 && renderActorOutcomeEntries(group)}
                             </Paper>
                         </motion.div>
                     </div>
-                ))}
+                    );
+                })}
 
-                {/* Station stat group — one card for PARC */}
-                {stationStatEntries.length > 0 && (
+                {/* PARC group — station stats and new modules */}
+                {(stationStatEntries.length > 0 || parcModuleEntries.length > 0) && (
                     <div key="stationStats">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.5 + actorStatGroups.length * 0.2 }}
+                            transition={{ duration: 0.4, delay: 0.5 + actorOutcomeGroups.length * 0.2 }}
                         >
                             <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(0,255,136,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
                                 <motion.div
                                     initial={{ scale: 0.8, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ duration: 0.5, delay: 0.6 + actorStatGroups.length * 0.2 }}
+                                    transition={{ duration: 0.5, delay: 0.6 + actorOutcomeGroups.length * 0.2 }}
                                     style={{ marginBottom: '12px' }}
                                 >
-                                    <Box sx={{
-                                        width: '100%',
-                                        height: '150px',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: '2px solid rgba(0,255,136,0.4)',
-                                        backgroundImage: `url(${PARC_BACKGROUND_IMAGE})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: '50% 15%',
-                                        backgroundRepeat: 'no-repeat',
-                                        filter: 'brightness(1.1)',
-                                        boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
-                                    }} />
+                                    <OutcomePortraitBox
+                                        border="2px solid rgba(0,255,136,0.4)"
+                                        baseImageUrl={PARC_BACKGROUND_IMAGE}
+                                        height="150px"
+                                        basePosition="50% 15%"
+                                        filter="brightness(1.1)"
+                                        boxShadow="0 8px 24px rgba(0,0,0,0.6)"
+                                    />
                                 </motion.div>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: 0.7 + actorStatGroups.length * 0.2 }}
+                                    transition={{ duration: 0.4, delay: 0.7 + actorOutcomeGroups.length * 0.2 }}
                                     style={{ marginBottom: '12px' }}
                                 >
                                     <Nameplate name="PARC" size="large" layout="inline" />
                                 </motion.div>
-                                {renderStatEntries(stationStatEntries, actorStatGroups.length, true)}
+                                {stationStatEntries.length > 0 && renderStatEntries(stationStatEntries, actorOutcomeGroups.length, true)}
+                                {parcModuleEntries.length > 0 && renderParcModuleEntries(parcModuleEntries)}
                             </Paper>
                         </motion.div>
                     </div>
@@ -392,20 +680,43 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     const accent = getAccent(outcome);
                     const OutcomeIcon = getOutcomeIcon(outcome);
                     const cardTitle = getOutcomeTitle(outcome);
-                    const cardIndex = actorStatGroups.length + (stationStatEntries.length > 0 ? 1 : 0) + outcomeIndex;
+                    const cardIndex = actorOutcomeGroups.length + ((stationStatEntries.length > 0 || parcModuleEntries.length > 0) ? 1 : 0) + outcomeIndex;
 
                     let content: React.ReactNode = null;
 
                     switch (outcome.type) {
                         case 'roleChange':
                             console.log('Processing roleChange outcome:', outcome);
+                            const roleActor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
+                            const previousRole = roleActor ? getRole(roleActor, save).trim() : '';
+                            const previousRoleLabel = previousRole.length > 0 ? previousRole : 'Patient';
+                            const newRoleLabel = outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient';
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
-                                        {resolveActorName(outcome.actorId)}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
-                                        Role set to {outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'None'}
+                                    <OutcomePortraitBox
+                                        border={`2px solid ${accent.color}66`}
+                                        baseImageUrl={roleActor ? roleActor.getEmotionImage(roleActor.getDefaultEmotion()) : undefined}
+                                        height="160px"
+                                        basePosition="50% 10%"
+                                        mb={1.25}
+                                    />
+                                    <Box sx={{ mb: 1.25 }}>
+                                        <Nameplate
+                                            actor={roleActor}
+                                            name={roleActor ? undefined : resolveActorName(outcome.actorId)}
+                                            layout="inline"
+                                        />
+                                    </Box>
+                                    <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                        <Box component="span" sx={{ textDecoration: 'line-through', textDecorationThickness: '2px', opacity: 0.75 }}>
+                                            {previousRoleLabel}
+                                        </Box>
+                                        <Box component="span" sx={{ mx: 1, color: accent.color, fontWeight: 900 }}>
+                                            {'→'}
+                                        </Box>
+                                        <Box component="span" sx={{ color: accent.color, fontWeight: 900 }}>
+                                            {newRoleLabel}
+                                        </Box>
                                     </Typography>
                                 </Box>
                             );
@@ -433,36 +744,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const isDecrease = newReputation < oldReputation;
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Box sx={{
-                                        width: '100%',
-                                        height: '160px',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: `2px solid ${accent.color}66`,
-                                        backgroundImage: `url(${faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        backgroundRepeat: 'no-repeat',
-                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                                        position: 'relative',
-                                        mb: 1.25
-                                    }}>
-                                        {representative && (
-                                            <Box sx={{
-                                                position: 'absolute',
-                                                inset: 0,
-                                                backgroundImage: `url(${representative.getEmotionImage(representative.getDefaultEmotion())})`,
-                                                backgroundSize: 'cover',
-                                                backgroundPosition: '50% 15%',
-                                                backgroundRepeat: 'no-repeat'
-                                            }} />
-                                        )}
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            inset: 0,
-                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
-                                        }} />
-                                    </Box>
+                                    <OutcomePortraitBox
+                                        border={`2px solid ${accent.color}66`}
+                                        baseImageUrl={faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
+                                        overlayImageUrl={representative ? representative.getEmotionImage(representative.getDefaultEmotion()) : undefined}
+                                        height="160px"
+                                        basePosition="center"
+                                        overlayPosition="50% 15%"
+                                        showGradient
+                                        mb={1.25}
+                                    />
                                     <Box sx={{ mb: 1.25 }}>
                                         <Nameplate name={factionName} size="large" layout="inline" />
                                     </Box>
@@ -552,34 +843,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Box sx={{
-                                        width: '100%',
-                                        height: '160px',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        border: `2px solid ${accent.color}66`,
-                                        backgroundImage: `url(${backgroundImage})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        backgroundRepeat: 'no-repeat',
-                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                                        position: 'relative',
-                                        mb: 1.25
-                                    }}>
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            inset: 0,
-                                            backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
-                                            backgroundSize: 'cover',
-                                            backgroundPosition: '50% 10%',
-                                            backgroundRepeat: 'no-repeat'
-                                        }} />
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            inset: 0,
-                                            background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)'
-                                        }} />
-                                    </Box>
+                                    <OutcomePortraitBox
+                                        border={`2px solid ${accent.color}66`}
+                                        baseImageUrl={backgroundImage}
+                                        overlayImageUrl={actor.getEmotionImage(actor.getDefaultEmotion())}
+                                        height="160px"
+                                        basePosition="center"
+                                        overlayPosition="50% 10%"
+                                        showGradient
+                                        mb={1.25}
+                                    />
                                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
                                         {message}
                                     </Typography>
