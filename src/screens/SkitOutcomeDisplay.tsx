@@ -57,6 +57,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     })();
 
     const otherOutcomes = currentOutcomes.filter(o => o.type !== 'actorStat' && o.type !== 'stationStat');
+    console.log('otherOutcomes:', otherOutcomes);
 
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
@@ -388,6 +389,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
                 {/* Other outcomes — one card each */}
                 {otherOutcomes.map((outcome, outcomeIndex) => {
+                    console.log('Processing outcome:', outcome);
                     const accent = getAccent(outcome);
                     const OutcomeIcon = getOutcomeIcon(outcome);
                     const cardTitle = getOutcomeTitle(outcome);
@@ -397,6 +399,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
                     switch (outcome.type) {
                         case 'roleChange':
+                            console.log('Processing roleChange outcome:', outcome);
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
                                     <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
@@ -409,6 +412,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             );
                             break;
                         case 'factionChange':
+                            console.log('Processing factionChange outcome:', outcome);
                             content = (
                                 <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
                                     <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
