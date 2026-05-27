@@ -21,7 +21,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     // Calculate bottom position based on message box top
 
     const currentOutcomes: Outcome[] = outcomes || [];
-    console.log('currentOutcomes:', currentOutcomes);
     const save = stage.getSave();
 
     // --- Stat grouping ---

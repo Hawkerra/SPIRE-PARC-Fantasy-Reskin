@@ -946,7 +946,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     outcomes: save.currentSkit.outcomes
                 });
             }
-            const outcomes = accumulateOutcomes(outcomeEntries) || [];
+            const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
             for (const outcome of outcomes) {
                 if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
                     if (save.actors[outcome.actorId]) {

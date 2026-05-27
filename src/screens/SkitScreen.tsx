@@ -228,7 +228,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
             ? [...visibleScriptEntries, { speaker: 'NARRATOR', message: '', speechUrl: '', outcomes: skit.outcomes }]
             : visibleScriptEntries;
 
-        const outcomes = accumulateOutcomes(visibleEntries) || [];
+        const outcomes = accumulateOutcomes(visibleEntries, stage()) || [];
         console.log('Skit outcomes:', skit.outcomes);
         setAccumulatedOutcomes(outcomes);
 

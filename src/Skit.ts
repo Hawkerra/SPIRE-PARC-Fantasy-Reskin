@@ -1492,10 +1492,10 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
     return [];
 }
 
-export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
+export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): Outcome[] {
     const statTotals = new Map<string, { outcome: Outcome; total: number; order: number }>();
     const factionReputationTotals = new Map<string, { outcome: Outcome; total: number; order: number }>();
-    const roleHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
+    const newRole = new Map<string, Outcome>();
     const factionHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
     const movementOutcomesByActor = new Map<string, { outcome: Outcome; order: number }>();
     const acceptedModules: { outcome: Outcome; order: number }[] = [];
@@ -1548,13 +1548,11 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
                 }
                 case 'roleChange': {
                     const actorKey = outcome.actorId || '';
-                    const currentHistory = roleHistories.get(actorKey)?.entries || [];
-                    const updatedHistory = appendNettingHistory(currentHistory, outcome.role || '', outcome);
-                    if (updatedHistory.length === 0) {
-                        roleHistories.delete(actorKey);
-                    } else {
-                        roleHistories.set(actorKey, { entries: updatedHistory });
+                    if (!actorKey) {
+                        break;
                     }
+
+                    newRole.set(actorKey, { ...outcome });
                     break;
                 }
                 case 'factionChange': {
@@ -1634,8 +1632,10 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[]): Outcome[] {
         }
     });
 
-    roleHistories.forEach(({ entries }) => {
-        entries.forEach(entry => accumulated.push({ outcome: { ...entry.outcome, role: entry.value }, order: entry.order }));
+    newRole.forEach((outcome, actorId) => {
+        if (outcome.role !== getRole(stage.getSave().actors[actorId], stage.getSave())) {
+            accumulated.push({ outcome: { ...outcome }, order: 0 });
+        }
     });
 
     factionHistories.forEach(({ entries }) => {
