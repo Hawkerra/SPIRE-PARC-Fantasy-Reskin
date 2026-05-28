@@ -860,13 +860,16 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
     const newModuleRegex = /NEW MODULE:\s*([^|]+)\|\s*ROLE\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
     const newModuleMatch = newModuleRegex.exec(text);
     if (newModuleMatch) {
+        console.log('New Module tag detected:', text);
         const moduleName = newModuleMatch[1].trim();
         const roleName = newModuleMatch[2].trim();
         const description = newModuleMatch[3].trim();
         if (moduleName && roleName && description) {
+            console.log(`Parsing new module definition from tag: ${text}: Module Name: ${moduleName}, Role Name: ${roleName}, Description: ${description}`);
             const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
             const similarModule = findBestNameMatch(moduleName, existingModules);
             if (!similarModule && !findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))])) {
+                console.log('Nothing too similar');
                 return [{
                     type: 'newModule',
                     module: {
@@ -876,6 +879,8 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
                         description
                     }
                 }];
+            } else {
+                console.log('Something too similar');
             }
         }
     }
