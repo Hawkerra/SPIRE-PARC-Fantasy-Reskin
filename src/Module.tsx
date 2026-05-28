@@ -330,7 +330,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         name: 'Armory',
         skitPrompt: 'The armory is the station\'s defense hub, where weapons and security systems are managed. Scenes here often involve security protocols, incident reports, or ways to enhance the station\'s safety and defense capabilities.',
         imagePrompt: 'A sci-fi armory with weapon lockers, equipment racks, and security equipment.',
-        role: 'Officer',
+        role: 'Security Officer',
         roleDescription: `Manage the station's defenses and ensure the safety of the crew against external and internal threats.`,
         baseImageUrl: 'https://media.charhub.io/7ccddb81-bed6-4395-80c6-912fe2932e53/c58a4f32-270d-4b62-b2b4-bcc1a3dedc94.png',
         defaultImageUrl: 'https://media.charhub.io/090e6a42-62f9-46da-9a29-09de8b469f05/eedf310f-af7a-40b4-ac56-686f4daa5c07.png',

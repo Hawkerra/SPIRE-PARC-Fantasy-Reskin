@@ -867,7 +867,8 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
             console.log(`Parsing new module definition from tag: ${text}: Module Name: ${moduleName}, Role Name: ${roleName}, Description: ${description}`);
             const existingModules = Object.values(MODULE_TEMPLATES).map(m => ({ name: m.name }));
             const similarModule = findBestNameMatch(moduleName, existingModules);
-            const similarRole = findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))]);
+            // Currently, allow for duplicate roles. Only block non-roles.
+            const similarRole = findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }]); //, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))]);
             if (!similarModule && !similarRole) {
                 console.log('Nothing too similar');
                 return [{
