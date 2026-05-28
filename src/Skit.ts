@@ -748,7 +748,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `The role name must directly match an existing role defined by the station's current modules (or "None," if a character's role is being removed by this tag).\n` +
 
                             `\n#Character Movement/Departure:#\n` +
-                            `If the entry depicts or implies that a character has departed the PARC or moved to a different faction (or such departure appears imminent), include final movement tags here.` +
+                            `If the content depicts or implies that a character has departed the PARC or moved to a different faction (or such departure appears imminent), include final movement tags here.` +
                             `[CHARACTER NAME moves to <module name|faction name>]\n` +
                             `Full Example:\n` +
                             `[${exampleActor} moves to Stellar Concord]\n` +
@@ -757,17 +757,17 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `remember that moving "to" a faction is an abstract location representing a task on that faction's behalf, whether that task is at the faction location or elsewhere entirely.` +
 
                             `\n#New Module Definition:#\n` +
-                            `If the entry results in the conception of a new module for the station ` +
-                            `(e.g., a character requests a specific new space or a new role is being established, which requires a dedicated workspace), ` +
+                            `If the content involves the conception or design of a new module for the station ` +
+                            `(e.g., a character requests a specific new space, or a new role is being established which requires a dedicated workspace, or a character discusses plans for a new module), ` +
                             `this tag is used to define the proposed module name and distinct, associated role:\n` +
                             `[NEW MODULE: <moduleName> | ROLE <roleName> | DESCRIPTION <briefDescription>]\n` +
                             `Full Example:\n` +
                             `[NEW MODULE: MedBay | ROLE Medic | DESCRIPTION A small medical bay equipped for basic treatments and check-ups.]\n` +
                             `[NEW MODULE: Lounge | ROLE Social Coordinator | DESCRIPTION A comfortable lounge area for relaxation and socialization among staff and patients.]\n` +
-                            `This tag allows the game engine to create new modules dynamically based on entry events, expanding the station's capabilities and accommodating character roles as needed.\n` +
+                            `This tag allows the game engine to create new modules dynamically based on entry events, expanding the station's capabilities and accommodating new character roles as needed.\n` +
 
                             `\n#New Appearance Definition:#\n` +
-                            `If the entry establishes a new look for a character(s) (for example, a marked physical change) or suggests the need for an alternative appearance (such as a new uniform)—which is not represented in their current "Other Appearances" list—, utilize this tag for each new look:\n` +
+                            `If the content establishes a new look for a character(s) (for example, a marked physical change) or suggests the need for an alternative appearance (such as a new uniform)—which is not represented in their current "Other Appearances" list—, utilize this tag for each new look:\n` +
                             `[NEW APPEARANCE: <characterName> | NAME <appearanceName> | DESCRIPTION <physicalDescription>]\n` +
                             `Full Example:\n` +
                             `[NEW APPEARANCE: ${exampleActor} | NAME Mission Armor | DESCRIPTION Reinforced tactical plating over a dark undersuit with compact shoulder lights and weathered gloves.]\n` +
