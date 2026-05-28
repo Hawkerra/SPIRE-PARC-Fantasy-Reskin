@@ -774,7 +774,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `The DESCRIPTION should focus on concise physical details, including intrinsic character details: body type, skin tone, hair style, eye color, etc., in addition to clothing elements and accessories.\n` +
 
                             `\n\n` +
-                            `Tags should be a fair representation of the entry's direct or implied events. ` +
+                            `Tags should be a fair representation of the content's direct or implied events. ` +
                             `Bear in mind the somewhat abstract nature of character and station stats when determining reasonable changes. ` +
                             `All stats (station and character) exist on a scale of 1-10, with 1 being the lowest and 10 being the highest possible value; ` +
                             `typically, changes should be minor (+/- 1 or 2) at a time, unless something dramatic occurs.`};
@@ -1010,8 +1010,10 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
                     `Analyze the scene depicted in the above script. ` +
                     `The System will apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
                     `Bear in mind existing outcome tags within the skit, avoiding redundancy or overkill. ` +
-                    `Tacitly consider the implications of these interactions, and infer outcomes involving character movements/departures/arrivals (particularly for missions or other faction arrangements), impending trade or exchanges, or other developments that may be reasonably suggested by the scene's context. ` +
-                    `When all relevant tags have been output by System, include an [END] tag before including any explanations for the chosen tags. ` +
+                    `Tacitly consider the implications of these interactions, and infer outcomes involving character movements/departures/arrivals (particularly for missions or other faction arrangements), ` +
+                    `impending trade or exchanges (affecting the station's stats or resources), new modules being discussed or designed, new looks or appearances for existing characters, ` +
+                    `or other developments that may be reasonably suggested by the scene's context but not captured by current tags in the script above. ` +
+                    `After all relevant tags have been output by System, include an [END] tag before including any explanations for the chosen tags. ` +
                     `If no outcomes seem relevant, output [NO OUTCOMES].`)
                 );
 
