@@ -1,7 +1,6 @@
-import { c } from "vite/dist/node/types.d-aGj9QkWt";
 import Actor, { getStatDescription, findBestNameMatch, Stat, getRole } from "./actors/Actor";
 import { Emotion, EMOTION_MAPPING } from "./actors/Emotion";
-import { getStatRating, Module, MODULE_TEMPLATES, STATION_STAT_PROMPTS, StationStat } from "./Module";
+import { getStatRating, MODULE_TEMPLATES, STATION_STAT_PROMPTS, StationStat } from "./Module";
 import { Stage } from "./Stage";
 import { v4 as generateUuid } from 'uuid';
 
@@ -759,7 +758,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `\n#New Module Definition:#\n` +
                             `If the content involves the conception or design of a new module for the station ` +
                             `(e.g., a character requests a specific new space, or a new role is being established which requires a dedicated workspace, or a character discusses plans for a new module), ` +
-                            `this tag is used to define the proposed module name and distinct, associated role:\n` +
+                            `this tag is used to define the proposed module name and a new crew role to go with it; both the name and role must be distinct from existing modules and roles.\n` +
                             `[NEW MODULE: <moduleName> | ROLE <roleName> | DESCRIPTION <briefDescription>]\n` +
                             `Full Example:\n` +
                             `[NEW MODULE: MedBay | ROLE Medic | DESCRIPTION A small medical bay equipped for basic treatments and check-ups.]\n` +
