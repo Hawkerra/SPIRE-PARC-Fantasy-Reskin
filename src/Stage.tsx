@@ -980,7 +980,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             } else if (outcome.type === 'newModule' && outcome.module) {
                 const moduleData = outcome.module;
                 // Kick off module generation
-                console.log(`End Test: Generating new module "${moduleData.name}" due to skit outcome.`);
+                console.log(`End Test: Generating new module "${moduleData.moduleName}" due to skit outcome.`);
             } else if (outcome.type === 'newOutfit' && outcome.actorId && outcome.outfit && outcome.outfit.outfitName) {
                 const actor = save.actors[outcome.actorId];
                 const outfit = outcome.outfit;
