@@ -948,13 +948,16 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             }
             const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
             for (const outcome of outcomes) {
+                console.log('Processing outcome:', outcome);
                 if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
+                    console.log('Processing actor stat outcome for actorId:', outcome.actorId, 'stat:', outcome.stat, 'amount:', outcome.amount);
                     if (save.actors[outcome.actorId]) {
                         const actor = save.actors[outcome.actorId];
                         actor.stats[outcome.stat as Stat] += outcome.amount;
                         this.showPriorityMessage(`${actor.name}'s ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
                     }
                 } else if (outcome.type === 'stationStat' && outcome.stat && outcome.stat in StationStat && outcome.amount) {
+                    console.log('Processing station stat outcome for stat:', outcome.stat, 'amount:', outcome.amount);
                     // Handle station stat changes here if needed
                     if (save.stationStats && outcome.stat in save.stationStats) {
                         save.stationStats[outcome.stat as StationStat] += outcome.amount;
