@@ -870,7 +870,6 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
             // Currently, allow for duplicate roles. Only block non-roles.
             const similarRole = findBestNameMatch(roleName, [{ name: 'NONE' }, { name: 'NOT APPLICABLE' }, { name: 'N/A' }]); //, ...Object.values(MODULE_TEMPLATES).map(m => ({ name: m.role || 'NOT APPLICABLE' }))]);
             if (!similarModule && !similarRole) {
-                console.log('Nothing too similar');
                 return [{
                     type: 'newModule',
                     module: {

@@ -215,7 +215,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
 	}, [stage]);
 
     useEffect(() => {
-        if (skit.script.length == 0) {
+        if (skit.script.length == 0 && !isLoading) {
             setIsLoading(true);
             stage().continueSkit().then(() => {
                 setIsLoading(false);
