@@ -676,7 +676,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
                 {/* Other outcomes — one card each */}
                 {otherOutcomes.map((outcome, outcomeIndex) => {
-                    console.log('Processing outcome:', outcome);
                     const accent = getAccent(outcome);
                     const OutcomeIcon = getOutcomeIcon(outcome);
                     const cardTitle = getOutcomeTitle(outcome);

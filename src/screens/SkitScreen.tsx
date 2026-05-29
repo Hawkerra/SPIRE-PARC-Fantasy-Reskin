@@ -231,6 +231,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
         const outcomes = accumulateOutcomes(visibleEntries, stage()) || [];
         console.log('Skit outcomes:', skit.outcomes);
         setAccumulatedOutcomes(outcomes);
+        stage().testEndSkit();
 
     }, [skit, skit.currentIndex, isLoading]);
 

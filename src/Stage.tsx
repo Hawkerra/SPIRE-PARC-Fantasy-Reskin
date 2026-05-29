@@ -921,6 +921,78 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         save.currentSkit = skit;
     }
 
+    // For logging skit outcomes without actually executing them.
+    testEndSkit() {
+        const save = this.getSave();
+        if (!save.currentSkit) {
+            console.warn('End Test: No active skit to end.');
+            return;
+        }
+        // Handle all outcomes:
+        const endedOnCurrentFinalEntry = (save.currentSkit.currentIndex ?? (save.currentSkit.script.length - 1)) >= (save.currentSkit.script.length - 1);
+        const outcomeEntries: ScriptEntry[] = [...save.currentSkit.script];
+        if (endedOnCurrentFinalEntry && (save.currentSkit.outcomes?.length || 0) > 0) {
+            outcomeEntries.push({
+                speaker: 'NARRATOR',
+                message: '',
+                speechUrl: '',
+                outcomes: save.currentSkit.outcomes
+            });
+        }
+        const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
+        for (const outcome of outcomes) {
+            console.log('End Test: Processing outcome:', outcome);
+            if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
+                console.log('End Test: Processing actor stat outcome for actorId:', outcome.actorId, 'stat:', outcome.stat, 'amount:', outcome.amount);
+                
+            } else if (outcome.type === 'stationStat' && outcome.stat && outcome.stat in StationStat && outcome.amount) {
+                console.log('End Test: Processing station stat outcome for stat:', outcome.stat, 'amount:', outcome.amount);
+                // Handle station stat changes here if needed
+                if (save.stationStats && outcome.stat in save.stationStats) {
+                    console.log('End Test: Current station stat value:', save.stationStats[outcome.stat as StationStat]);
+                }
+            } else if (outcome.type === 'factionReputation' && outcome.factionId && outcome.amount) {
+                if (save.factions[outcome.factionId]) {
+                    const faction = this.getSave().factions[outcome.factionId];
+                    if (!faction) return;
+
+                    const newReputation = Math.max(0, Math.min(10, faction.reputation + outcome.amount));
+
+                    faction.reputation = newReputation;
+                
+                    // If reputation reaches 0, deactivate faction
+                    if (newReputation <= 0 && faction.active) {
+                        console.log(`End Test: Deactivating faction ${faction.name} due to reputation reaching 0.`);
+                    } else if (newReputation >= 5 && !faction.module) {
+                        console.log(`End Test: Generating module for faction ${faction.name} due to reputation reaching ${newReputation}.`);
+                    }
+                }
+            } else if (outcome.type === 'factionChange' && outcome.actorId && outcome.factionId !== undefined) {
+                const actor = save.actors[outcome.actorId];
+                const newFactionId = outcome.factionId;
+                if (actor && actor.factionId != newFactionId) {
+                    console.log(`End Test: Changing ${actor.name}'s faction from ${actor.factionId || 'PARC'} to ${newFactionId || 'PARC'}`);
+                }
+            } else if (outcome.type === 'roleChange' && outcome.actorId) {
+                const actor = save.actors[outcome.actorId];
+                const newRole = outcome.role || '';
+                console.log(`End Test: Changing ${actor?.name}'s role to ${newRole}`);
+            } else if (outcome.type === 'newModule' && outcome.module) {
+                const moduleData = outcome.module;
+                // Kick off module generation
+                console.log(`End Test: Generating new module "${moduleData.name}" due to skit outcome.`);
+            } else if (outcome.type === 'newOutfit' && outcome.actorId && outcome.outfit && outcome.outfit.outfitName) {
+                const actor = save.actors[outcome.actorId];
+                const outfit = outcome.outfit;
+                console.log(`End Test: Generating new outfit "${outfit.outfitName}" for ${actor?.name} due to skit outcome.`);
+            } else if (outcome.type === 'movement' && outcome.actorId && (outcome.factionId || outcome.moduleId)) {
+                const actor = save.actors[outcome.actorId];
+                console.log(`End Test: Moving ${actor?.name} to ${outcome.moduleId ? `module ${outcome.moduleId}` : `faction ${outcome.factionId}` } due to skit outcome.`);
+            }
+        }
+
+    }
+
     endSkit(setScreenType: (type: ScreenType) => void) {
         const save = this.getSave();
         if (save.currentSkit) {
