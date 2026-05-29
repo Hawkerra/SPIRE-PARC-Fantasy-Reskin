@@ -942,10 +942,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
         for (const outcome of outcomes) {
             console.log('End Test: Processing outcome:', outcome);
-            if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && outcome.stat in Stat && outcome.amount) {
+            if (outcome.type === 'actorStat' && outcome.actorId && outcome.stat && Object.values(Stat).includes(outcome.stat as Stat) && outcome.amount) {
                 console.log('End Test: Processing actor stat outcome for actorId:', outcome.actorId, 'stat:', outcome.stat, 'amount:', outcome.amount);
                 
-            } else if (outcome.type === 'stationStat' && outcome.stat && outcome.stat in StationStat && outcome.amount) {
+            } else if (outcome.type === 'stationStat' && outcome.stat && Object.values(StationStat).includes(outcome.stat as StationStat) && outcome.amount) {
                 console.log('End Test: Processing station stat outcome for stat:', outcome.stat, 'amount:', outcome.amount);
                 // Handle station stat changes here if needed
                 if (save.stationStats && outcome.stat in save.stationStats) {
@@ -965,6 +965,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         console.log(`End Test: Deactivating faction ${faction.name} due to reputation reaching 0.`);
                     } else if (newReputation >= 5 && !faction.module) {
                         console.log(`End Test: Generating module for faction ${faction.name} due to reputation reaching ${newReputation}.`);
+                    } else {
+                        console.log(`End Test: Updated reputation for faction ${faction.name} to ${newReputation}.`);
                     }
                 }
             } else if (outcome.type === 'factionChange' && outcome.actorId && outcome.factionId !== undefined) {
