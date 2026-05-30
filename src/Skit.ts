@@ -1048,27 +1048,29 @@ async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: 
 }
 
 export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise<string> {
-    const summaryPrompt = buildSkitPrompt(skit, stage, 0,
-            buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
-            buildPromptSegment('Instruction', `The System will analyze the preceding scene script output a "[SUMMARY: <textSummary>]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
-        buildPromptSegment('Example Response',
-            `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`);
-     let endResponse = await stage.makeText({
-        prompt: summaryPrompt,
-        min_tokens: 1,
-        max_tokens: 300,
-        include_history: true,
-        stop: ['#END']
-    });
-    if (endResponse) {
-        const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
-        if (summaryMatch && summaryMatch[1].trim().length < 30) {
-            console.log('Generated summary too short, likely an error. Response:', endResponse);
-            return '';
+    let retries = 3;
+    while (retries > 0) {
+        const summaryPrompt = buildSkitPrompt(skit, stage, 0,
+                buildPromptSegment('Scene Script for Analysis', buildScriptLog(skit, skit.script, stage)) +
+                buildPromptSegment('Instruction', `The System will analyze the preceding scene script output a "[SUMMARY: <textSummary>]" tag with a brief summary of the entire scene's key events or outcomes.`)) +
+            buildPromptSegment('Example Response',
+                `[SUMMARY: A faction representative visits the PARC to make an offer to a patient, which they accept, leading to the patient's departure from the station to join that faction permanently.]`);
+        let endResponse = await stage.makeText({
+            prompt: summaryPrompt,
+            min_tokens: 1,
+            max_tokens: 300,
+            include_history: true,
+            stop: ['#END']
+        });
+        if (endResponse) {
+            const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
+            if (summaryMatch && summaryMatch[1].trim().length > 30) {
+                skit.summary = summaryMatch[1].trim();
+                console.log('New summary for skit:', skit.summary);
+                return skit.summary;
+            }
         }
-        skit.summary = summaryMatch ? summaryMatch[1].trim() : '';
-        console.log('New summary for skit:', skit.summary);
-        return skit.summary;
+        retries--;
     }
     return '';
 }
