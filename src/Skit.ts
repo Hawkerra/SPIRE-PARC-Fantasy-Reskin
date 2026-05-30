@@ -19,7 +19,7 @@ export enum SkitType {
 }
 
 export interface Outcome {
-    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit' | 'movement';
+    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit' | 'movement' | 'newActor';
     actorId?: string; // Required for actorStat, roleChange, factionChange, newOutfit, and movement
     stat?: Stat | StationStat; // Required for actorStat
     amount?: number; // Required for actorStat
@@ -28,6 +28,7 @@ export interface Outcome {
     moduleId?: string; // Required for movement (destination module ID)
     module?: { id: string; moduleName: string; roleName: string; description: string }; // Required for new module
     outfit?: { id: string; actorId: string; outfitName: string; description: string }; // Required for new outfit
+    actor?: { name: string; personality: string, locationId: string }; // Required for newActor
 }
 
 export interface ScriptEntry {
@@ -236,6 +237,13 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
             case 'newOutfit': {
                 if (!outcome.outfit?.outfitName || !outcome.outfit?.description) return null;
                 return `[NEW APPEARANCE: ${resolveActorName(outcome.actorId || outcome.outfit.actorId)} | NAME ${outcome.outfit.outfitName} | DESCRIPTION ${outcome.outfit.description}]`;
+            }
+            case 'newActor': {
+                if (!outcome.actor?.name || !outcome.actor?.personality || !outcome.actor?.locationId) return null;
+                const locationName = stage?.getSave().layout.getModuleById(outcome.actor.locationId)?.getAttribute('name')
+                    || resolveFactionName(outcome.actor.locationId)
+                    || outcome.actor.locationId;
+                return `[NEW CHARACTER: ${outcome.actor.name} | LOCATION ${locationName} | DESCRIPTION ${outcome.actor.personality}]`;
             }
             default:
                 return null;
@@ -772,6 +780,13 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `[NEW APPEARANCE: ${exampleActor} | NAME Mission Armor | DESCRIPTION Reinforced tactical plating over a dark undersuit with compact shoulder lights and weathered gloves.]\n` +
                             `The DESCRIPTION should focus on concise physical details, including intrinsic character details: body type, skin tone, hair style, eye color, etc., in addition to clothing elements and accessories.\n` +
 
+                            `\n#New Character Definition:#\n` +
+                            `If the content introduces a new character to the story, include a tag in the following format:\n` +
+                            `[NEW CHARACTER: <characterName> | LOCATION <moduleName or factionName> | DESCRIPTION <briefDescription>]\n` +
+                            `Full Example:\n` +
+                            `[NEW CHARACTER: Alex Mercer | LOCATION Some Faction Name | DESCRIPTION A resourceful engineer with a knack for improvisation, sporting a rugged look with short-cropped hair and a perpetual five o'clock shadow.]\n` +
+                            `This tag allows the game engine to create new characters dynamically based on entry events, expanding the cast and introducing new dynamics to the story as needed. ` +
+
                             `\n\n` +
                             `Tags should be a fair representation of the content's direct or implied events. ` +
                             `Bear in mind the somewhat abstract nature of character and station stats when determining reasonable changes. ` +
@@ -906,6 +921,55 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
                         actorId: matchedActor.id,
                         outfitName: appearanceName,
                         description: appearanceDescription
+                    }
+                }];
+            }
+        }
+    }
+
+    const newCharacterRegex = /NEW CHARACTER:\s*([^|]+)\|\s*LOCATION\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+    const newCharacterMatch = newCharacterRegex.exec(text);
+    if (newCharacterMatch) {
+        const characterName = newCharacterMatch[1].trim();
+        const locationName = newCharacterMatch[2].trim();
+        const personality = newCharacterMatch[3].trim();
+
+        if (characterName && personality) {
+            // Reject obvious duplicates by name against the current cast.
+            const similarActor = findBestNameMatch(characterName, allActors);
+            if (similarActor) {
+                return null;
+            }
+
+            let moduleId = '';
+
+            const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
+            const modulesWithAliases = modules.flatMap(module => [
+                { name: module.getAttribute('name') || '', module },
+                { name: module.type || '', module },
+                { name: `${module.getAttribute('name') || ''} ${module.type}`.trim(), module }
+            ]).filter(candidate => candidate.name.trim().length > 0);
+
+            const matchedModule = findBestNameMatch(locationName, modulesWithAliases);
+            if (matchedModule) {
+                moduleId = matchedModule.module.id;
+            } else if (['HERE', 'THIS MODULE', 'CURRENT MODULE', 'THIS LOCATION'].includes(locationName.toUpperCase())) {
+                moduleId = currentSceneModuleForAnalysis || skit.moduleId || '';
+            } else {
+                const matchedFaction = findBestNameMatch(locationName, allFactions);
+                if (matchedFaction) {
+                    // `moduleId` doubles as a location ID for this outcome; faction IDs are valid locations.
+                    moduleId = matchedFaction.id;
+                }
+            }
+
+            if (moduleId) {
+                return [{
+                    type: 'newActor',
+                    actor: {
+                        name: characterName,
+                        personality,
+                        locationId: moduleId
                     }
                 }];
             }

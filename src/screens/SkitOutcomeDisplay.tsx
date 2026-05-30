@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { motion } from 'framer-motion';
 import { Paper, Typography, Box } from '@mui/material';
-import { TrendingUp, Handshake, TrendingDown, ContentCut, Work, DomainAdd, Output, Input } from '@mui/icons-material';
+import { TrendingUp, Handshake, TrendingDown, ContentCut, Work, DomainAdd, Output, Input, PersonAdd } from '@mui/icons-material';
 import Actor, { Stat, ACTOR_STAT_ICONS, getRole } from '../actors/Actor';
 import Nameplate from '../components/Nameplate';
 import { scoreToGrade } from '../utils';
@@ -99,6 +99,14 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         firstOrder: number;
     }
 
+    interface FactionOutcomeGroup {
+        factionId: string;
+        faction: any;
+        reputationOutcomes: Array<{ outcome: Outcome; order: number }>;
+        newActorOutcomes: Array<{ outcome: Outcome; order: number }>;
+        firstOrder: number;
+    }
+
     const actorOutcomeGroups: ActorOutcomeGroup[] = (() => {
         const map = new Map<string, ActorOutcomeGroup>();
         const ensureGroup = (actorId: string, order: number): ActorOutcomeGroup => {
@@ -143,6 +151,41 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             .sort((left, right) => left.firstOrder - right.firstOrder);
     })();
 
+    const factionOutcomeGroups: FactionOutcomeGroup[] = (() => {
+        const map = new Map<string, FactionOutcomeGroup>();
+        const ensureGroup = (factionId: string, order: number): FactionOutcomeGroup => {
+            if (!map.has(factionId)) {
+                map.set(factionId, {
+                    factionId,
+                    faction: save.factions[factionId],
+                    reputationOutcomes: [],
+                    newActorOutcomes: [],
+                    firstOrder: order
+                });
+            }
+            const group = map.get(factionId)!;
+            group.firstOrder = Math.min(group.firstOrder, order);
+            return group;
+        };
+
+        currentOutcomes.forEach((outcome, order) => {
+            if (outcome.type === 'factionReputation' && outcome.factionId) {
+                const group = ensureGroup(outcome.factionId, order);
+                group.reputationOutcomes.push({ outcome, order });
+                return;
+            }
+
+            if (outcome.type === 'newActor' && outcome.actor?.locationId && save.factions[outcome.actor.locationId]) {
+                const group = ensureGroup(outcome.actor.locationId, order);
+                group.newActorOutcomes.push({ outcome, order });
+            }
+        });
+
+        return Array.from(map.values())
+            .filter(group => group.reputationOutcomes.length > 0 || group.newActorOutcomes.length > 0)
+            .sort((left, right) => left.firstOrder - right.firstOrder);
+    })();
+
     const stationStatEntries: StatEntry[] = (() => {
         return currentOutcomes
             .filter(o => o.type === 'stationStat' && o.stat != null)
@@ -155,12 +198,13 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     })();
 
     const parcModuleEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newModule' && !!o.module);
+    const parcNewActorEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newActor' && !!o.actor?.locationId && !!save.layout.getModuleById(o.actor.locationId));
 
     const otherOutcomes = currentOutcomes.filter(o => {
         if (o.type === 'actorStat' || o.type === 'stationStat') {
             return false;
         }
-        if (o.type === 'roleChange' || o.type === 'factionChange' || o.type === 'movement' || o.type === 'newOutfit' || o.type === 'newModule') {
+        if (o.type === 'roleChange' || o.type === 'factionChange' || o.type === 'movement' || o.type === 'newOutfit' || o.type === 'newModule' || o.type === 'factionReputation' || (o.type === 'newActor' && !!o.actor?.locationId && (save.layout.getModuleById(o.actor.locationId) || save.factions[o.actor.locationId]))) {
             return false;
         }
         return true;
@@ -199,6 +243,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return { border: 'rgba(99,102,241,0.32)', background: 'linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(99,102,241,0.22) 50%, rgba(139,92,246,0.12) 100%)', color: '#a5b4fc' };
             case 'newOutfit':
                 return { border: 'rgba(16,185,129,0.32)', background: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(6,182,212,0.20) 50%, rgba(14,165,233,0.12) 100%)', color: '#10b981' };
+            case 'newActor':
+                return { border: 'rgba(255,200,0,0.32)', background: 'rgba(255,200,0,0.10)', color: '#ffc800' };
             case 'movement':
                 return { border: 'rgba(56,189,248,0.32)', background: 'linear-gradient(135deg, rgba(14,165,233,0.16) 0%, rgba(59,130,246,0.20) 50%, rgba(30,64,175,0.14) 100%)', color: '#38bdf8' };
             default:
@@ -225,6 +271,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return DomainAdd;
             case 'newOutfit':
                 return ContentCut;
+            case 'newActor':
+                return PersonAdd;
             case 'movement':
                 return outcome.factionId ? Output : Input;
             default:
@@ -247,6 +295,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return 'New Module';
             case 'newOutfit':
                 return 'New Outfit';
+            case 'newActor':
+                return 'New Character';
             case 'movement':
                 return outcome.factionId ? `Leaving` : 'Returning';
         }
@@ -343,6 +393,87 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             })}
         </Box>
     );
+
+    const renderNewActorEntry = (outcome: Outcome, accentColor: string, key: string) => {
+        if (!outcome.actor?.name) {
+            return null;
+        }
+
+        return (
+            <Box
+                key={key}
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    padding: '8px 10px',
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: '8px',
+                    border: `1px solid ${accentColor}55`,
+                    textAlign: 'left'
+                }}
+            >
+                <PersonAdd sx={{ fontSize: '1.15rem', color: accentColor, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                    New Character: {outcome.actor.name}
+                </Typography>
+            </Box>
+        );
+    };
+
+    const renderFactionReputationEntry = (outcome: Outcome, accentColor: string, key: string) => {
+        const faction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
+        const representative = faction?.representativeId ? save.actors[faction.representativeId] : undefined;
+        const factionName = resolveFactionName(outcome.factionId);
+        const oldReputation = Math.max(0, Math.min(10, faction?.reputation ?? 3));
+        const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
+        const isIncrease = newReputation > oldReputation;
+        const isDecrease = newReputation < oldReputation;
+
+        return (
+            <Box key={key} sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accentColor}55` }}>
+                <OutcomePortraitBox
+                    border={`2px solid ${accentColor}66`}
+                    baseImageUrl={faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
+                    overlayImageUrl={representative ? representative.getEmotionImage(representative.getDefaultEmotion()) : undefined}
+                    height="160px"
+                    basePosition="center"
+                    overlayPosition="50% 15%"
+                    showGradient
+                    mb={1.25}
+                />
+                <Box sx={{ mb: 1.25 }}>
+                    <Nameplate name={factionName} size="large" layout="inline" />
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 10px',
+                        background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
+                        borderRadius: '8px',
+                        border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                    }}
+                >
+                    <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Reputation
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
+                            {scoreToGrade(oldReputation)}
+                        </span>
+                        <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                            {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
+                        </Typography>
+                        <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
+                            {scoreToGrade(newReputation)}
+                        </span>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    };
 
     const renderActorOutcomeEntries = (group: ActorOutcomeGroup) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: group.entries.length > 0 ? 1 : 0 }}>
@@ -635,8 +766,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     );
                 })}
 
-                {/* PARC group — station stats and new modules */}
-                {(stationStatEntries.length > 0 || parcModuleEntries.length > 0) && (
+                {/* PARC group — station stats, new modules, and station-bound new characters */}
+                {(stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0) && (
                     <div key="stationStats">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
@@ -669,10 +800,62 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 </motion.div>
                                 {stationStatEntries.length > 0 && renderStatEntries(stationStatEntries, actorOutcomeGroups.length, true)}
                                 {parcModuleEntries.length > 0 && renderParcModuleEntries(parcModuleEntries)}
+                                {parcNewActorEntries.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: (stationStatEntries.length > 0 || parcModuleEntries.length > 0) ? 1 : 0 }}>
+                                        {parcNewActorEntries.map((entry, index) => renderNewActorEntry(entry, '#a5b4fc', `parc_new_actor_${entry.actor?.name || index}`))}
+                                    </Box>
+                                )}
                             </Paper>
                         </motion.div>
                     </div>
                 )}
+
+                {/* Faction groups — reputation changes and faction-bound new characters */}
+                {factionOutcomeGroups.map((group, groupIndex) => {
+                    const accentColor = group.reputationOutcomes.length > 0
+                        ? ((group.reputationOutcomes[0].outcome.amount || 0) < 0 ? '#ff5050' : '#00ff88')
+                        : '#ffc800';
+
+                    return (
+                        <div key={`factionOutcome_${group.factionId}`}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: 0.5 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                            >
+                                <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(255,200,0,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                                    <motion.div
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ duration: 0.5, delay: 0.6 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                                        style={{ marginBottom: '12px' }}
+                                    >
+                                        <OutcomePortraitBox
+                                            border="2px solid rgba(255,200,0,0.4)"
+                                            baseImageUrl={group.faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
+                                            height="150px"
+                                            basePosition="center"
+                                            filter="brightness(1.1)"
+                                            boxShadow="0 8px 24px rgba(0,0,0,0.6)"
+                                        />
+                                    </motion.div>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: 0.7 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                                        style={{ marginBottom: '12px' }}
+                                    >
+                                        <Nameplate name={resolveFactionName(group.factionId)} size="large" layout="inline" />
+                                    </motion.div>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {group.reputationOutcomes.map(({ outcome }, index) => renderFactionReputationEntry(outcome, accentColor, `${group.factionId}_rep_${index}`))}
+                                        {group.newActorOutcomes.map(({ outcome }, index) => renderNewActorEntry(outcome, '#ffc800', `${group.factionId}_new_actor_${index}`))}
+                                    </Box>
+                                </Paper>
+                            </motion.div>
+                        </div>
+                    );
+                })}
 
                 {/* Other outcomes — one card each */}
                 {otherOutcomes.map((outcome, outcomeIndex) => {
@@ -807,6 +990,21 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     </Typography>
                                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
                                         {outcome.outfit.description}
+                                    </Typography>
+                                </Box>
+                            ) : null;
+                            break;
+                        case 'newActor':
+                            content = outcome.actor?.name ? (
+                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
+                                        <OutcomeIcon sx={{ color: accent.color, fontSize: '1.5rem' }} />
+                                        <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                            New Character
+                                        </Typography>
+                                    </Box>
+                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                        New Character: {outcome.actor.name}
                                     </Typography>
                                 </Box>
                             ) : null;

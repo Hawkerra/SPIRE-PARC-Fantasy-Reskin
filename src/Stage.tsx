@@ -1172,6 +1172,17 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         const newLocationId = outcome.moduleId || outcome.factionId || actor.locationId;
                         actor.locationId = newLocationId;
                     }
+                } else if (outcome.type === 'newActor' && outcome.actor) {
+                    const actorData = outcome.actor;
+                    // Need to kick off actor generation in the background, then save when complete:
+                    loadReserveActor(actorData, this).then(newActor => {
+                        if (newActor) {
+                            newActor.locationId = actorData.locationId || '';
+                            newActor.origin = 'emergent';
+                            save.actors[newActor.id] = newActor;
+                            this.saveGame();
+                        }
+                    });
                 }
             }
 
