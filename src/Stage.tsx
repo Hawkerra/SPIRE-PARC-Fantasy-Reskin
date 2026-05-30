@@ -638,6 +638,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 break; // only do one at a time
             }
         }
+
+        this.summaryCheck();
     }
 
     getGenerateAidePromise(): Promise<void> | undefined {
@@ -1199,19 +1201,24 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 }
             }
 
-            // Look at past skits (starting from the beginning), and find one that doesn't have a summary, to generate:
-            const skitToSummarize = (save.timeline || []).find(entry => entry.skit && !entry.skit.summary)?.skit;
-            if (skitToSummarize) {
-                console.log(`Summarizing an old skit.`);
-                generateSkitSummary(skitToSummarize, this).then(summary => {
-                    if (summary) {
-                        this.saveGame();
-                    }
-                });
-            }
+            this.summaryCheck();
 
             save.currentSkit = undefined;
             this.incTurn(1, setScreenType);
+        }
+    }
+
+    async summaryCheck() {
+        const save = this.getSave();
+        // Look at past skits (starting from the beginning), and find one that doesn't have a summary, to generate:
+        const skitToSummarize = (save.timeline || []).find(entry => entry.skit && !entry.skit.summary)?.skit;
+        if (skitToSummarize) {
+            console.log(`Summarizing an old skit.`);
+            generateSkitSummary(skitToSummarize, this).then(summary => {
+                if (summary) {
+                    this.saveGame();
+                }
+            });
         }
     }
 
