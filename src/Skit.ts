@@ -1579,9 +1579,12 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     const newRole = new Map<string, Outcome>();
     const factionHistories = new Map<string, { entries: { value: string; outcome: Outcome; order: number }[] }>();
     const movementOutcomesByActor = new Map<string, { outcome: Outcome; order: number }>();
+    const acceptedActors: { outcome: Outcome; order: number}[] = [];
+    const acceptedActorNames: { name: string; index: number }[] = [];
     const acceptedModules: { outcome: Outcome; order: number }[] = [];
     const acceptedModuleNames: { name: string; index: number }[] = [];
     const acceptedOutfitsByActor = new Map<string, { outcome: Outcome; order: number }[]>();
+    
     let orderCounter = 0;
 
     const nextOrder = (): number => orderCounter++;
@@ -1678,6 +1681,21 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
                     acceptedModules.push({ outcome: { ...outcome, module: outcome.module ? { ...outcome.module } : outcome.module }, order: nextOrder() });
                     break;
                 }
+                case 'newActor': {
+                    const actorName = outcome.actor?.name?.trim() || '';
+                    if (!actorName) {
+                        break;
+                    }
+
+                    const similarExistingActor = findBestNameMatch(actorName, acceptedActorNames.map(existing => ({ name: existing.name })));
+                    if (similarExistingActor) {
+                        break;
+                    }
+
+                    acceptedActorNames.push({ name: actorName, index: acceptedActors.length });
+                    acceptedActors.push({ outcome: { ...outcome, actor: outcome.actor ? { ...outcome.actor } : outcome.actor }, order: nextOrder() });
+                    break;
+                }
                 case 'newOutfit': {
                     const actorId = outcome.outfit?.actorId || outcome.actorId || '';
                     const outfitName = outcome.outfit?.outfitName?.trim() || '';
@@ -1731,6 +1749,8 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     acceptedOutfitsByActor.forEach(entries => {
         entries.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));
     });
+
+    acceptedActors.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));
 
     return accumulated
         .sort((left, right) => left.order - right.order)

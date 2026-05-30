@@ -181,7 +181,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             if (outcome.factionId) {
                 const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
                 const group = ensureGroup(outcome.factionId, order);
-                console.log('Adding faction reputation outcome to faction group', { factionId: outcome.factionId, order });
                 group.reputationOutcomes.push({ outcome, order });
             }
         });
@@ -190,7 +189,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             if (outcome.actor?.locationId) {
                 const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
                 const group = ensureGroup(outcome.actor.locationId, order);
-                console.log('Adding new actor outcome to faction group', { actorName: outcome.actor.name, factionId: outcome.actor.locationId, order });
                 group.newActorOutcomes.push({ outcome, order });
             }
         });
