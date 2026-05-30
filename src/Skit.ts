@@ -1062,6 +1062,10 @@ export async function generateSkitSummary(skit: SkitData, stage: Stage): Promise
     });
     if (endResponse) {
         const summaryMatch = /\[SUMMARY:\s*([^\]]+)\]/i.exec(endResponse);
+        if (summaryMatch && summaryMatch[1].trim().length < 30) {
+            console.log('Generated summary too short, likely an error. Response:', endResponse);
+            return '';
+        }
         skit.summary = summaryMatch ? summaryMatch[1].trim() : '';
         console.log('New summary for skit:', skit.summary);
         return skit.summary;
