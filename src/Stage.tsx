@@ -957,8 +957,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     if (!faction) return;
 
                     const newReputation = Math.max(0, Math.min(10, faction.reputation + outcome.amount));
-
-                    faction.reputation = newReputation;
                 
                     // If reputation reaches 0, deactivate faction
                     if (newReputation <= 0 && faction.active) {
