@@ -933,11 +933,14 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         const characterName = newCharacterMatch[1].trim();
         const locationName = newCharacterMatch[2].trim();
         const personality = newCharacterMatch[3].trim();
+        console.log(`New Character tag detected: ${text}`);
 
         if (characterName && personality) {
             // Reject obvious duplicates by name against the current cast.
+            console.log(`Parsing new character definition from tag: ${text}: Character Name: ${characterName}, Location Name: ${locationName}, Personality: ${personality}`);
             const similarActor = findBestNameMatch(characterName, allActors);
             if (similarActor) {
+                console.log(`Too similar character name found for new character tag: ${similarActor.name}`);
                 return null;
             }
 
@@ -962,6 +965,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
                     moduleId = matchedFaction.id;
                 }
             }
+            console.log(`Matched location for new character tag: ${moduleId ? (stage.getSave().layout.getModuleById(moduleId)?.getAttribute('name') || stage.getSave().factions[moduleId]?.name || 'Unknown Location') : 'No match found'}`);
 
             if (moduleId) {
                 return [{

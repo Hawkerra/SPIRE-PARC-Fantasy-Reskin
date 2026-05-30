@@ -423,8 +423,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
     const renderFactionReputationEntry = (outcome: Outcome, accentColor: string, key: string) => {
         const faction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
-        const representative = faction?.representativeId ? save.actors[faction.representativeId] : undefined;
-        const factionName = resolveFactionName(outcome.factionId);
         const oldReputation = Math.max(0, Math.min(10, faction?.reputation ?? 3));
         const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
         const isIncrease = newReputation > oldReputation;
@@ -432,19 +430,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
         return (
             <Box key={key} sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accentColor}55` }}>
-                <OutcomePortraitBox
-                    border={`2px solid ${accentColor}66`}
-                    baseImageUrl={faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
-                    overlayImageUrl={representative ? representative.getEmotionImage(representative.getDefaultEmotion()) : undefined}
-                    height="160px"
-                    basePosition="center"
-                    overlayPosition="50% 15%"
-                    showGradient
-                    mb={1.25}
-                />
-                <Box sx={{ mb: 1.25 }}>
-                    <Nameplate name={factionName} size="large" layout="inline" />
-                </Box>
                 <Box
                     sx={{
                         display: 'flex',
@@ -815,6 +800,9 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     const accentColor = group.reputationOutcomes.length > 0
                         ? ((group.reputationOutcomes[0].outcome.amount || 0) < 0 ? '#ff5050' : '#00ff88')
                         : '#ffc800';
+                    const representative = group.faction?.representativeId
+                        ? save.actors[group.faction.representativeId]
+                        : undefined;
 
                     return (
                         <div key={`factionOutcome_${group.factionId}`}>
@@ -833,9 +821,12 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         <OutcomePortraitBox
                                             border="2px solid rgba(255,200,0,0.4)"
                                             baseImageUrl={group.faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
+                                            overlayImageUrl={representative ? representative.getEmotionImage(representative.getDefaultEmotion()) : undefined}
                                             height="150px"
                                             basePosition="center"
+                                            overlayPosition="50% 15%"
                                             filter="brightness(1.1)"
+                                            showGradient
                                             boxShadow="0 8px 24px rgba(0,0,0,0.6)"
                                         />
                                     </motion.div>
