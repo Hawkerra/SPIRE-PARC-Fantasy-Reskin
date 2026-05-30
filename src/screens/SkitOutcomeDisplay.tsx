@@ -151,8 +151,17 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             .sort((left, right) => left.firstOrder - right.firstOrder);
     })();
 
+    const factionNewActorEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newActor' && o.actor?.locationId && !!save.factions[o.actor.locationId]);
+    const factionReputationEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'factionReputation' && !!o.factionId);
+
     const factionOutcomeGroups: FactionOutcomeGroup[] = (() => {
         const map = new Map<string, FactionOutcomeGroup>();
+        const outcomeOrderByRef = new Map<Outcome, number>();
+
+        currentOutcomes.forEach((outcome, order) => {
+            outcomeOrderByRef.set(outcome, order);
+        });
+
         const ensureGroup = (factionId: string, order: number): FactionOutcomeGroup => {
             if (!map.has(factionId)) {
                 map.set(factionId, {
@@ -168,14 +177,17 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             return group;
         };
 
-        currentOutcomes.forEach((outcome, order) => {
-            if (outcome.type === 'factionReputation' && outcome.factionId) {
+        factionReputationEntries.forEach(outcome => {
+            if (outcome.factionId) {
+                const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
                 const group = ensureGroup(outcome.factionId, order);
                 group.reputationOutcomes.push({ outcome, order });
-                return;
             }
+        });
 
-            if (outcome.type === 'newActor' && outcome.actor?.locationId && save.factions[outcome.actor.locationId]) {
+        factionNewActorEntries.forEach(outcome => {
+            if (outcome.actor?.locationId) {
+                const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
                 const group = ensureGroup(outcome.actor.locationId, order);
                 group.newActorOutcomes.push({ outcome, order });
             }
@@ -209,8 +221,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         }
         return true;
     });
-
-    console.log('Other outcomes:', otherOutcomes);
 
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
