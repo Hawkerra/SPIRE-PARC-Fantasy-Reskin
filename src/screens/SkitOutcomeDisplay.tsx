@@ -210,6 +210,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         return true;
     });
 
+    console.log('Other outcomes:', otherOutcomes);
+
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
         if (actorId === 'player') return save.player.name;

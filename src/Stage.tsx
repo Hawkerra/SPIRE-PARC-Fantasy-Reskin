@@ -990,6 +990,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             } else if (outcome.type === 'movement' && outcome.actorId && (outcome.factionId || outcome.moduleId)) {
                 const actor = save.actors[outcome.actorId];
                 console.log(`End Test: Moving ${actor?.name} to ${outcome.moduleId ? `module ${outcome.moduleId}` : `faction ${outcome.factionId}` } due to skit outcome.`);
+            } else if (outcome.type === 'newActor' && outcome.actor) {
+                console.log(`End Test: Adding new actor ${outcome.actor.name} due to skit outcome.`);    
             }
         }
 
