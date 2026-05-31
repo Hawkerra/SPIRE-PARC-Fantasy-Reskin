@@ -42,7 +42,6 @@ const outcomeMicroLabelSx = {
     fontSize: '0.8rem',
     fontWeight: 700,
     letterSpacing: '0.08em',
-    textTransform: 'uppercase' as const,
     mb: 0.4
 };
 
@@ -66,7 +65,6 @@ const outcomeStatLabelSx = {
     ...outcomeBodyTextSx,
     fontSize: '0.9rem',
     fontWeight: 700,
-    textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
     color: 'var(--color-primary)'
 };
@@ -168,6 +166,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
     const currentOutcomes: Outcome[] = outcomes || [];
     const save = stage.getSave();
+    const mappedOutcomeOrders = new Set<number>();
 
     // --- Actor and stat grouping ---
     interface StatEntry { stat: Stat | StationStat; oldValue: number; newValue: number; }
@@ -212,6 +211,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 if (newValue !== currentValue) {
                     group.entries.push({ stat: outcome.stat, oldValue: currentValue, newValue });
                 }
+                mappedOutcomeOrders.add(order);
                 return;
             }
 
@@ -223,6 +223,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             if (outcome.type === 'roleChange' || outcome.type === 'factionChange' || outcome.type === 'movement' || outcome.type === 'newOutfit') {
                 const group = ensureGroup(actorId, order);
                 group.outcomes.push({ outcome, order });
+                mappedOutcomeOrders.add(order);
             }
         });
 
@@ -231,16 +232,8 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             .sort((left, right) => left.firstOrder - right.firstOrder);
     })();
 
-    const factionNewActorEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newActor' && o.actor?.locationId && !!save.factions[o.actor.locationId]);
-    const factionReputationEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'factionReputation' && !!o.factionId);
-
     const factionOutcomeGroups: FactionOutcomeGroup[] = (() => {
         const map = new Map<string, FactionOutcomeGroup>();
-        const outcomeOrderByRef = new Map<Outcome, number>();
-
-        currentOutcomes.forEach((outcome, order) => {
-            outcomeOrderByRef.set(outcome, order);
-        });
 
         const ensureGroup = (factionId: string, order: number): FactionOutcomeGroup => {
             if (!map.has(factionId)) {
@@ -257,19 +250,18 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             return group;
         };
 
-        factionReputationEntries.forEach(outcome => {
-            if (outcome.factionId) {
-                const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
+        currentOutcomes.forEach((outcome, order) => {
+            if (outcome.type === 'factionReputation' && outcome.factionId) {
                 const group = ensureGroup(outcome.factionId, order);
                 group.reputationOutcomes.push({ outcome, order });
+                mappedOutcomeOrders.add(order);
+                return;
             }
-        });
 
-        factionNewActorEntries.forEach(outcome => {
-            if (outcome.actor?.locationId) {
-                const order = outcomeOrderByRef.get(outcome) ?? Number.MAX_SAFE_INTEGER;
+            if (outcome.type === 'newActor' && outcome.actor?.locationId && save.factions[outcome.actor.locationId]) {
                 const group = ensureGroup(outcome.actor.locationId, order);
                 group.newActorOutcomes.push({ outcome, order });
+                mappedOutcomeOrders.add(order);
             }
         });
 
@@ -279,28 +271,46 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     })();
 
     const stationStatEntries: StatEntry[] = (() => {
-        return currentOutcomes
-            .filter(o => o.type === 'stationStat' && o.stat != null)
-            .map(o => {
-                const currentValue: number = save.stationStats?.[o.stat as StationStat] ?? 5;
-                const newValue = Math.max(1, Math.min(10, currentValue + (o.amount ?? 0)));
-                return { stat: o.stat!, oldValue: currentValue, newValue };
-            })
-            .filter(e => e.newValue !== e.oldValue);
+        const entries: StatEntry[] = [];
+
+        currentOutcomes.forEach((outcome, order) => {
+            if (outcome.type !== 'stationStat' || outcome.stat == null) {
+                return;
+            }
+
+            const currentValue: number = save.stationStats?.[outcome.stat as StationStat] ?? 5;
+            const newValue = Math.max(1, Math.min(10, currentValue + (outcome.amount ?? 0)));
+            if (newValue !== currentValue) {
+                entries.push({ stat: outcome.stat, oldValue: currentValue, newValue });
+            }
+
+            mappedOutcomeOrders.add(order);
+        });
+
+        return entries;
     })();
 
-    const parcModuleEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newModule' && !!o.module);
-    const parcNewActorEntries: Outcome[] = currentOutcomes.filter(o => o.type === 'newActor' && !!o.actor?.locationId && !!save.layout.getModuleById(o.actor.locationId));
+    const parcModuleEntries: Outcome[] = [];
+    const parcNewActorEntries: Outcome[] = [];
 
-    const otherOutcomes = currentOutcomes.filter(o => {
-        if (o.type === 'actorStat' || o.type === 'stationStat') {
-            return false;
+    currentOutcomes.forEach((outcome, order) => {
+        if (outcome.type === 'newModule' && outcome.module) {
+            parcModuleEntries.push(outcome);
+            mappedOutcomeOrders.add(order);
+            return;
         }
-        if (o.type === 'roleChange' || o.type === 'factionChange' || o.type === 'movement' || o.type === 'newOutfit' || o.type === 'newModule' || o.type === 'factionReputation' || (o.type === 'newActor' && !!o.actor?.locationId && (save.layout.getModuleById(o.actor.locationId) || save.factions[o.actor.locationId]))) {
-            return false;
+
+        if (outcome.type === 'newActor' && outcome.actor?.name) {
+            const locationId = outcome.actor.locationId;
+            const isFactionLocation = !!locationId && !!save.factions[locationId];
+            if (!isFactionLocation) {
+                parcNewActorEntries.push(outcome);
+                mappedOutcomeOrders.add(order);
+            }
         }
-        return true;
     });
+
+    const parcFallbackOutcomes = currentOutcomes.filter((_, order) => !mappedOutcomeOrders.has(order));
 
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
@@ -376,7 +386,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         switch (outcome.type) {
             case 'actorStat':
             case 'stationStat':
-                return outcome.stat ? String(outcome.stat).toUpperCase() : 'STAT CHANGE';
+                return outcome.stat ? String(outcome.stat).charAt(0).toUpperCase() + String(outcome.stat).slice(1) : 'Stat Change';
             case 'roleChange':
                 return 'Role Change';
             case 'factionChange':
@@ -393,6 +403,40 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 return outcome.factionId ? `Leaving` : 'Returning';
         }
     }
+
+    const getOutcomeSummary = (outcome: Outcome) => {
+        switch (outcome.type) {
+            case 'actorStat':
+                return `${resolveActorName(outcome.actorId)}: ${String(outcome.stat || 'Stat')} ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
+            case 'stationStat':
+                return `${String(outcome.stat || 'Station Stat')}: ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
+            case 'roleChange':
+                return `${resolveActorName(outcome.actorId)} is now ${outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient'}`;
+            case 'factionChange':
+                return `${resolveActorName(outcome.actorId)} changed faction to ${resolveFactionName(outcome.factionId)}`;
+            case 'factionReputation':
+                return `${resolveFactionName(outcome.factionId)} reputation ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
+            case 'newModule':
+                return outcome.module?.moduleName || 'New module unlocked';
+            case 'newOutfit':
+                return outcome.outfit?.outfitName
+                    ? `${resolveActorName(outcome.outfit.actorId)} unlocked ${outcome.outfit.outfitName}`
+                    : 'New outfit unlocked';
+            case 'newActor':
+                return outcome.actor?.name
+                    ? `New character: ${outcome.actor.name}`
+                    : 'New character joined the PARC';
+            case 'movement': {
+                const movement = getMovementPresentation(outcome);
+                if (movement) {
+                    return movement.message;
+                }
+                return `${resolveActorName(outcome.actorId)} movement updated`;
+            }
+            default:
+                return 'Outcome updated';
+        }
+    };
 
     const getMovementPresentation = (outcome: Outcome) => {
         const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
@@ -614,7 +658,24 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     case 'movement': {
                         const movement = getMovementPresentation(outcome);
                         if (!movement) {
-                            return null;
+                            return (
+                                <Box
+                                    key={`movement_${index}`}
+                                    sx={{
+                                        ...outcomeContentCardSx,
+                                        background: 'rgba(56,189,248,0.10)',
+                                        border: '1px solid rgba(56,189,248,0.35)',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    <Typography sx={{ ...outcomeMicroLabelSx, color: '#38bdf8' }}>
+                                        Movement
+                                    </Typography>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.45 }}>
+                                        {resolveActorName(outcome.actorId)} movement updated
+                                    </Typography>
+                                </Box>
+                            );
                         }
                         return (
                             <Box
@@ -670,6 +731,36 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     </Box>
                 ) : null
             ))}
+        </Box>
+    );
+
+    const renderParcFallbackEntries = (entries: Outcome[]) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0) ? 1 : 0 }}>
+            {entries.map((entry, index) => {
+                const accent = getAccent(entry);
+                const OutcomeIcon = getOutcomeIcon(entry);
+                return (
+                    <Box
+                        key={`parc_fallback_${index}`}
+                        sx={{
+                            ...outcomeContentCardSx,
+                            border: `1px solid ${accent.border}`,
+                            background: accent.background,
+                            textAlign: 'left'
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.4 }}>
+                            <OutcomeIcon sx={{ fontSize: '1.05rem', color: accent.color }} />
+                            <Typography sx={{ ...outcomeMicroLabelSx, color: accent.color, mb: 0 }}>
+                                {getOutcomeTitle(entry)}
+                            </Typography>
+                        </Box>
+                        <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.4 }}>
+                            {getOutcomeSummary(entry)}
+                        </Typography>
+                    </Box>
+                );
+            })}
         </Box>
     );
 
@@ -817,7 +908,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 })}
 
                 {/* PARC group — station stats, new modules, and station-bound new characters */}
-                {(stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0) && (
+                {(stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 || parcFallbackOutcomes.length > 0) && (
                     <div key="stationStats">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
@@ -855,6 +946,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         {parcNewActorEntries.map((entry, index) => renderNewActorEntry(entry, '#a5b4fc', `parc_new_actor_${entry.actor?.name || index}`))}
                                     </Box>
                                 )}
+                                {parcFallbackOutcomes.length > 0 && renderParcFallbackEntries(parcFallbackOutcomes)}
                             </Paper>
                         </motion.div>
                     </div>
@@ -874,13 +966,13 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.5 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                                transition={{ duration: 0.4, delay: 0.5 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 || parcFallbackOutcomes.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
                             >
                                 <Paper elevation={6} className="glass-panel" sx={{ ...outcomeCardSx, border: '2px solid rgba(255,200,0,0.2)' }}>
                                     <motion.div
                                         initial={{ scale: 0.8, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ duration: 0.5, delay: 0.6 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                                        transition={{ duration: 0.5, delay: 0.6 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 || parcFallbackOutcomes.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
                                         style={{ marginBottom: '12px' }}
                                     >
                                         <OutcomePortraitBox
@@ -898,7 +990,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, delay: 0.7 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
+                                        transition={{ duration: 0.4, delay: 0.7 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 || parcFallbackOutcomes.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
                                         style={{ marginBottom: '12px' }}
                                     >
                                         <Nameplate name={resolveFactionName(group.factionId)} size="large" layout="inline" />
@@ -908,248 +1000,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         {group.newActorOutcomes.map(({ outcome }, index) => renderNewActorEntry(outcome, '#ffc800', `${group.factionId}_new_actor_${index}`))}
                                     </Box>
                                 </Paper>
-                            </motion.div>
-                        </div>
-                    );
-                })}
-
-                {/* Other outcomes — one card each */}
-                {otherOutcomes.map((outcome, outcomeIndex) => {
-                    const accent = getAccent(outcome);
-                    const OutcomeIcon = getOutcomeIcon(outcome);
-                    const cardTitle = getOutcomeTitle(outcome);
-                    const cardIndex = actorOutcomeGroups.length + ((stationStatEntries.length > 0 || parcModuleEntries.length > 0) ? 1 : 0) + outcomeIndex;
-
-                    let content: React.ReactNode = null;
-
-                    switch (outcome.type) {
-                        case 'roleChange':
-                            const roleActor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
-                            const previousRole = roleActor ? getRole(roleActor, save).trim() : '';
-                            const previousRoleLabel = previousRole.length > 0 ? previousRole : 'Patient';
-                            const newRoleLabel = outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient';
-                            content = (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <OutcomePortraitBox
-                                        border={`2px solid ${accent.color}66`}
-                                        baseImageUrl={roleActor ? roleActor.getEmotionImage(roleActor.getDefaultEmotion()) : undefined}
-                                        height="160px"
-                                        basePosition="50% 10%"
-                                        mb={1.25}
-                                    />
-                                    <Box sx={{ mb: 1.25 }}>
-                                        <Nameplate
-                                            actor={roleActor}
-                                            name={roleActor ? undefined : resolveActorName(outcome.actorId)}
-                                            layout="inline"
-                                        />
-                                    </Box>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 700 }}>
-                                        <Box component="span" sx={{ textDecoration: 'line-through', textDecorationThickness: '2px', opacity: 0.75 }}>
-                                            {previousRoleLabel}
-                                        </Box>
-                                        <Box component="span" sx={{ mx: 1, color: accent.color, fontWeight: 900 }}>
-                                            {'→'}
-                                        </Box>
-                                        <Box component="span" sx={{ color: accent.color, fontWeight: 900 }}>
-                                            {newRoleLabel}
-                                        </Box>
-                                    </Typography>
-                                </Box>
-                            );
-                            break;
-                        case 'factionChange':
-                            content = (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
-                                        {resolveActorName(outcome.actorId)}
-                                    </Typography>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                                        Faction changed to {resolveFactionName(outcome.factionId)}
-                                    </Typography>
-                                </Box>
-                            );
-                            break;
-                        case 'factionReputation':
-                            const faction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
-                            const representative = faction?.representativeId ? save.actors[faction.representativeId] : undefined;
-                            const factionName = resolveFactionName(outcome.factionId);
-                            const oldReputation = Math.max(0, Math.min(10, faction?.reputation ?? 3));
-                            const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
-                            const isIncrease = newReputation > oldReputation;
-                            const isDecrease = newReputation < oldReputation;
-                            content = (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <OutcomePortraitBox
-                                        border={`2px solid ${accent.color}66`}
-                                        baseImageUrl={faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
-                                        overlayImageUrl={representative ? representative.getEmotionImage(representative.getDefaultEmotion()) : undefined}
-                                        height="160px"
-                                        basePosition="center"
-                                        overlayPosition="50% 15%"
-                                        showGradient
-                                        mb={1.25}
-                                    />
-                                    <Box sx={{ mb: 1.25 }}>
-                                        <Nameplate name={factionName} size="large" layout="inline" />
-                                    </Box>
-                                    <Box sx={gradeTransitionSx(isIncrease, isDecrease)}>
-                                        <Typography sx={outcomeStatLabelSx}>
-                                            Reputation
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
-                                                {scoreToGrade(oldReputation)}
-                                            </span>
-                                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? 'var(--color-primary)' : 'var(--text-primary)', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
-                                                {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
-                                            </Typography>
-                                            <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
-                                                {scoreToGrade(newReputation)}
-                                            </span>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            );
-                            break;
-                        case 'newModule':
-                            content = outcome.module ? (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
-                                        {outcome.module.moduleName}
-                                    </Typography>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                                        Role: {outcome.module.roleName}
-                                        {'\n'}
-                                        {outcome.module.description}
-                                    </Typography>
-                                </Box>
-                            ) : null;
-                            break;
-                        case 'newOutfit':
-                            content = outcome.outfit ? (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
-                                        {resolveActorName(outcome.outfit.actorId)}: {outcome.outfit.outfitName}
-                                    </Typography>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                                        {outcome.outfit.description}
-                                    </Typography>
-                                </Box>
-                            ) : null;
-                            break;
-                        case 'newActor':
-                            content = outcome.actor?.name ? (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
-                                        <OutcomeIcon sx={{ color: accent.color, fontSize: '1.5rem' }} />
-                                        <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color }}>
-                                            New Character
-                                        </Typography>
-                                    </Box>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700 }}>
-                                        New Character: {outcome.actor.name}
-                                    </Typography>
-                                </Box>
-                            ) : null;
-                            break;
-                        case 'movement': {
-                            const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
-                            if (!actor) {
-                                content = null;
-                                break;
-                            }
-
-                            const actorIsAtFaction = !!save.factions[actor.locationId];
-                            const actorIsNotAtFaction = !actorIsAtFaction;
-                            const isReturnToParc = actorIsAtFaction && !!outcome.moduleId;
-                            const isLeavingForFaction = actorIsNotAtFaction && !!outcome.factionId;
-
-                            if (!isReturnToParc && !isLeavingForFaction) {
-                                content = null;
-                                break;
-                            }
-
-                            const currentFaction = save.factions[actor.locationId];
-                            const destinationFaction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
-                            const message = isReturnToParc
-                                ? `${actor.name} returns from ${currentFaction?.name || 'Unknown Faction'}`
-                                : `${actor.name} leaves for ${destinationFaction?.name || resolveFactionName(outcome.factionId)}`;
-
-                            const backgroundImage = isReturnToParc
-                                ? PARC_BACKGROUND_IMAGE
-                                : destinationFaction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE;
-
-                            content = (
-                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
-                                    <OutcomePortraitBox
-                                        border={`2px solid ${accent.color}66`}
-                                        baseImageUrl={backgroundImage}
-                                        overlayImageUrl={actor.getEmotionImage(actor.getDefaultEmotion())}
-                                        height="160px"
-                                        basePosition="center"
-                                        overlayPosition="50% 10%"
-                                        showGradient
-                                        mb={1.25}
-                                    />
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, whiteSpace: 'pre-line' }}>
-                                        {message}
-                                    </Typography>
-                                </Box>
-                            );
-                            break;
-                        }
-                    }
-
-                    if (!content) {
-                        return null;
-                    }
-
-                    const renderWithoutGenericWrapper = outcome.type === 'factionReputation';
-
-                    return (
-                        <div key={`${outcome.type}_${outcomeIndex}`}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.55 + cardIndex * 0.14 }}
-                            >
-                                {renderWithoutGenericWrapper ? (
-                                    content
-                                ) : (
-                                    <Paper
-                                        elevation={6}
-                                        className="glass-panel"
-                                        sx={{
-                                            ...outcomeCardSx,
-                                            background: accent.background,
-                                            border: `2px solid ${accent.border}`,
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}
-                                    >
-                                        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 10, 20, 0.45)', zIndex: 0 }} />
-                                        <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-                                                <OutcomeIcon sx={{ color: accent.color, fontSize: '1.8rem' }} />
-                                                <Typography
-                                                    variant="h6"
-                                                    className="section-header"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        color: accent.color,
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '1px',
-                                                        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-                                                    }}
-                                                >
-                                                    {cardTitle}
-                                                </Typography>
-                                            </Box>
-                                            {content}
-                                        </Box>
-                                    </Paper>
-                                )}
                             </motion.div>
                         </div>
                     );
