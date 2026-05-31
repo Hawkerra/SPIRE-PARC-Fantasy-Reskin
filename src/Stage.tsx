@@ -157,6 +157,92 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         }
     }
 
+    private async generateModuleFromOutcome(outcome: Outcome, queuedModuleKeys?: Set<string>) {
+        if (outcome.type !== 'newModule' || !outcome.module) {
+            return;
+        }
+
+        const moduleData = outcome.module;
+        const moduleName = moduleData.moduleName?.trim() || '';
+        if (!moduleName) {
+            return;
+        }
+
+        const moduleKey = moduleData.id || moduleName.toLowerCase();
+        if (queuedModuleKeys?.has(moduleKey)) {
+            return;
+        }
+
+        const save = this.getSave();
+        const moduleAlreadyExistsById = !!(moduleData.id && save.customModules?.[moduleData.id]);
+        const moduleAlreadyExistsByName = [...Object.values(save.customModules || {}), ...Object.values(MODULE_TEMPLATES)]
+            .some(existingModule => !!existingModule.name && namesMatch(moduleName, existingModule.name));
+
+        if (moduleAlreadyExistsById || moduleAlreadyExistsByName) {
+            return;
+        }
+
+        queuedModuleKeys?.add(moduleKey);
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const module = await generateModule(moduleData.moduleName, this, moduleData.description, moduleData.roleName);
+                if (module) {
+                    const generatedModuleId = moduleData.id || generateUuid();
+                    const currentSave = this.getSave();
+                    currentSave.customModules = { ...(currentSave.customModules || {}), [generatedModuleId]: module };
+                    registerModule(generatedModuleId, module);
+                    this.saveGame();
+                    this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
+                    return;
+                }
+            } catch (err) {
+                console.error(`Error generating module ${moduleData.moduleName} (attempt ${attempt + 1}/3):`, err);
+            }
+        }
+    }
+
+    private async generateActorFromOutcome(outcome: Outcome, queuedActorNames?: Set<string>) {
+        if (outcome.type !== 'newActor' || !outcome.actor) {
+            return;
+        }
+
+        const actorData = outcome.actor;
+        const actorName = actorData.name?.trim() || '';
+        if (!actorName) {
+            return;
+        }
+
+        const actorKey = actorName.toLowerCase();
+        if (queuedActorNames?.has(actorKey)) {
+            return;
+        }
+
+        const save = this.getSave();
+        const actorAlreadyExists = Object.values(save.actors).some(existingActor => namesMatch(actorName, existingActor.name));
+        if (actorAlreadyExists) {
+            return;
+        }
+
+        queuedActorNames?.add(actorKey);
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const newActor = await loadReserveActor(actorData, this);
+                if (newActor) {
+                    const currentSave = this.getSave();
+                    newActor.locationId = actorData.locationId || '';
+                    newActor.origin = 'emergent';
+                    currentSave.actors[newActor.id] = newActor;
+                    this.saveGame();
+                    return;
+                }
+            } catch (err) {
+                console.error(`Error generating actor ${actorName} (attempt ${attempt + 1}/3):`, err);
+            }
+        }
+    }
+
     constructor(data: InitialData<InitStateType, ChatStateType, MessageStateType, ConfigType>) {
 
         super(data);
@@ -627,51 +713,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
             for (const outcome of outcomes) {
                 if (outcome.type === 'newModule' && outcome.module) {
-                    const moduleData = outcome.module;
-                    const moduleName = moduleData.moduleName?.trim() || '';
-                    if (!moduleName) {
-                        continue;
-                    }
-
-                    const moduleKey = moduleData.id || moduleName.toLowerCase();
-                    const moduleAlreadyExistsById = !!(moduleData.id && save.customModules?.[moduleData.id]);
-                    const moduleAlreadyExistsByName = [...Object.values(save.customModules || {}), ...Object.values(MODULE_TEMPLATES)]
-                        .some(existingModule => !!existingModule.name && namesMatch(moduleName, existingModule.name));
-
-                    if (!moduleAlreadyExistsById && !moduleAlreadyExistsByName && !queuedModuleKeys.has(moduleKey)) {
-                        queuedModuleKeys.add(moduleKey);
-                        generateModule(moduleData.moduleName, this,
-                            moduleData.description,
-                            moduleData.roleName).then(module => {
-                                if (module) {
-                                    const generatedModuleId = moduleData.id || generateUuid();
-                                    this.getSave().customModules = { ...(this.getSave().customModules || {}), [generatedModuleId]: module };
-                                    registerModule(generatedModuleId, module);
-                                    this.saveGame();
-                                    this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
-                                }
-                            });
-                    }
+                    void this.generateModuleFromOutcome(outcome, queuedModuleKeys);
                 } else if (outcome.type === 'newActor' && outcome.actor) {
-                    const actorData = outcome.actor;
-                    const actorName = actorData.name?.trim() || '';
-                    if (!actorName) {
-                        continue;
-                    }
-
-                    const actorAlreadyExists = Object.values(save.actors).some(existingActor => namesMatch(actorName, existingActor.name));
-                    const actorKey = actorName.toLowerCase();
-                    if (!actorAlreadyExists && !queuedActorNames.has(actorKey)) {
-                        queuedActorNames.add(actorKey);
-                        loadReserveActor(actorData, this).then(newActor => {
-                            if (newActor) {
-                                newActor.locationId = actorData.locationId || '';
-                                newActor.origin = 'emergent';
-                                save.actors[newActor.id] = newActor;
-                                this.saveGame();
-                            }
-                        });
-                    }
+                    void this.generateActorFromOutcome(outcome, queuedActorNames);
                 }
             }
         }
@@ -1202,19 +1246,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         });
                     }
                 } else if (outcome.type === 'newModule' && outcome.module) {
-                    const moduleData = outcome.module;
-                    // Kick off module generation
-                    generateModule(moduleData.moduleName, this, 
-                        moduleData.description,
-                        moduleData.roleName).then(module => {
-                            if (module) {
-                                this.getSave().customModules = { ...this.getSave().customModules, [moduleData.id]: module };
-                                registerModule(moduleData.id, module);
-                                this.saveGame();
-                                // Show priority message in tooltip
-                                this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
-                            }
-                    });
+                    // Kick off module generation in the background.
+                    void this.generateModuleFromOutcome(outcome);
                 } else if (outcome.type === 'newOutfit' && outcome.actorId && outcome.outfit && outcome.outfit.outfitName) {
                     const actor = save.actors[outcome.actorId];
                     const outfit = outcome.outfit;
@@ -1247,16 +1280,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         actor.locationId = newLocationId;
                     }
                 } else if (outcome.type === 'newActor' && outcome.actor) {
-                    const actorData = outcome.actor;
-                    // Need to kick off actor generation in the background, then save when complete:
-                    loadReserveActor(actorData, this).then(newActor => {
-                        if (newActor) {
-                            newActor.locationId = actorData.locationId || '';
-                            newActor.origin = 'emergent';
-                            save.actors[newActor.id] = newActor;
-                            this.saveGame();
-                        }
-                    });
+                    // Kick off actor generation in the background.
+                    void this.generateActorFromOutcome(outcome);
                 }
             }
 
