@@ -441,32 +441,30 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         const isDecrease = newReputation < oldReputation;
 
         return (
-            <Box key={key} sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accentColor}55` }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 10px',
-                        background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: '8px',
-                        border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                    }}
-                >
-                    <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Reputation
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
+                    borderRadius: '8px',
+                    border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                }}
+            >
+                <Typography className="stat-label" sx={{ fontSize: '0.9rem', letterSpacing: '0.08em' }}>
+                    Reputation
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
+                        {scoreToGrade(oldReputation)}
+                    </span>
+                    <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                        {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
-                            {scoreToGrade(oldReputation)}
-                        </span>
-                        <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
-                            {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
-                        </Typography>
-                        <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
-                            {scoreToGrade(newReputation)}
-                        </span>
-                    </Box>
+                    <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
+                        {scoreToGrade(newReputation)}
+                    </span>
                 </Box>
             </Box>
         );
