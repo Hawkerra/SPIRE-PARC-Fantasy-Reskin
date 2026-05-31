@@ -9,6 +9,77 @@ import { StationStat, STATION_STAT_ICONS } from '../Module';
 import { Outcome } from '../Skit';
 import { Stage } from '../Stage';
 
+const outcomeCardSx = {
+    background: 'var(--bg-darker-blue)',
+    border: 'var(--border-primary)',
+    borderRadius: 3,
+    p: 2,
+    backdropFilter: 'var(--backdrop-blur)',
+    textAlign: 'center' as const,
+    color: 'var(--text-primary)',
+    boxShadow: 'var(--glow-primary)'
+};
+
+const outcomeHeaderCardSx = {
+    ...outcomeCardSx,
+    background: 'linear-gradient(135deg, var(--color-primary-20) 0%, rgba(0, 180, 100, 0.25) 50%, var(--color-primary-15) 100%)',
+    border: 'var(--border-primary-bright)',
+    p: 1.5
+};
+
+const outcomeContentCardSx = {
+    px: 1.5,
+    py: 1.25,
+    background: 'color-mix(in srgb, var(--bg-glass-darker) 68%, transparent)',
+    borderRadius: '12px',
+    border: '1px solid var(--color-primary-20)',
+    textAlign: 'left' as const,
+    color: 'var(--text-primary)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)'
+};
+
+const outcomeMicroLabelSx = {
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+    mb: 0.4
+};
+
+const outcomeBodyTextSx = {
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    lineHeight: 1.5,
+    textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+};
+
+const outcomeDetailTextSx = {
+    fontSize: '0.88rem',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    lineHeight: 1.45,
+    textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+};
+
+const gradeTransitionSx = (isIncrease: boolean, isDecrease: boolean) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '8px 10px',
+    background: isDecrease
+        ? 'rgba(255,80,80,0.08)'
+        : isIncrease
+            ? 'var(--color-primary-08)'
+            : 'rgba(255,255,255,0.05)',
+    borderRadius: '8px',
+    border: isDecrease
+        ? '1px solid rgba(255,80,80,0.3)'
+        : isIncrease
+            ? '1px solid var(--color-primary-30)'
+            : '1px solid rgba(255,255,255,0.1)'
+});
+
 
 interface SkitOutcomeDisplayProps {
     outcomes: Outcome[];
@@ -367,17 +438,12 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: 0.8 + cardIndex * 0.2 + statIndex * 0.1 }}
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '8px 4px',
-                            background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
-                            borderRadius: '8px',
-                            border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                            ...gradeTransitionSx(isIncrease, isDecrease),
+                            padding: '8px 4px'
                         }}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {StatIcon && <StatIcon sx={{ fontSize: '1.2rem', color: isIncrease ? '#00ff88' : isDecrease ? '#ff6b6b' : '#fff', opacity: 0.9 }} />}
+                            {StatIcon && <StatIcon sx={{ fontSize: '1.2rem', color: isIncrease ? 'var(--color-primary)' : isDecrease ? '#ff6b6b' : 'var(--text-primary)', opacity: 0.9 }} />}
                             <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
                                 {String(entry.stat)}
                             </Typography>
@@ -386,7 +452,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <span className="stat-grade" data-grade={scoreToGrade(entry.oldValue)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
                                 {scoreToGrade(entry.oldValue)}
                             </span>
-                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? 'var(--color-primary)' : 'var(--text-primary)', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
                                 {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
                             </Typography>
                             <motion.span
@@ -418,15 +484,13 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    padding: '8px 10px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: '8px',
+                    ...outcomeContentCardSx,
                     border: `1px solid ${accentColor}55`,
                     textAlign: 'left'
                 }}
             >
                 <PersonAdd sx={{ fontSize: '1.15rem', color: accentColor, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.4 }}>
                     New Character: {outcome.actor.name}
                 </Typography>
             </Box>
@@ -442,15 +506,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
         return (
             <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 10px',
-                    background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
-                    borderRadius: '8px',
-                    border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                }}
+                sx={gradeTransitionSx(isIncrease, isDecrease)}
             >
                 <Typography className="stat-label" sx={{ fontSize: '0.9rem', letterSpacing: '0.08em' }}>
                     Reputation
@@ -459,7 +515,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
                         {scoreToGrade(oldReputation)}
                     </span>
-                    <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                    <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? 'var(--color-primary)' : 'var(--text-primary)', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
                         {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
                     </Typography>
                     <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
@@ -482,17 +538,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <Box
                                 key={`role_${index}`}
                                 sx={{
-                                    padding: '8px 10px',
+                                    ...outcomeContentCardSx,
                                     background: 'rgba(100,180,255,0.12)',
-                                    borderRadius: '8px',
                                     border: '1px solid rgba(100,180,255,0.35)',
                                     textAlign: 'left'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#64b4ff', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                <Typography sx={{ ...outcomeMicroLabelSx, color: '#64b4ff' }}>
                                     Role
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700 }}>
                                     <Box component="span" sx={{ textDecoration: 'line-through', textDecorationThickness: '2px', opacity: 0.75 }}>
                                         {previousRoleLabel}
                                     </Box>
@@ -511,17 +566,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <Box
                                 key={`faction_${index}`}
                                 sx={{
-                                    padding: '8px 10px',
+                                    ...outcomeContentCardSx,
                                     background: 'rgba(255,200,0,0.10)',
-                                    borderRadius: '8px',
                                     border: '1px solid rgba(255,200,0,0.35)',
                                     textAlign: 'left'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffc800', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                <Typography sx={{ ...outcomeMicroLabelSx, color: '#ffc800' }}>
                                     Faction
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700 }}>
                                     Changed to {resolveFactionName(outcome.factionId)}
                                 </Typography>
                             </Box>
@@ -531,20 +585,19 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <Box
                                 key={`outfit_${index}`}
                                 sx={{
-                                    padding: '8px 10px',
+                                    ...outcomeContentCardSx,
                                     background: 'rgba(16,185,129,0.10)',
-                                    borderRadius: '8px',
                                     border: '1px solid rgba(16,185,129,0.35)',
                                     textAlign: 'left'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                <Typography sx={{ ...outcomeMicroLabelSx, color: '#10b981' }}>
                                     New Outfit
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#d1fae5', lineHeight: 1.35, mb: 0.2, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 800, color: '#d1fae5', lineHeight: 1.35, mb: 0.2 }}>
                                     {outcome.outfit.outfitName}
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.88rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                <Typography sx={outcomeDetailTextSx}>
                                     {outcome.outfit.description}
                                 </Typography>
                             </Box>
@@ -558,17 +611,16 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             <Box
                                 key={`movement_${index}`}
                                 sx={{
-                                    padding: '8px 10px',
+                                    ...outcomeContentCardSx,
                                     background: 'rgba(56,189,248,0.10)',
-                                    borderRadius: '8px',
                                     border: '1px solid rgba(56,189,248,0.35)',
                                     textAlign: 'left'
                                 }}
                             >
-                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                                <Typography sx={{ ...outcomeMicroLabelSx, color: '#38bdf8' }}>
                                     Movement
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.45 }}>
                                     {movement.message}
                                 </Typography>
                             </Box>
@@ -588,23 +640,22 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     <Box
                         key={`parc_module_${entry.module.id || index}`}
                         sx={{
-                            padding: '8px 10px',
+                            ...outcomeContentCardSx,
                             background: 'rgba(99,102,241,0.10)',
-                            borderRadius: '8px',
                             border: '1px solid rgba(99,102,241,0.35)',
                             textAlign: 'left'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.4 }}>
+                        <Typography sx={{ ...outcomeMicroLabelSx, color: '#a5b4fc' }}>
                             New Module
                         </Typography>
-                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#e0e7ff', lineHeight: 1.35, mb: 0.2, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                        <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 800, color: '#e0e7ff', lineHeight: 1.35, mb: 0.2 }}>
                             {entry.module.moduleName}
                         </Typography>
-                        <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#bfdbfe', lineHeight: 1.35, mb: 0.25, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                        <Typography sx={{ ...outcomeDetailTextSx, fontWeight: 600, color: '#bfdbfe', lineHeight: 1.35, mb: 0.25 }}>
                             Role: {entry.module.roleName}
                         </Typography>
-                        <Typography sx={{ fontSize: '0.88rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.45, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                        <Typography sx={outcomeDetailTextSx}>
                             {entry.module.description}
                         </Typography>
                     </Box>
@@ -649,22 +700,17 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 <div>
                     <Paper
                         elevation={8}
-                        sx={{
-                            background: 'linear-gradient(135deg, rgba(0,255,136,0.25) 0%, rgba(0,180,100,0.35) 50%, rgba(0,120,80,0.25) 100%)',
-                            border: '2px solid rgba(0,255,136,0.4)',
-                            borderRadius: 2,
-                            p: 1.5,
-                            backdropFilter: 'blur(12px)',
-                            textAlign: 'center'
-                        }}
+                        className="glass-panel-bright"
+                        sx={outcomeHeaderCardSx}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                            <TrendingUp sx={{ color: '#00ff88', fontSize: '1.5rem' }} />
+                            <TrendingUp sx={{ color: 'var(--color-primary)', fontSize: '1.5rem' }} />
                             <Typography
                                 variant="h6"
+                                className="section-header"
                                 sx={{
                                     fontWeight: 800,
-                                    color: '#fff',
+                                    color: 'var(--text-primary)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',
                                     textShadow: '0 2px 4px rgba(0,0,0,0.8)'
@@ -677,7 +723,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             variant="caption"
                             sx={{
                                 fontSize: '0.7rem',
-                                color: 'rgba(255,255,255,0.6)',
+                                color: 'var(--text-very-muted)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -717,7 +763,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: 0.5 + groupIndex * 0.2 }}
                         >
-                            <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(0,255,136,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                            <Paper elevation={6} className="glass-panel" sx={outcomeCardSx}>
                                 <motion.div
                                     initial={{ scale: 0.8, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
@@ -769,7 +815,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: 0.5 + actorOutcomeGroups.length * 0.2 }}
                         >
-                            <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(0,255,136,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                            <Paper elevation={6} className="glass-panel" sx={outcomeCardSx}>
                                 <motion.div
                                     initial={{ scale: 0.8, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
@@ -821,7 +867,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.5 + (actorOutcomeGroups.length + (stationStatEntries.length > 0 || parcModuleEntries.length > 0 || parcNewActorEntries.length > 0 ? 1 : 0) + groupIndex) * 0.2 }}
                             >
-                                <Paper elevation={6} sx={{ background: 'rgba(10,20,30,0.95)', border: '2px solid rgba(255,200,0,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+                                <Paper elevation={6} className="glass-panel" sx={{ ...outcomeCardSx, border: '2px solid rgba(255,200,0,0.2)' }}>
                                     <motion.div
                                         initial={{ scale: 0.8, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
@@ -869,13 +915,12 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
 
                     switch (outcome.type) {
                         case 'roleChange':
-                            console.log('Processing roleChange outcome:', outcome);
                             const roleActor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
                             const previousRole = roleActor ? getRole(roleActor, save).trim() : '';
                             const previousRoleLabel = previousRole.length > 0 ? previousRole : 'Patient';
                             const newRoleLabel = outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient';
                             content = (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
                                     <OutcomePortraitBox
                                         border={`2px solid ${accent.color}66`}
                                         baseImageUrl={roleActor ? roleActor.getEmotionImage(roleActor.getDefaultEmotion()) : undefined}
@@ -890,7 +935,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                             layout="inline"
                                         />
                                     </Box>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 700 }}>
                                         <Box component="span" sx={{ textDecoration: 'line-through', textDecorationThickness: '2px', opacity: 0.75 }}>
                                             {previousRoleLabel}
                                         </Box>
@@ -905,13 +950,12 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             );
                             break;
                         case 'factionChange':
-                            console.log('Processing factionChange outcome:', outcome);
                             content = (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
                                         {resolveActorName(outcome.actorId)}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                                         Faction changed to {resolveFactionName(outcome.factionId)}
                                     </Typography>
                                 </Box>
@@ -926,7 +970,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const isIncrease = newReputation > oldReputation;
                             const isDecrease = newReputation < oldReputation;
                             content = (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
                                     <OutcomePortraitBox
                                         border={`2px solid ${accent.color}66`}
                                         baseImageUrl={faction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE}
@@ -940,17 +984,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     <Box sx={{ mb: 1.25 }}>
                                         <Nameplate name={factionName} size="large" layout="inline" />
                                     </Box>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 10px',
-                                            background: isDecrease ? 'rgba(255,80,80,0.08)' : isIncrease ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)',
-                                            borderRadius: '8px',
-                                            border: isDecrease ? '1px solid rgba(255,80,80,0.3)' : isIncrease ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                                        }}
-                                    >
+                                    <Box sx={gradeTransitionSx(isIncrease, isDecrease)}>
                                         <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                             Reputation
                                         </Typography>
@@ -958,7 +992,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                             <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
                                                 {scoreToGrade(oldReputation)}
                                             </span>
-                                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? '#00ff88' : '#fff', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
+                                            <Typography sx={{ color: isDecrease ? '#ff5050' : isIncrease ? 'var(--color-primary)' : 'var(--text-primary)', fontWeight: 900, fontSize: '1.4rem', mx: 0.5, textShadow: isDecrease ? '0 2px 4px rgba(255,0,0,0.6)' : isIncrease ? '0 2px 4px rgba(0,255,0,0.6)' : '0 2px 4px rgba(0,0,0,0.6)' }}>
                                                 {isDecrease ? '↓' : isIncrease ? '↑' : '→'}
                                             </Typography>
                                             <span className="stat-grade" data-grade={scoreToGrade(newReputation)} style={{ fontSize: '2rem' }}>
@@ -971,11 +1005,11 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             break;
                         case 'newModule':
                             content = outcome.module ? (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
                                         {outcome.module.moduleName}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                                         Role: {outcome.module.roleName}
                                         {'\n'}
                                         {outcome.module.description}
@@ -985,11 +1019,11 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             break;
                         case 'newOutfit':
                             content = outcome.outfit ? (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
-                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)', mb: 0.75 }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color, mb: 0.75 }}>
                                         {resolveActorName(outcome.outfit.actorId)}: {outcome.outfit.outfitName}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500, color: '#e2e8f0', lineHeight: 1.6, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                                         {outcome.outfit.description}
                                     </Typography>
                                 </Box>
@@ -997,14 +1031,14 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             break;
                         case 'newActor':
                             content = outcome.actor?.name ? (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
                                         <OutcomeIcon sx={{ color: accent.color, fontSize: '1.5rem' }} />
-                                        <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: accent.color, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                        <Typography sx={{ ...outcomeBodyTextSx, fontSize: '1rem', fontWeight: 800, color: accent.color }}>
                                             New Character
                                         </Typography>
                                     </Box>
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700 }}>
                                         New Character: {outcome.actor.name}
                                     </Typography>
                                 </Box>
@@ -1014,7 +1048,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const actor = outcome.actorId ? save.actors[outcome.actorId] : undefined;
                             if (!actor) {
                                 content = null;
-                                console.log('Actor not found for movement outcome:', outcome);
                                 break;
                             }
 
@@ -1024,7 +1057,6 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const isLeavingForFaction = actorIsNotAtFaction && !!outcome.factionId;
 
                             if (!isReturnToParc && !isLeavingForFaction) {
-                                console.log('No need to display; actor is not moving between PARC and a faction:', outcome);
                                 content = null;
                                 break;
                             }
@@ -1040,7 +1072,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 : destinationFaction?.backgroundImageUrl || PARC_BACKGROUND_IMAGE;
 
                             content = (
-                                <Box sx={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${accent.color}55` }}>
+                                <Box sx={{ ...outcomeContentCardSx, border: `1px solid ${accent.color}55` }}>
                                     <OutcomePortraitBox
                                         border={`2px solid ${accent.color}66`}
                                         baseImageUrl={backgroundImage}
@@ -1051,7 +1083,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         showGradient
                                         mb={1.25}
                                     />
-                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-line', textAlign: 'left', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, whiteSpace: 'pre-line' }}>
                                         {message}
                                     </Typography>
                                 </Box>
@@ -1078,13 +1110,11 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 ) : (
                                     <Paper
                                         elevation={6}
+                                        className="glass-panel"
                                         sx={{
+                                            ...outcomeCardSx,
                                             background: accent.background,
                                             border: `2px solid ${accent.border}`,
-                                            borderRadius: 3,
-                                            p: 2,
-                                            backdropFilter: 'blur(8px)',
-                                            textAlign: 'center',
                                             position: 'relative',
                                             overflow: 'hidden'
                                         }}
@@ -1095,6 +1125,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                                 <OutcomeIcon sx={{ color: accent.color, fontSize: '1.8rem' }} />
                                                 <Typography
                                                     variant="h6"
+                                                    className="section-header"
                                                     sx={{
                                                         fontWeight: 800,
                                                         color: accent.color,
