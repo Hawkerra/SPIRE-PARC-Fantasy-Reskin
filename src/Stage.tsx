@@ -203,6 +203,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     }
 
     private async generateActorFromOutcome(outcome: Outcome, queuedActorNames?: Set<string>) {
+        console.log('generateActorFromOutcome');
         if (outcome.type !== 'newActor' || !outcome.actor) {
             return;
         }
@@ -219,15 +220,18 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         }
 
         const save = this.getSave();
+        console.log('Nearly approved');
         const actorAlreadyExists = Object.values(save.actors).some(existingActor => namesMatch(actorName, existingActor.name));
         if (actorAlreadyExists) {
             return;
         }
+        console.log('Approved for generation');
 
         queuedActorNames?.add(actorKey);
 
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
+                console.log('Generating actor from outcome:', actorName);
                 const newActor = await loadReserveActor(actorData, this);
                 if (newActor) {
                     const currentSave = this.getSave();
