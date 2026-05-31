@@ -604,6 +604,78 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             }
         });
 
+        // Rebuild outcome characters and modules that never successfully generated. Go through skits and find newActor and newModule outcomes and search the existing customModules and actors to verify they exist.
+        const queuedActorNames = new Set<string>();
+        const queuedModuleKeys = new Set<string>();
+        for (const timelineEntry of save.timeline || []) {
+            if (!timelineEntry.skit) {
+                continue;
+            }
+
+            const timelineSkit = timelineEntry.skit;
+            const endedOnCurrentFinalEntry = (timelineSkit.currentIndex ?? (timelineSkit.script.length - 1)) >= (timelineSkit.script.length - 1);
+            const outcomeEntries: ScriptEntry[] = [...timelineSkit.script];
+            if (endedOnCurrentFinalEntry && (timelineSkit.outcomes?.length || 0) > 0) {
+                outcomeEntries.push({
+                    speaker: 'NARRATOR',
+                    message: '',
+                    speechUrl: '',
+                    outcomes: timelineSkit.outcomes
+                });
+            }
+
+            const outcomes = accumulateOutcomes(outcomeEntries, this) || [];
+            for (const outcome of outcomes) {
+                if (outcome.type === 'newModule' && outcome.module) {
+                    const moduleData = outcome.module;
+                    const moduleName = moduleData.moduleName?.trim() || '';
+                    if (!moduleName) {
+                        continue;
+                    }
+
+                    const moduleKey = moduleData.id || moduleName.toLowerCase();
+                    const moduleAlreadyExistsById = !!(moduleData.id && save.customModules?.[moduleData.id]);
+                    const moduleAlreadyExistsByName = [...Object.values(save.customModules || {}), ...Object.values(MODULE_TEMPLATES)]
+                        .some(existingModule => !!existingModule.name && namesMatch(moduleName, existingModule.name));
+
+                    if (!moduleAlreadyExistsById && !moduleAlreadyExistsByName && !queuedModuleKeys.has(moduleKey)) {
+                        queuedModuleKeys.add(moduleKey);
+                        generateModule(moduleData.moduleName, this,
+                            moduleData.description,
+                            moduleData.roleName).then(module => {
+                                if (module) {
+                                    const generatedModuleId = moduleData.id || generateUuid();
+                                    this.getSave().customModules = { ...(this.getSave().customModules || {}), [generatedModuleId]: module };
+                                    registerModule(generatedModuleId, module);
+                                    this.saveGame();
+                                    this.showPriorityMessage(`New module "${moduleData.moduleName}" now available!`);
+                                }
+                            });
+                    }
+                } else if (outcome.type === 'newActor' && outcome.actor) {
+                    const actorData = outcome.actor;
+                    const actorName = actorData.name?.trim() || '';
+                    if (!actorName) {
+                        continue;
+                    }
+
+                    const actorAlreadyExists = Object.values(save.actors).some(existingActor => namesMatch(actorName, existingActor.name));
+                    const actorKey = actorName.toLowerCase();
+                    if (!actorAlreadyExists && !queuedActorNames.has(actorKey)) {
+                        queuedActorNames.add(actorKey);
+                        loadReserveActor(actorData, this).then(newActor => {
+                            if (newActor) {
+                                newActor.locationId = actorData.locationId || '';
+                                newActor.origin = 'emergent';
+                                save.actors[newActor.id] = newActor;
+                                this.saveGame();
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         save.layout.getModulesWhere(m => true).forEach(module => {
             if (!Object.keys(MODULE_TEMPLATES).includes(module.type)) {
                 console.log(`Removing unknown module type ${module.getAttribute('name')} from layout.`);
