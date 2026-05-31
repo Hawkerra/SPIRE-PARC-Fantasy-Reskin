@@ -534,17 +534,20 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             <Box
                 key={key}
                 sx={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...gradeTransitionSx(false, false),
                     gap: 1,
-                    ...outcomeContentCardSx,
                     border: `1px solid ${accentColor}55`,
-                    textAlign: 'left'
+                    background: `color-mix(in srgb, ${accentColor} 12%, rgba(255,255,255,0.05))`
                 }}
             >
-                <PersonAdd sx={{ fontSize: '1.15rem', color: accentColor, flexShrink: 0 }} />
-                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.4 }}>
-                    New Character: {outcome.actor.name}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PersonAdd sx={{ fontSize: '1.2rem', color: accentColor, opacity: 0.9, flexShrink: 0 }} />
+                    <Typography sx={outcomeStatLabelSx}>
+                        New Character
+                    </Typography>
+                </Box>
+                <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 800, color: accentColor, lineHeight: 1.2 }}>
+                    {outcome.actor.name}
                 </Typography>
             </Box>
         );
@@ -556,14 +559,19 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         const newReputation = Math.max(0, Math.min(10, oldReputation + (outcome.amount ?? 0)));
         const isIncrease = newReputation > oldReputation;
         const isDecrease = newReputation < oldReputation;
+        const OutcomeIcon = getOutcomeIcon(outcome);
 
         return (
             <Box
+                key={key}
                 sx={gradeTransitionSx(isIncrease, isDecrease)}
             >
-                <Typography sx={outcomeStatLabelSx}>
-                    Reputation
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <OutcomeIcon sx={{ fontSize: '1.2rem', color: accentColor, opacity: 0.9 }} />
+                    <Typography sx={outcomeStatLabelSx}>
+                        Reputation
+                    </Typography>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <span className="stat-grade" data-grade={scoreToGrade(oldReputation)} style={{ fontSize: '2rem', opacity: 0.6, filter: 'grayscale(0.5)' }}>
                         {scoreToGrade(oldReputation)}
@@ -943,7 +951,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                 {parcModuleEntries.length > 0 && renderParcModuleEntries(parcModuleEntries)}
                                 {parcNewActorEntries.length > 0 && (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: (stationStatEntries.length > 0 || parcModuleEntries.length > 0) ? 1 : 0 }}>
-                                        {parcNewActorEntries.map((entry, index) => renderNewActorEntry(entry, '#a5b4fc', `parc_new_actor_${entry.actor?.name || index}`))}
+                                        {parcNewActorEntries.map((entry, index) => renderNewActorEntry(entry, '#ffc800', `parc_new_actor_${entry.actor?.name || index}`))}
                                     </Box>
                                 )}
                                 {parcFallbackOutcomes.length > 0 && renderParcFallbackEntries(parcFallbackOutcomes)}
