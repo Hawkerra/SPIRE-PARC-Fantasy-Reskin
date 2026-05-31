@@ -12,7 +12,7 @@ import { Stage } from '../Stage';
 const outcomeCardSx = {
     background: 'var(--bg-darker-blue)',
     border: 'var(--border-primary)',
-    borderRadius: 3,
+    borderRadius: '12px',
     p: 2,
     backdropFilter: 'var(--backdrop-blur)',
     textAlign: 'center' as const,
@@ -31,7 +31,7 @@ const outcomeContentCardSx = {
     px: 1.5,
     py: 1.25,
     background: 'color-mix(in srgb, var(--bg-glass-darker) 68%, transparent)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     border: '1px solid var(--color-primary-20)',
     textAlign: 'left' as const,
     color: 'var(--text-primary)',
@@ -60,6 +60,15 @@ const outcomeDetailTextSx = {
     color: 'var(--text-secondary)',
     lineHeight: 1.45,
     textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+};
+
+const outcomeStatLabelSx = {
+    ...outcomeBodyTextSx,
+    fontSize: '0.9rem',
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.08em',
+    color: 'var(--color-primary)'
 };
 
 const gradeTransitionSx = (isIncrease: boolean, isDecrease: boolean) => ({
@@ -444,7 +453,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             {StatIcon && <StatIcon sx={{ fontSize: '1.2rem', color: isIncrease ? 'var(--color-primary)' : isDecrease ? '#ff6b6b' : 'var(--text-primary)', opacity: 0.9 }} />}
-                            <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
+                            <Typography sx={{ ...outcomeStatLabelSx, textTransform: 'capitalize' }}>
                                 {String(entry.stat)}
                             </Typography>
                         </Box>
@@ -508,7 +517,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             <Box
                 sx={gradeTransitionSx(isIncrease, isDecrease)}
             >
-                <Typography className="stat-label" sx={{ fontSize: '0.9rem', letterSpacing: '0.08em' }}>
+                <Typography sx={outcomeStatLabelSx}>
                     Reputation
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -985,7 +994,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                         <Nameplate name={factionName} size="large" layout="inline" />
                                     </Box>
                                     <Box sx={gradeTransitionSx(isIncrease, isDecrease)}>
-                                        <Typography className="stat-label" sx={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                        <Typography sx={outcomeStatLabelSx}>
                                             Reputation
                                         </Typography>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -1065,7 +1074,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             const destinationFaction = outcome.factionId ? save.factions[outcome.factionId] : undefined;
                             const message = isReturnToParc
                                 ? `${actor.name} returns from ${currentFaction?.name || 'Unknown Faction'}`
-                                : `${actor.name} Leaves for ${destinationFaction?.name || resolveFactionName(outcome.factionId)}`;
+                                : `${actor.name} leaves for ${destinationFaction?.name || resolveFactionName(outcome.factionId)}`;
 
                             const backgroundImage = isReturnToParc
                                 ? PARC_BACKGROUND_IMAGE
