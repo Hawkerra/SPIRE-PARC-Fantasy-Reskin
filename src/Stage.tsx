@@ -1,7 +1,7 @@
 import {ReactElement} from "react";
 import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@chub-ai/stages-ts";
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
-import Actor, { loadReserveActor, generateBaseActorImage, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch } from "./actors/Actor";
+import Actor, { loadReserveActor, generateBaseActorImage, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, Module, registerModule } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
@@ -221,8 +221,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
         const save = this.getSave();
         console.log('Nearly approved');
-        const actorAlreadyExists = Object.values(save.actors).some(existingActor => namesMatch(actorName, existingActor.name));
+        const actorAlreadyExists = findBestNameMatch(actorName, Object.values(save.actors));
         if (actorAlreadyExists) {
+            console.log(`Actor "${actorName}" already exists as "${actorAlreadyExists.name}". Skipping generation.`);
             return;
         }
         console.log('Approved for generation');
