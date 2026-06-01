@@ -808,7 +808,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
     const allActors = Object.values(stage.getSave().actors);
     const allFactions = Object.values(stage.getSave().factions);
     const currentSceneModuleForAnalysis = getCurrentSceneModuleId(skit, -1);
-    const presentActors: Actor[] = Object.values(stage.getSave().actors).filter(a => a.locationId === (currentSceneModuleForAnalysis || skit.moduleId || ''));
+    const availableActors: Actor[] = Object.values(stage.getSave().actors);
 
     if (!text) return null;
 
@@ -988,7 +988,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         const payload = statMatch[2].trim();
         const adjustments = payload.split(',').map(p => p.trim());
 
-        if (target.toUpperCase() === 'STATION') {
+        if (target.toUpperCase() === 'STATION' || target.toUpperCase() === 'PARC') {
             const outcomes: Outcome[] = [];
             for (const adj of adjustments) {
                 const m = adj.match(/([A-Za-z\s]+)\s*([+-]\s*\d+)/i);
@@ -1008,7 +1008,8 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
             return outcomes.length > 0 ? outcomes : null;
         }
 
-        const matchedActor = findBestNameMatch(target, presentActors);
+        const matchedActor = findBestNameMatch(target, availableActors);
+        console.log(`Parsing character stat change from tag: ${text}: Target: ${target}, Matched Actor: ${matchedActor ? matchedActor.name : 'None'}`);
         if (!matchedActor) return null;
         const outcomes: Outcome[] = [];
         for (const adj of adjustments) {
