@@ -1720,14 +1720,32 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     const accumulated: { outcome: Outcome; order: number }[] = [];
 
     statTotals.forEach(({ outcome, total, order }) => {
+        // If the effective result is no change, don't add it. Need to look at max/minimum value for the actual current target stat to make this determination.
+        let effectiveTotal = total;
+        if (outcome.actorId && outcome.stat && Object.values(Stat).includes(outcome.stat as Stat)) {
+            const currentValue = stage.getSave().actors[outcome.actorId].stats[outcome.stat as Stat];
+            effectiveTotal = Math.max(1, Math.min(10, currentValue + total)) - currentValue;
+        } else if (outcome.stat && Object.values(StationStat).includes(outcome.stat as StationStat)) {
+            const currentValue = stage.getSave().stationStats?.[outcome.stat as StationStat] ?? 1;
+            effectiveTotal = Math.max(1, Math.min(10, currentValue + total)) - currentValue;
+        }
+
         if (total !== 0) {
-            accumulated.push({ outcome: { ...outcome, amount: total }, order });
+            accumulated.push({ outcome: { ...outcome, amount: effectiveTotal }, order });
         }
     });
 
     factionReputationTotals.forEach(({ outcome, total, order }) => {
+        
+        // Similar to stat totals, if the effective result is no change, don't add it. Look at current reputation with the faction to determine this.
+        let effectiveTotal = total;
+        if (outcome.factionId) {
+            const currentReputation = stage.getSave().factions[outcome.factionId]?.reputation ?? 1;
+            effectiveTotal = Math.max(1, Math.min(10, currentReputation + total)) - currentReputation;
+        }
+
         if (total !== 0) {
-            accumulated.push({ outcome: { ...outcome, amount: total }, order });
+            accumulated.push({ outcome: { ...outcome, amount: effectiveTotal }, order });
         }
     });
 

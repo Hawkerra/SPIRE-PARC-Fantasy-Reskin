@@ -431,7 +431,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 if (movement) {
                     return movement.message;
                 }
-                return `${resolveActorName(outcome.actorId)} movement updated`;
+                return ''; // Don't display a message for non station to faction or faction to station transfers.
             }
             default:
                 return 'Outcome updated';
@@ -747,6 +747,10 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             {entries.map((entry, index) => {
                 const accent = getAccent(entry);
                 const OutcomeIcon = getOutcomeIcon(entry);
+                const message = getOutcomeSummary(entry);
+                if (!message) {
+                    return null;
+                }
                 return (
                     <Box
                         key={`parc_fallback_${index}`}
@@ -764,7 +768,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                             </Typography>
                         </Box>
                         <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.4 }}>
-                            {getOutcomeSummary(entry)}
+                            {message}
                         </Typography>
                     </Box>
                 );
