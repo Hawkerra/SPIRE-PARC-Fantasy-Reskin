@@ -1731,7 +1731,7 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
             effectiveTotal = Math.max(1, Math.min(10, currentValue + total)) - currentValue;
         }
 
-        if (total !== 0) {
+        if (effectiveTotal !== 0) {
             accumulated.push({ outcome: { ...outcome, amount: effectiveTotal }, order });
         }
     });
