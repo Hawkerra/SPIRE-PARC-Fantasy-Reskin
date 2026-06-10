@@ -37,6 +37,8 @@ interface ActorCardProps {
     className?: string;
     /** The faction the actor is visiting (when away from station) */
     visitingFaction?: Faction;
+    /** The actor is present on station but belongs to this faction */
+    visitingFromFaction?: Faction;
 }
 
 /**
@@ -58,9 +60,11 @@ export const ActorCard: FC<ActorCardProps> = ({
     whileHover,
     style,
     className,
-    visitingFaction
+    visitingFaction,
+    visitingFromFaction
 }) => {
     const isAway = !!visitingFaction;
+    const visitingStatusFaction = visitingFaction || visitingFromFaction;
     const currentSections = (isExpanded && expandedSections?.length > 0) ? expandedSections : collapsedSections;
     const clickable = !!onClick;
 
@@ -103,7 +107,7 @@ export const ActorCard: FC<ActorCardProps> = ({
         <motion.div {...wrapperProps}>
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 {/* Away Status Indicator */}
-                {visitingFaction && (
+                {visitingStatusFaction && (
                     <div style={{
                         fontSize: 'clamp(0.65rem, 1.8vmin, 0.85rem)',
                         color: '#ffa726',
@@ -120,7 +124,8 @@ export const ActorCard: FC<ActorCardProps> = ({
                         gap: '4px',
                     }}>
                         <AccessTime style={{ fontSize: 'clamp(0.7rem, 1.8vmin, 0.9rem)' }} />
-                        Visiting {visitingFaction.name}
+                        {visitingFaction ? 'Visiting ' : 'Visiting from '}
+                        {visitingStatusFaction.name}
                     </div>
                 )}
                 

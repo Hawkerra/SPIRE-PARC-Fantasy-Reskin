@@ -898,6 +898,25 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
         return cells;
     }
 
+    const save = stage().getSave();
+    const stationActors = Object.values(save.actors).filter(actor => {
+        if (save.aide.actorId === actor.id || ['cryo', 'dead'].includes(actor.locationId)) {
+            return false;
+        }
+
+        // Keep existing non-faction patients and include faction actors that are physically present on station.
+        return !actor.factionId || !!layout.getModuleById(actor.locationId);
+    });
+
+    const getActorVisitingStatus = (actor: any) => {
+        const visitingFaction = actor.isOffSite(save) ? save.factions[actor.locationId] : undefined;
+        const visitingFromFaction = !visitingFaction && actor.factionId && layout.getModuleById(actor.locationId)
+            ? save.factions[actor.factionId]
+            : undefined;
+
+        return { visitingFaction, visitingFromFaction };
+    };
+
     return (
         <div className="station-screen" style={{ 
             display: 'flex', 
@@ -1309,43 +1328,47 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         gap: '0.5vh',
                                     }),
                                 }}>
-                                    {Object.values(stage().getSave().actors).filter(actor => !actor.factionId && stage().getSave().aide.actorId != actor.id && !['cryo', 'dead'].includes(actor.locationId)).length === 0 ? (
+                                    {stationActors.length === 0 ? (
                                         <p style={{ color: '#00ff88', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700, margin: 0, ...(isVerticalLayout && { gridColumn: '1 / -1' }) }}>Visit the Echo Chamber to bring on new patients!</p>
                                     ) : (
-                                        Object.values(stage().getSave().actors).filter(actor => !actor.factionId && stage().getSave().aide.actorId != actor.id && !['cryo', 'dead'].includes(actor.locationId)).map((actor: any) => (
-                                            <div 
-                                                key={actor.id}
-                                                onMouseEnter={() => setHoveredActorId(actor.id)}
-                                                onMouseLeave={() => setHoveredActorId(null)}
-                                            >
-                                                <ActorCard
-                                                    actor={actor}
-                                                    role={getRole(actor, stage().getSave())}
-                                                    visitingFaction={actor.isOffSite(stage().getSave()) ? stage().getSave().factions[actor.locationId] : undefined}
-                                                    isDragging={draggedActor?.id === actor.id}
-                                                    draggable={true}
-                                                    onDragStart={(e: React.DragEvent) => {
-                                                        setDraggedActor(actor);
-                                                        setHoveredActorId(null);
-                                                        e.dataTransfer.effectAllowed = 'move';
-                                                    }}
-                                                    onDragEnd={() => {
-                                                        setDraggedActor(null);
-                                                        setHoveredModuleId(null);
-                                                        setHoveredActorId(null);
-                                                        clearTooltip();
-                                                    }}
-                                                    whileHover={{
-                                                        backgroundColor: 'rgba(0, 255, 136, 0.15)',
-                                                        borderColor: 'rgba(0, 255, 136, 0.5)',
-                                                        x: isVerticalLayout ? 5 : 10
-                                                    }}
-                                                    style={{
-                                                        marginBottom: '0',
-                                                    }}
-                                                />
-                                            </div>
-                                        ))
+                                        stationActors.map((actor: any) => {
+                                            const { visitingFaction, visitingFromFaction } = getActorVisitingStatus(actor);
+                                            return (
+                                                <div 
+                                                    key={actor.id}
+                                                    onMouseEnter={() => setHoveredActorId(actor.id)}
+                                                    onMouseLeave={() => setHoveredActorId(null)}
+                                                >
+                                                    <ActorCard
+                                                        actor={actor}
+                                                        role={getRole(actor, save)}
+                                                        visitingFaction={visitingFaction}
+                                                        visitingFromFaction={visitingFromFaction}
+                                                        isDragging={draggedActor?.id === actor.id}
+                                                        draggable={true}
+                                                        onDragStart={(e: React.DragEvent) => {
+                                                            setDraggedActor(actor);
+                                                            setHoveredActorId(null);
+                                                            e.dataTransfer.effectAllowed = 'move';
+                                                        }}
+                                                        onDragEnd={() => {
+                                                            setDraggedActor(null);
+                                                            setHoveredModuleId(null);
+                                                            setHoveredActorId(null);
+                                                            clearTooltip();
+                                                        }}
+                                                        whileHover={{
+                                                            backgroundColor: 'rgba(0, 255, 136, 0.15)',
+                                                            borderColor: 'rgba(0, 255, 136, 0.5)',
+                                                            x: isVerticalLayout ? 5 : 10
+                                                        }}
+                                                        style={{
+                                                            marginBottom: '0',
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        })
                                     )}
                                 </div>
                             )}
@@ -1517,43 +1540,47 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 {/* Always render content, but with conditional styling for visibility */}
                                 {itemKey === 'patients' && (
                                     <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
-                                        {Object.values(stage().getSave().actors).filter(actor => !actor.factionId && stage().getSave().aide.actorId != actor.id && !['cryo', 'dead'].includes(actor.locationId)).length === 0 ? (
+                                        {stationActors.length === 0 ? (
                                             <p style={{ color: '#00ff88', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>Visit the Echo Chamber to bring on new patients!</p>
                                         ) : (
-                                            Object.values(stage().getSave().actors).filter(actor => !actor.factionId && stage().getSave().aide.actorId != actor.id && !['cryo', 'dead'].includes(actor.locationId)).map((actor: any) => (
-                                                <div 
-                                                    key={actor.id}
-                                                    onMouseEnter={() => setHoveredActorId(actor.id)}
-                                                    onMouseLeave={() => setHoveredActorId(null)}
-                                                >
-                                                    <ActorCard
-                                                        actor={actor}
-                                                        role={getRole(actor, stage().getSave())}
-                                                        visitingFaction={actor.isOffSite(stage().getSave()) ? stage().getSave().factions[actor.locationId] : undefined}
-                                                        isDragging={draggedActor?.id === actor.id}
-                                                        draggable={true}
-                                                        onDragStart={(e: React.DragEvent) => {
-                                                            setDraggedActor(actor);
-                                                            setHoveredActorId(null);
-                                                            e.dataTransfer.effectAllowed = 'move';
-                                                        }}
-                                                        onDragEnd={() => {
-                                                            setDraggedActor(null);
-                                                            setHoveredModuleId(null);
-                                                            setHoveredActorId(null);
-                                                            clearTooltip();
-                                                        }}
-                                                        whileHover={{
-                                                            backgroundColor: 'rgba(0, 255, 136, 0.15)',
-                                                            borderColor: 'rgba(0, 255, 136, 0.5)',
-                                                            x: 10
-                                                        }}
-                                                        style={{
-                                                            marginBottom: '15px',
-                                                        }}
-                                                    />
-                                                </div>
-                                            ))
+                                            stationActors.map((actor: any) => {
+                                                const { visitingFaction, visitingFromFaction } = getActorVisitingStatus(actor);
+                                                return (
+                                                    <div 
+                                                        key={actor.id}
+                                                        onMouseEnter={() => setHoveredActorId(actor.id)}
+                                                        onMouseLeave={() => setHoveredActorId(null)}
+                                                    >
+                                                        <ActorCard
+                                                            actor={actor}
+                                                            role={getRole(actor, save)}
+                                                            visitingFaction={visitingFaction}
+                                                            visitingFromFaction={visitingFromFaction}
+                                                            isDragging={draggedActor?.id === actor.id}
+                                                            draggable={true}
+                                                            onDragStart={(e: React.DragEvent) => {
+                                                                setDraggedActor(actor);
+                                                                setHoveredActorId(null);
+                                                                e.dataTransfer.effectAllowed = 'move';
+                                                            }}
+                                                            onDragEnd={() => {
+                                                                setDraggedActor(null);
+                                                                setHoveredModuleId(null);
+                                                                setHoveredActorId(null);
+                                                                clearTooltip();
+                                                            }}
+                                                            whileHover={{
+                                                                backgroundColor: 'rgba(0, 255, 136, 0.15)',
+                                                                borderColor: 'rgba(0, 255, 136, 0.5)',
+                                                                x: 10
+                                                            }}
+                                                            style={{
+                                                                marginBottom: '15px',
+                                                            }}
+                                                        />
+                                                    </div>
+                                                );
+                                            })
                                         )}
                                     </div>
                                 )}

@@ -278,7 +278,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     }}
                 >
                     {stage().isAuthenticated 
-                        ? 'v2026.05.30 - Experimenting with skit-generated characters. Still lots of issues with Soji.'
+                        ? 'v2026.06.10 - Experimenting with skit-generated characters. Still some issues with Soji.'
                         : (
                             <>
                                 This is an unofficial bot; for the latest version for PARC, visit:{' '}
