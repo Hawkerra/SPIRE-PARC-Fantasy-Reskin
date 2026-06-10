@@ -28,7 +28,7 @@ export interface Outcome {
     moduleId?: string; // Required for movement (destination module ID)
     module?: { id: string; moduleName: string; roleName: string; description: string }; // Required for new module
     outfit?: { id: string; actorId: string; outfitName: string; description: string }; // Required for new outfit
-    actor?: { name: string; personality: string, locationId: string }; // Required for newActor
+    actor?: { name: string; personality: string, locationId: string, factionId?: string }; // Required for newActor
 }
 
 export interface ScriptEntry {
@@ -243,7 +243,8 @@ function buildScriptLog(skit: SkitData, additionalEntries: ScriptEntry[] = [], s
                 const locationName = stage?.getSave().layout.getModuleById(outcome.actor.locationId)?.getAttribute('name')
                     || resolveFactionName(outcome.actor.locationId)
                     || outcome.actor.locationId;
-                return `[NEW CHARACTER: ${outcome.actor.name} | LOCATION ${locationName} | DESCRIPTION ${outcome.actor.personality}]`;
+                const factionName = outcome.actor.factionId ? resolveFactionName(outcome.actor.factionId) : 'No Faction';
+                return `[NEW CHARACTER: ${outcome.actor.name} | LOCATION ${locationName} | FACTION ${factionName} | DESCRIPTION ${outcome.actor.personality}]`;
             }
             default:
                 return null;
@@ -551,6 +552,29 @@ export function buildPromptSegment(title: string, content: string) {
     return content.trim() ? `${title}: [\n${content.trim()}\n]\n\n` : '';
 }
 
+export function buildEventHistory(stage: Stage, depth: number) {
+    let pastEvents = stage.getSave().timeline || [];
+    pastEvents = pastEvents.filter((v, index) => index > (pastEvents.length || 0) - depth);
+
+    if (pastEvents.length === 0) {
+        return '';
+    }
+    return pastEvents.map((v, index) =>  {
+                if (v.skit) {
+                    const module = stage.getSave().layout.getModuleById(v.skit.moduleId || '');
+                    const moduleOwner = module?.ownerId ? stage.getSave().actors[module.ownerId] : null;
+                    const moduleDescription = module ? (module.type === 'quarters' && moduleOwner ? `${moduleOwner.name}'s quarters` : `the ${module.getAttribute('name')}`) : 'an unknown location';
+                    return ((!v.skit.summary || index == pastEvents.length - 1) ?
+                        (`\n\nScript of Scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` +
+                        `${buildScriptLog(v.skit, [], stage)}`) :
+                        (`\n\nSummary of scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` + v.skit.summary)
+                        )
+                } else {
+                    return `\n\nAction ${stage.getSave().day - v.day} days ago: ${v.description || ''}`;
+                }
+    }).join('');
+}
+
 export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: number, instruction: string): string {
     const playerName = stage.getSave().player.name;
     const save = stage.getSave();
@@ -583,8 +607,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
         });
     }
 
-    let pastEvents = save.timeline || [];
-    pastEvents = pastEvents.filter((v, index) => index > (pastEvents.length || 0) - historyLength);
+    const historyPrompt = buildEventHistory(stage, historyLength);
     const module = save.layout.getModuleById(currentSceneModuleId || '');
     const moduleOwner = module?.ownerId ? save.actors[module.ownerId] : null;
     const faction = skit.context.factionId ? save.factions[skit.context.factionId] : null;
@@ -664,22 +687,9 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
             `Remember to use appropriate tags when moving characters on- or off-station in the skit. `) : '') +
 
         buildPromptSegment(`Known Factions`, `${Object.values(stage.getSave().factions).filter(faction => faction.active && faction.reputation > 0).map(faction => `${faction.name}: ${faction.getReputationDescription()}`).join('\n  ')}`) +
-        ((historyLength > 0 && pastEvents.length) ? 
+        ((historyLength > 0 && historyPrompt) ? 
                 // Include last few skit scripts for context and style reference; use summary except for most recent skit or if no summary.
-                buildPromptSegment('Recent Events and Skits', pastEvents.map((v, index) =>  {
-                if (v.skit) {
-                    const module = stage.getSave().layout.getModuleById(v.skit.moduleId || '');
-                    const moduleOwner = module?.ownerId ? stage.getSave().actors[module.ownerId] : null;
-                    const moduleDescription = module ? (module.type === 'quarters' && moduleOwner ? `${moduleOwner.name}'s quarters` : `the ${module.getAttribute('name')}`) : 'an unknown location';
-                    return ((!v.skit.summary || index == pastEvents.length - 1) ?
-                        (`\n\nScript of Scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` +
-                        `${buildScriptLog(v.skit, [], stage)}`) :
-                        (`\n\nSummary of scene in ${moduleDescription} (${stage.getSave().day - v.day}) days ago:\n` + v.skit.summary)
-                        )
-                } else {
-                    return `\n\nAction ${stage.getSave().day - v.day} days ago: ${v.description || ''}`;
-                }
-            }).join('')) : '') +
+                buildPromptSegment('Recent Events and Skits', historyPrompt) : '') +
         (module ? buildPromptSegment('Current Module', `The following scene is set in ` +
             `${module.type === 'quarters' ? `${moduleOwner ? `${moduleOwner.name}'s` : 'a vacant'} quarters` : 
             `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}`) : '') +
@@ -782,10 +792,10 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
 
                             `\n#New Character Definition:#\n` +
                             `If the content introduces a new character to the story, include a tag in the following format:\n` +
-                            `[NEW CHARACTER: <characterName> | LOCATION <moduleName or factionName> | DESCRIPTION <briefDescription>]\n` +
+                            `[NEW CHARACTER: <characterName> | LOCATION <moduleName or factionName> | FACTION <factionName> | DESCRIPTION <briefDescription>]\n` +
                             `Full Example:\n` +
-                            `[NEW CHARACTER: Alex Mercer | LOCATION Some Faction Name | DESCRIPTION A resourceful engineer with a knack for improvisation, sporting a rugged look with short-cropped hair and a perpetual five o'clock shadow.]\n` +
-                            `This tag allows the game engine to create new characters dynamically based on entry events, expanding the cast and introducing new dynamics to the story as needed. ` +
+                            `[NEW CHARACTER: Alex Mercer | LOCATION Some Faction Name | FACTION Some Faction Name | DESCRIPTION A resourceful engineer with a knack for improvisation, sporting a rugged look with short-cropped hair and a perpetual five o'clock shadow.]\n` +
+                            `This tag allows the game engine to create new characters dynamically based on entry events, expanding the cast and introducing new dynamics to the story as needed. Location is often a faction or module where the character is initially present. Faction is an optional field to indicate if the character belongs to one of the established factions and not to the PARC; it may be provided as a faction name or faction ID. ` +
 
                             `\n\n` +
                             `Tags should be a fair representation of the content's direct or implied events. ` +
@@ -927,12 +937,13 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         }
     }
 
-    const newCharacterRegex = /NEW CHARACTER:\s*([^|]+)\|\s*LOCATION\s+([^|]+)\|\s*DESCRIPTION\s+(.+)/i;
+    const newCharacterRegex = /NEW CHARACTER:\s*([^|]+)\|\s*LOCATION\s+([^|]+)(?:\|\s*FACTION\s*([^|]*))?\|\s*DESCRIPTION\s+(.+)/i;
     const newCharacterMatch = newCharacterRegex.exec(text);
     if (newCharacterMatch) {
         const characterName = newCharacterMatch[1].trim();
         const locationName = newCharacterMatch[2].trim();
-        const personality = newCharacterMatch[3].trim();
+        const factionInput = (newCharacterMatch[3] || '').trim();
+        const personality = newCharacterMatch[4].trim();
         console.log(`New Character tag detected: ${text}`);
 
         if (characterName && personality) {
@@ -967,13 +978,27 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
             }
             console.log(`Matched location for new character tag: ${moduleId ? (stage.getSave().layout.getModuleById(moduleId)?.getAttribute('name') || stage.getSave().factions[moduleId]?.name || 'Unknown Location') : 'No match found'}`);
 
+            let factionId = '';
+            if (!['PARC', 'NONE', 'NA', ''].includes(factionInput.toUpperCase())) {
+                const directFaction = stage.getSave().factions[factionInput];
+                const matchedFaction = directFaction || findBestNameMatch(factionInput, allFactions);
+                factionId = matchedFaction?.id || '';
+
+                // If FACTION is provided, it must resolve to a valid faction ID.
+                if (!factionId) {
+                    console.log(`Failed to resolve faction for new character tag: ${factionInput}`);
+                    return null;
+                }
+            }
+
             if (moduleId) {
                 return [{
                     type: 'newActor',
                     actor: {
                         name: characterName,
                         personality,
-                        locationId: moduleId
+                        locationId: moduleId,
+                        factionId
                     }
                 }];
             }

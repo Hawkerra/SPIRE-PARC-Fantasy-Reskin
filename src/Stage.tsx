@@ -1,7 +1,7 @@
 import {ReactElement} from "react";
 import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@chub-ai/stages-ts";
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
-import Actor, { loadReserveActor, generateBaseActorImage, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch } from "./actors/Actor";
+import Actor, { loadReserveActor, generateBaseActorImage, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, Module, registerModule } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
@@ -233,12 +233,14 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
                 console.log('Generating actor from outcome:', actorName);
-                const newActor = await loadReserveActor(actorData, this);
+                const newActor = await loadReserveActor(actorData, this, true);
                 if (newActor) {
                     const currentSave = this.getSave();
                     newActor.locationId = actorData.locationId || '';
                     newActor.origin = 'emergent';
                     currentSave.actors[newActor.id] = newActor;
+                    newActor.factionId = actorData.factionId || '';
+                    void generateBaseActorImage(newActor, this);
                     this.saveGame();
                     return;
                 }
@@ -783,7 +785,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 }
                 // Retry a few times if it fails (or returns null):
                 for (let attempt = 0; attempt < 3; attempt++) {
-                    const aideActor = await loadReserveActor(actorData, this);
+                    const aideActor = await loadReserveActor(actorData, this, false);
                     if (aideActor) {
                         save = this.getSave();
                         save.actors[aideActor.id] = aideActor;

@@ -7,7 +7,7 @@ import { FlashOn, Forum,
     FitnessCenter, Construction, Lightbulb, 
     Whatshot, SentimentVerySatisfied, Handshake 
 } from '@mui/icons-material';
-import { buildPromptSegment } from "../Skit";
+import { buildEventHistory, buildPromptSegment } from "../Skit";
 
 // Core character stats as an enum so other parts of the app can reference them safely
 // Using single-syllable words, each starting with a different letter
@@ -301,7 +301,7 @@ export async function loadReserveActorFromFullPath(fullPath: string, stage: Stag
         // If the voice ID is not in the VOICE_MAP, it is a custom voice and should be preserved
         voiceId: !VOICE_MAP[item.node.definition.voice_id] ? item.node.definition.voice_id : ''
     };
-    return loadReserveActor(data, stage);
+    return loadReserveActor(data, stage, true);
 }
 
 // Mapping of voice IDs to a description of the voice, so the AI can choose an ID based on the character profile.
@@ -326,7 +326,7 @@ export const VOICE_MAP: {[key: string]: string} = {
     'animated_male_20s': 'masculine - hip and lively',
 };
 
-export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|null> {
+export async function loadReserveActor(data: any, stage: Stage, includeHistory: boolean): Promise<Actor|null> {
     console.log('Loading reserve actor:', data.name);
     console.log(data);
 
@@ -393,6 +393,8 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
         return null;
     }
 
+    const historyPrompt = buildEventHistory(stage, 5);
+
     // Take this data and use text generation to get an updated distillation of this character, including a physical description.
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
@@ -402,6 +404,7 @@ export async function loadReserveActor(data: any, stage: Stage): Promise<Actor|n
                 `Some roles are above board, while others may involve morally ambiguous or covert activities; some may even be illicit or compulsary. ` +
                 `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
             buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
+            (includeHistory && historyPrompt ? buildPromptSegment(`Recent Events`, historyPrompt) : '') +
             buildPromptSegment(`Original Details`, `The Original Details below describe a character or scenario (${data.name}) from another universe. This request and response must digest and distill these details to suit the game's narrative scenario, ` +
                 `crafting a character who has been rematerialized into this universe through an "echo chamber," their essence reconstituted from the whispers of a black hole. ` +
                 `As a result of this process, many of this character's traits may have changed, including the loss of most supernatural or arcane abilities, which functioned only within the rules of their former universe. ` +
