@@ -252,7 +252,7 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
     }
     // retry a few times if it fails (or returns null):
     for (let attempt = 0; attempt < 3; attempt++) {
-        const repActor = await loadReserveActor(actorData, stage);
+        const repActor = await loadReserveActor(actorData, stage, false);
         if (repActor) {
             repActor.factionId = faction.id;
             repActor.origin = 'faction';
