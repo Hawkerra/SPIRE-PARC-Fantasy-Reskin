@@ -526,8 +526,8 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory: 
     if (!newActor.name) {
         console.log(`Discarding actor due to missing name: ${newActor.name}`);
         return null;
-    // if there's a best name match, discard this (too similar to existing characters):
-    } else if (findBestNameMatch(newActor.name, [...Object.values(stage.getSave().actors), ...stage.getSave().reserveActors || [], ...stage.getSave().echoes.map(e => ({name: e?.name || ''})).filter(e => e.name) || []])) {
+    // if there's a best name match, discard this (too similar to existing characters or to the placeholder name):
+    } else if (findBestNameMatch(newActor.name, [{name: 'Their Simplified Name'}, {name: stage.getSave().player.name},...Object.values(stage.getSave().actors), ...stage.getSave().reserveActors || [], ...stage.getSave().echoes.map(e => ({name: e?.name || ''})).filter(e => e.name) || []])) {
         console.log(`Discarding actor due to name similarity: ${newActor.name}`);
         return null;
     } else if (!newActor.getDescription()) {
