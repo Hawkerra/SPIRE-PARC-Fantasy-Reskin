@@ -949,7 +949,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         if (characterName && personality) {
             // Reject obvious duplicates by name against the current cast.
             console.log(`Parsing new character definition from tag: ${text}: Character Name: ${characterName}, Location Name: ${locationName}, Personality: ${personality}`);
-            const similarActor = findBestNameMatch(characterName, allActors);
+            const similarActor = findBestNameMatch(characterName, [...allActors, {name: stage.getSave().player.name, id: 'player'}]);
             if (similarActor) {
                 console.log(`Too similar character name found for new character tag: ${similarActor.name}`);
                 return null;
