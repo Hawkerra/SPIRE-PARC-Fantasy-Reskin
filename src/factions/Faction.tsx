@@ -148,20 +148,21 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
                     (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
                     `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from the dominant themes found in the details and lean into some of the quirks to create something truly unique. `) +
                 buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
-                buildPromptSegment(`Instructions`, `After carefully considering this description, generate a concise breakdown for a faction based upon these details in the following strict format:\n` +
-                    `NAME: The faction's simple name\n` +
+                buildPromptSegment(`Instructions`, `After carefully considering this description, the System will generate details for a distinct faction based upon these details in the following strict format:\n` +
                     `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
                     `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
                     `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
                     `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
                     `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
+                    `NAME: The faction's simple name\n` +
                     `#END#`) +
-                buildPromptSegment(`Example Response`, `NAME: The Stellar Concord\n` +
+                buildPromptSegment(`Example Response`, 
                     `DESCRIPTION: A diplomatic federation of peaceful worlds dedicated to preserving knowledge and fostering cooperation across the galaxy. They value education, cultural exchange, and peaceful resolution of conflicts.\n` +
                     `ROLES: Ambassador, Researcher, Bodyguard, Negotiator\n` +
                     `VISUALSTYLE: Clean, elegant architecture with flowing curves and abundant natural light. Members wear formal robes in soft pastels with subtle geometric patterns. Spaces feature living plants and water features.\n` +
                     `COLOR: #2a4a7c\n` +
                     `FONT: Georgia, serif\n` +
+                    `NAME: The Stellar Concord\n` +
                     `#END#`),
             stop: ['#END'],
             include_history: true,

@@ -4,7 +4,7 @@
 import React, { FC, useCallback, useEffect } from 'react';
 import { ScreenType } from './BaseScreen';
 import Actor, { getRole, isHologram } from '../actors/Actor';
-import { Stage } from '../Stage';
+import { SaveType, Stage } from '../Stage';
 import { accumulateOutcomes, generateSkitScript, Outcome, SkitData } from '../Skit';
 import { Emotion } from '../actors/Emotion';
 import SkitOutcomeDisplay from './SkitOutcomeDisplay';
@@ -57,21 +57,33 @@ const getSceneModuleIdAtIndex = (skit: SkitData, scriptIndex: number): string =>
  * Helper function to get the actors present in the scene at a given script index.
  * Walks through movements from initialActorLocations, filtering by scene module at index.
  */
-const getActorsAtIndex = (skit: SkitData, scriptIndex: number, allActors: {[key: string]: Actor}): Actor[] => {
+const getActorsAtIndex = (skit: SkitData, scriptIndex: number, allActors: {[key: string]: Actor}, save: SaveType): Actor[] => {
     // Start with initial actor locations
     const currentLocations = {...(skit.initialActorLocations || {})};
+    const movedActorIds = new Set<string>();
     
     // Apply movements up to and including the current index
     for (let i = 0; i <= scriptIndex && i < skit.script.length; i++) {
         const entry = skit.script[i];
         if (entry.movements) {
             Object.entries(entry.movements).forEach(([actorId, newLocationId]) => {
+                movedActorIds.add(actorId);
                 currentLocations[actorId] = newLocationId;
             });
         }
     }
     
     const sceneModuleId = getSceneModuleIdAtIndex(skit, scriptIndex);
+    const sceneModuleType = save.layout.getModuleById(sceneModuleId || '')?.type;
+
+    if (sceneModuleType === 'comms') {
+        const commsVisitors = save.commsVisitors || [];
+        commsVisitors.forEach(actorId => {
+            if (allActors[actorId] && !movedActorIds.has(actorId)) {
+                currentLocations[actorId] = sceneModuleId;
+            }
+        });
+    }
 
     // Filter actors who are at the skit's module
     const actorsAtModule: Actor[] = [];
@@ -367,7 +379,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                         actors={actors}
                         playerActorId={'player'}
                         getPresentActors={(_script, _index) =>
-                            getActorsAtIndex(_script, _index, stage().getSave().actors) || []
+                            getActorsAtIndex(_script, _index, stage().getSave().actors, stage().getSave()) || []
                         }
                         getActorImageUrl={(actor, _script, index) => {
                             let emotion = Emotion.neutral;
@@ -398,7 +410,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                                 return currentLocationId;
                             })();
 
-                            const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
+                            const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId, currentSceneModuleId || '');
 
                             return {
                                 filter: useHoloFilter ? 'hologram' : undefined,

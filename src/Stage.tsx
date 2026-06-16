@@ -55,6 +55,7 @@ export type SaveType = {
     language?: string;
     tone?: string;
     disableImpersonation?: boolean;
+    commsVisitors?: string[]; // List of actor IDs currently visiting the comms module (for faction representatives)
 }
 
 export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateType, ConfigType> {
@@ -409,10 +410,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     // Cryo or dead patients don't move.
                     continue;
                 }
-                // Move faction actors to "in" their faction.
-                if (actor.factionId) {
-                    actor.locationId = actor.factionId;
-                } else if (actor.id == save.aide.actorId) {
+                if (actor.id == save.aide.actorId) {
                     // Aide goes nowhere by default.
                     actor.locationId = '';
                 } else if (!actor.locationId || save.layout.getModulesWhere(m => actor.locationId === m.id).length > 0) {
@@ -444,12 +442,15 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         const commsModule = save.layout.getModulesWhere(m => m.type === 'comms')[0];
         const eligibleFactions = Object.values(save.factions).filter(faction => faction.reputation > 0 && faction.representativeId && save.actors[faction.representativeId]);
         // If there are eligible factions and a comms module, and there is at least one non-remote actor other than the aide:
+        save.commsVisitors = []; // Clear visitors.
         if (eligibleFactions.length > 0 && commsModule && Object.values(save.actors).filter(a => !a.factionId && a.id !== save.aide.actorId).length > 0) {
             const randomFaction = eligibleFactions.sort(() => Math.random() - 0.5)[0];
             
-            // Move the faction rep to the comms room, if available:
+            // Add the faction rep to the comms array
             const factionRep = save.actors[randomFaction.representativeId || ''];
-            factionRep.locationId = commsModule.id;
+            if (factionRep) {
+                save.commsVisitors.push(factionRep.id);
+            }
         }
 
         this.currentSave = {...save}; // Update the current save slot with the modified save, ensuring a new object reference.

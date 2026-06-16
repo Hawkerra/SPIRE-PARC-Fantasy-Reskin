@@ -14,6 +14,7 @@ import { ContentManagementScreen } from './ContentManagementScreen';
 import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete } from '@mui/icons-material';
 import { EditNote } from '@mui/icons-material';
 import { SkitType } from '../Skit';
+import Actor from '../actors/Actor';
 import { generateActorDecor, getRole, isHologram } from '../actors/Actor';
 import { scoreToGrade, assignActorToRole } from '../utils';
 
@@ -114,6 +115,21 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
     }, [isVerticalLayout, gridWidth, gridHeight]);
     
     const gridEdgeSize = isVerticalLayout ? '12vh' : '0';
+
+    const getActorsAtModule = (module: Module): Actor[] => {
+        const save = stage().getSave();
+        const actorsAtLocation = Object.values(save.actors).filter(actor => actor.locationId === module.id);
+
+        if (module.type !== 'comms') {
+            return actorsAtLocation;
+        }
+
+        const commsVisitors = (save.commsVisitors || [])
+            .map(actorId => save.actors[actorId])
+            .filter((actor): actor is Actor => !!actor);
+
+        return Array.from(new Map([...actorsAtLocation, ...commsVisitors].map(actor => [actor.id, actor])).values());
+    };
 
     const openModuleSelector = (x: number, y: number) => {
         setSelectedPosition({x, y});
@@ -785,7 +801,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     )}
                                     {/* Compute actors once for this module */}
                                     {(() => {
-                                        const actors = Object.values(stage()?.getSave().actors).filter(a => a.locationId === module.id);
+                                        const actors = getActorsAtModule(module);
                                         const actorCount = actors.length;
                                         return (
                                             <>
@@ -818,7 +834,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                                     height: `calc(0.6 * ${cellSize})`,
                                                                     userSelect: 'none',
                                                                     pointerEvents: 'none',
-                                                                    filter: isHologram(actor, stage().getSave(), module ? module.id || '' : '') ? 'sepia(100%) hue-rotate(180deg) saturate(200%) brightness(1.2)' : undefined,
+                                                                    filter: isHologram(actor, stage().getSave(), actor.locationId || '', module.id || '') ? 'sepia(100%) hue-rotate(180deg) saturate(200%) brightness(1.2)' : undefined,
                                                                 }}
                                                             />
                                                         );
