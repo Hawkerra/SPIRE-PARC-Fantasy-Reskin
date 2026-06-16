@@ -1,6 +1,6 @@
 import { Stage } from "../Stage";
 import { v4 as generateUuid } from 'uuid';
-import Actor, { generateBaseActorImage, loadReserveActor } from "../actors/Actor";
+import Actor, { findBestNameMatch, generateBaseActorImage, loadReserveActor } from "../actors/Actor";
 import { AspectRatio } from "@chub-ai/stages-ts";
 import { Module, MODULE_TEMPLATES, ModuleIntrinsic, registerFactionModule } from "../Module";
 import { buildPromptSegment } from "../Skit";
@@ -128,111 +128,120 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
         return null;
     }
 
-    // Generate faction distillation using AI
-    const generatedResponse = await stage.makeText({
-        prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
-            buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-                `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
-                `Some roles are above board, while others may involve morally ambiguous or covert activities; many may even be illicit, sexual, or compulsory (essentially human trafficking). ` +
-                `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
-            buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
-            (Object.values(stage.getSave().factions).length > 0 ? buildPromptSegment(`Established Factions`, `${Object.values(stage.getSave().factions).map(faction => `- ${faction.name}: ${faction.description}. Representative: ${stage.getSave().actors[faction.representativeId || '']}`).join('\n')}`) : '') +
-            buildPromptSegment(`Original Details`, `The Original Details below describe a character, faction, organization, or setting (${data.name}) from another universe. ` +
-                `This request and response must digest and distill these details into a new faction that suits the game's narrative scenario, ` +
-                `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied sci-fi setting. ` +
-                (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
-                `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from the dominant themes found in the details and lean into some of the quirks to create something truly unique. `) +
-            buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
-            buildPromptSegment(`Instructions`, `After carefully considering this description, generate a concise breakdown for a faction based upon these details in the following strict format:\n` +
-                `NAME: The faction's simple name\n` +
-                `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
-                `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
-                `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
-                `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
-                `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
-                `#END#`) +
-            buildPromptSegment(`Example Response`, `NAME: The Stellar Concord\n` +
-                `DESCRIPTION: A diplomatic federation of peaceful worlds dedicated to preserving knowledge and fostering cooperation across the galaxy. They value education, cultural exchange, and peaceful resolution of conflicts.\n` +
-                `ROLES: Ambassador, Researcher, Bodyguard, Negotiator\n` +
-                `VISUALSTYLE: Clean, elegant architecture with flowing curves and abundant natural light. Members wear formal robes in soft pastels with subtle geometric patterns. Spaces feature living plants and water features.\n` +
-                `COLOR: #2a4a7c\n` +
-                `FONT: Georgia, serif\n` +
-                `#END#`),
-        stop: ['#END'],
-        include_history: true,
-        max_tokens: 600,
-    });
-    
-    console.log('Generated faction distillation:');
-    console.log(generatedResponse);
-    
-    // Parse the generated response
-    const lines = generatedResponse?.split('\n').map((line: string) => line.trim()) || [];
-    const parsedData: any = {};
-    
-    for (let line of lines) {
-        line = line.replace(/\*\*/g, '');
-        const colonIndex = line.indexOf(':');
-        if (colonIndex > 0) {
-            const keyMatch = line.substring(0, colonIndex).trim().match(/(\w+)$/);
-            if (!keyMatch) continue;
-            const key = keyMatch[1].toLowerCase();
-            const value = line.substring(colonIndex + 1).trim();
-            parsedData[key] = value;
+
+    let tries = 3;
+    while (tries > 0) {
+        tries--;
+        // Generate faction distillation
+        const generatedResponse = await stage.makeText({
+            prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
+                buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
+                    `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
+                    `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
+                    `Some roles are above board, while others may involve morally ambiguous or covert activities; many may even be illicit, sexual, or compulsory (essentially human trafficking). ` +
+                    `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
+                buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
+                (Object.values(stage.getSave().factions).length > 0 ? buildPromptSegment(`Established Factions`, `${Object.values(stage.getSave().factions).map(faction => `- ${faction.name}: ${faction.description}. Representative: ${stage.getSave().actors[faction.representativeId || '']}`).join('\n')}`) : '') +
+                buildPromptSegment(`Original Details`, `The Original Details below describe a character, faction, organization, or setting (${data.name}) from another universe. ` +
+                    `This request and response must digest and distill these details into a new faction that suits the game's narrative scenario, ` +
+                    `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied sci-fi setting. ` +
+                    (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
+                    `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from the dominant themes found in the details and lean into some of the quirks to create something truly unique. `) +
+                buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
+                buildPromptSegment(`Instructions`, `After carefully considering this description, generate a concise breakdown for a faction based upon these details in the following strict format:\n` +
+                    `NAME: The faction's simple name\n` +
+                    `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
+                    `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
+                    `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
+                    `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
+                    `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
+                    `#END#`) +
+                buildPromptSegment(`Example Response`, `NAME: The Stellar Concord\n` +
+                    `DESCRIPTION: A diplomatic federation of peaceful worlds dedicated to preserving knowledge and fostering cooperation across the galaxy. They value education, cultural exchange, and peaceful resolution of conflicts.\n` +
+                    `ROLES: Ambassador, Researcher, Bodyguard, Negotiator\n` +
+                    `VISUALSTYLE: Clean, elegant architecture with flowing curves and abundant natural light. Members wear formal robes in soft pastels with subtle geometric patterns. Spaces feature living plants and water features.\n` +
+                    `COLOR: #2a4a7c\n` +
+                    `FONT: Georgia, serif\n` +
+                    `#END#`),
+            stop: ['#END'],
+            include_history: true,
+            max_tokens: 600,
+        });
+        
+        console.log('Generated faction distillation:');
+        console.log(generatedResponse);
+        
+        // Parse the generated response
+        const lines = generatedResponse?.split('\n').map((line: string) => line.trim()) || [];
+        const parsedData: any = {};
+        
+        for (let line of lines) {
+            line = line.replace(/\*\*/g, '');
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                const keyMatch = line.substring(0, colonIndex).trim().match(/(\w+)$/);
+                if (!keyMatch) continue;
+                const key = keyMatch[1].toLowerCase();
+                const value = line.substring(colonIndex + 1).trim();
+                parsedData[key] = value;
+            }
         }
+        
+        // Validate hex color
+        const themeColor = /^#([0-9A-F]{6}|[0-9A-F]{8})$/i.test(parsedData['color']) ?
+                parsedData['color'] :
+                ['#788ebdff', '#d3aa68ff', '#75c275ff', '#c28891ff', '#55bbb2ff'][Math.floor(Math.random() * 5)];
+        
+        const newFaction = new Faction(
+            generateUuid(),
+            parsedData['name'] || data.name,
+            data.fullPath || '',
+            parsedData['description'] || '',
+            parsedData['visualstyle'] || '',
+            parsedData['roles'] ? parsedData['roles'].split(',').map((role: string) => role.trim()) : [],
+            themeColor,
+            parsedData['font'] || 'Arial, sans-serif',
+            3 // Start with reputation of 3
+        );
+        
+        console.log(`Loaded new faction: ${newFaction.name} (ID: ${newFaction.id})`);
+        console.log(newFaction);
+        
+        // Validation checks
+        if (!newFaction.name) {
+            console.log(`Discarding faction due to missing name: ${newFaction.name}`);
+            continue;
+        } else if (!newFaction.description) {
+            console.log(`Discarding faction due to missing description: ${newFaction.name}`);
+            continue;
+        } else if (!newFaction.visualStyle) {
+            console.log(`Discarding faction due to missing visual style: ${newFaction.name}`);
+            continue;
+        } else if (newFaction.name.length <= 2 || newFaction.name.length >= 50) {
+            console.log(`Discarding faction due to extreme name length: ${newFaction.name}`);
+            continue;
+        } else if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(`${newFaction.name}${newFaction.description}${newFaction.visualStyle}`)) {
+            console.log(`Discarding faction due to non-english characters in name/description/visualStyle: ${newFaction.name}`);
+            continue;
+        } else if (findBestNameMatch(newFaction.name, [...Object.values(stage.getSave().factions), {name: 'faction name'}])) {
+            console.log(`Discarding faction due to name conflict: ${newFaction.name}`);
+            continue;
+        }
+
+        // Generate a background image for the faction:
+        stage.generator.makeImage({
+            prompt: `An evocative visual novel background from a futuristic sci-fi universe. ` +
+                `The scene should encapsulate the essence of this description: ${newFaction.description}. ` +
+                `Include suitable design elements: ${newFaction.visualStyle}. `,
+            aspect_ratio: AspectRatio.SQUARE
+        }).then((bgResponse) => {newFaction.backgroundImageUrl = bgResponse?.url || ''});
+
+        // Generate a representative Actor:
+        await generateFactionRepresentative(newFaction, stage);
+        return newFaction;
     }
-    
-    // Validate hex color
-    const themeColor = /^#([0-9A-F]{6}|[0-9A-F]{8})$/i.test(parsedData['color']) ?
-            parsedData['color'] :
-            ['#788ebdff', '#d3aa68ff', '#75c275ff', '#c28891ff', '#55bbb2ff'][Math.floor(Math.random() * 5)];
-    
-    const newFaction = new Faction(
-        generateUuid(),
-        parsedData['name'] || data.name,
-        data.fullPath || '',
-        parsedData['description'] || '',
-        parsedData['visualstyle'] || '',
-        parsedData['roles'] ? parsedData['roles'].split(',').map((role: string) => role.trim()) : [],
-        themeColor,
-        parsedData['font'] || 'Arial, sans-serif',
-        3 // Start with reputation of 3
-    );
-    
-    console.log(`Loaded new faction: ${newFaction.name} (ID: ${newFaction.id})`);
-    console.log(newFaction);
-    
-    // Validation checks
-    if (!newFaction.name) {
-        console.log(`Discarding faction due to missing name: ${newFaction.name}`);
-        return null;
-    } else if (!newFaction.description) {
-        console.log(`Discarding faction due to missing description: ${newFaction.name}`);
-        return null;
-    } else if (!newFaction.visualStyle) {
-        console.log(`Discarding faction due to missing visual style: ${newFaction.name}`);
-        return null;
-    } else if (newFaction.name.length <= 2 || newFaction.name.length >= 50) {
-        console.log(`Discarding faction due to extreme name length: ${newFaction.name}`);
-        return null;
-    } else if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(`${newFaction.name}${newFaction.description}${newFaction.visualStyle}`)) {
-        console.log(`Discarding faction due to non-english characters in name/description/visualStyle: ${newFaction.name}`);
-        return null;
-    }
 
-    // Generate a background image for the faction:
-    stage.generator.makeImage({
-        prompt: `An evocative visual novel background from a futuristic sci-fi universe. ` +
-            `The scene should encapsulate the essence of this description: ${newFaction.description}. ` +
-            `Include suitable design elements: ${newFaction.visualStyle}. `,
-        aspect_ratio: AspectRatio.SQUARE
-    }).then((bgResponse) => {newFaction.backgroundImageUrl = bgResponse?.url || ''});
-
-    // Generate a representative Actor:
-    await generateFactionRepresentative(newFaction, stage);
-
-    return newFaction;
+    return null;
 }
 
 export async function generateFactionRepresentative(faction: Faction, stage: Stage): Promise<Actor|null> {
