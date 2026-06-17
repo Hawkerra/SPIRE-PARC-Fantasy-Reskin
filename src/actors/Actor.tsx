@@ -259,8 +259,8 @@ class Actor {
     }
 }
 
-export function isHologram(actor: Actor, save: SaveType, currentLocationId: string, sceneLocationId: string): boolean {
-        return sceneLocationId != currentLocationId || save.aide.actorId === actor.id;
+export function isHologram(actor: Actor, save: SaveType, currentLocationId: string): boolean {
+        return !!(save.factions[currentLocationId]) || save.aide.actorId === actor.id;
     }
 
 export function getStatDescription(stat: Stat | string): string {

@@ -410,7 +410,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                                 return currentLocationId;
                             })();
 
-                            const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId, currentSceneModuleId || '');
+                            const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
 
                             return {
                                 filter: useHoloFilter ? 'hologram' : undefined,
