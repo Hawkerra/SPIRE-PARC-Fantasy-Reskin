@@ -174,7 +174,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // If there is a rep from a faction here, open a faction interaction skit
             if (stage.getSave().commsVisitors?.length ?? 0 > 0) {
-                const faction = Object.values(stage.getSave().factions).find(a => a.representativeId && stage.getSave().actors[a.representativeId]?.locationId === module.id);
+                const faction = Object.values(stage.getSave().factions).find(a => a.representativeId && stage.getSave().commsVisitors?.includes(a.representativeId));
                 if (faction) {
                     // Move the module's owner (if any) here:
                     const owner = module.ownerId ? stage.getSave().actors[module.ownerId] : undefined;
