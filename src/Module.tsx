@@ -173,7 +173,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         cost: {}, // Free; starter module
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // If there is a rep from a faction here, open a faction interaction skit
-            if (Object.values(stage.getSave().factions).some(a => a.representativeId && stage.getSave().actors[a.representativeId]?.locationId === module.id)) {
+            if (stage.getSave().commsVisitors?.length ?? 0 > 0) {
                 const faction = Object.values(stage.getSave().factions).find(a => a.representativeId && stage.getSave().actors[a.representativeId]?.locationId === module.id);
                 if (faction) {
                     // Move the module's owner (if any) here:
