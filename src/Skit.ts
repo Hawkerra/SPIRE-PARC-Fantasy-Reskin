@@ -594,9 +594,9 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     // Determine present and absent actors for this moment in the skit (as of the last entry in skit.script):
     const currentSceneModuleId = getCurrentSceneModuleId(skit, -1);
     const presentActorIds = getCurrentActorsInScene(skit, currentSceneModuleId, -1);
-    const presentPatients = Object.values(save.actors).filter(a => presentActorIds.has(a.id) && !a.factionId);
-    const absentPatients = Object.values(save.actors).filter(a => !presentActorIds.has(a.id) && !a.factionId && save.aide.actorId != a.id && !['cryo', 'dead'].includes(a.locationId) && !a.isOffSite(save));
-    const cryoPatients = Object.values(save.actors).filter(a => a.locationId === 'cryo' && !a.factionId);
+    const presentPatients = Object.values(save.actors).filter(a => presentActorIds.has(a.id));
+    const absentPatients = Object.values(save.actors).filter(a => !presentActorIds.has(a.id) && save.aide.actorId != a.id && !['cryo', 'dead'].includes(a.locationId) && !a.isOffSite(save));
+    const cryoPatients = Object.values(save.actors).filter(a => a.locationId === 'cryo');
     const awayPatients = Object.values(save.actors).filter(a => !a.factionId && a.isOffSite(save));
 
     // Update participation counts if this is the start of the skit
