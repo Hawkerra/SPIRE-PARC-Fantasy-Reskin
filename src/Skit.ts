@@ -1786,7 +1786,10 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     });
 
     movementOutcomesByActor.forEach(({ outcome, order }) => {
-        accumulated.push({ outcome: { ...outcome }, order });
+        const actor = stage.getSave().actors[outcome.actorId || ''];
+        if (actor && Object.keys(stage.getSave().factions).includes(actor.locationId) != !!outcome.factionId) {
+            accumulated.push({ outcome: { ...outcome }, order });
+        }
     });
 
     acceptedModules.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));

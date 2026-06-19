@@ -666,24 +666,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                     case 'movement': {
                         const movement = getMovementPresentation(outcome);
                         if (!movement) {
-                            return (
-                                <Box
-                                    key={`movement_${index}`}
-                                    sx={{
-                                        ...outcomeContentCardSx,
-                                        background: 'rgba(56,189,248,0.10)',
-                                        border: '1px solid rgba(56,189,248,0.35)',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    <Typography sx={{ ...outcomeMicroLabelSx, color: '#38bdf8' }}>
-                                        Movement
-                                    </Typography>
-                                    <Typography sx={{ ...outcomeBodyTextSx, fontWeight: 700, lineHeight: 1.45 }}>
-                                        {resolveActorName(outcome.actorId)} movement updated
-                                    </Typography>
-                                </Box>
-                            );
+                            return <></>;
                         }
                         return (
                             <Box
