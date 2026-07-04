@@ -25,6 +25,7 @@ interface SettingsData {
     disableDecorImages: boolean;
     disableImpersonation: boolean;
     solidSpirit: boolean;
+    fastStart: boolean;
     typeOutSpeed: number;
     characterArtStyle: ArtStyle;
     characterArtist: string;
@@ -153,6 +154,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
         disableDecorImages: saveFromStage.disableDecorImages ?? saveFromStage.disableEmotionImages ?? false,
         disableImpersonation: saveFromStage.disableImpersonation ?? false,
         solidSpirit: saveFromStage.solidSpirit ?? false,
+        fastStart: false,
         typeOutSpeed: clampTypeOutSpeed(saveFromStage.typeOutSpeed ?? defaultTypeOutSpeed),
         characterArtStyle: saveFromStage.characterArtStyle ?? 'original',
         characterArtist: saveFromStage.characterArtist ?? '',
@@ -170,26 +172,19 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
     // new-writein input
     const [newWriteIn, setNewWriteIn] = useState('');
 
-    const handleFastStart = () => {
-        const st = stage();
-        const save = st.getSave();
-        const fastTypes: string[] = ['commons', 'lounge', 'aperture'];
-        let placed = 0;
-        for (const fastType of fastTypes) {
-            if (save.layout.getModulesWhere(m => m.type === fastType).length > 0) continue;
-            let done = false;
-            for (let y = 0; y < DEFAULT_GRID_HEIGHT && !done; y++) {
-                for (let x = 0; x < DEFAULT_GRID_WIDTH && !done; x++) {
-                    if (!save.layout.getModuleAt(x, y)) {
-                        save.layout.setModuleAt(x, y, createModule(fastType, { id: `${fastType}-fast-${x}-${y}`, attributes: {} }));
-                        placed++;
-                        done = true;
-                    }
-                }
-            }
+    const placeFastStartRooms = () => {
+        const save = stage().getSave();
+        // Place adjacent to the starting cluster in the known-free column (x=5, rows 1-3).
+        const placements: { type: string; x: number; y: number }[] = [
+            { type: 'commons', x: 5, y: 1 },   // Great Hall
+            { type: 'lounge',  x: 5, y: 2 },   // Parlor
+            { type: 'aperture', x: 5, y: 3 },  // Arcane Focus
+        ];
+        for (const p of placements) {
+            if (save.layout.getModulesWhere(m => m.type === p.type).length > 0) continue;
+            if (save.layout.getModuleAt(p.x, p.y)) continue; // don't overwrite anything
+            save.layout.setModuleAt(p.x, p.y, createModule(p.type, { id: `${p.type}-fast-${p.x}-${p.y}`, attributes: {} }));
         }
-        st.saveGame();
-        st.showPriorityMessage(placed > 0 ? `Fast start: ${placed} room(s) added at no cost.` : 'Fast start rooms are already built.');
     };
 
     const handleSave = () => {
@@ -197,6 +192,9 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
         
         if (isNewGame) {
             stage().newGame();
+            if (settings.fastStart) {
+                placeFastStartRooms();
+            }
         }
         const save = stage().getSave();
         save.player.name = settings.playerName;
@@ -864,33 +862,62 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </span>
                                     </motion.div>
 
-                                    {/* Fast Start */}
+                                    {/* Fast Start (new game only, one-way lock once checked) */}
+                                    {isNewGame && (
                                     <motion.div
-                                        whileHover={{ scale: 1.01 }}
-                                        whileTap={{ scale: 0.99 }}
-                                        onClick={handleFastStart}
+                                        whileHover={!settings.fastStart ? { scale: 1.01 } : undefined}
+                                        whileTap={!settings.fastStart ? { scale: 0.99 } : undefined}
+                                        onClick={() => { if (!settings.fastStart) setSettings(prev => ({ ...prev, fastStart: true })); }}
                                         style={{
                                             padding: '12px',
-                                            background: 'rgba(18, 8, 32, 0.7)',
-                                            border: '2px solid rgba(176, 102, 255, 0.5)',
+                                            background: settings.fastStart ? 'rgba(176, 102, 255, 0.15)' : 'rgba(18, 8, 32, 0.7)',
+                                            border: settings.fastStart ? '2px solid rgba(176, 102, 255, 0.5)' : '2px solid rgba(255, 255, 255, 0.1)',
                                             borderRadius: '8px',
-                                            cursor: 'pointer',
+                                            cursor: settings.fastStart ? 'default' : 'pointer',
+                                            opacity: settings.fastStart ? 0.55 : 1,
                                             transition: 'all 0.2s ease',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '8px',
                                         }}
                                     >
-                                        <span
+                                        <div
                                             style={{
-                                                color: '#b066ff',
-                                                fontSize: '13px',
-                                                fontWeight: 'bold',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '4px',
+                                                background: settings.fastStart ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.fastStart ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0,
+                                                transition: 'all 0.2s ease',
                                             }}
                                         >
-                                            ⚡ Fast Start: Add Great Hall, Parlor & Arcane Focus (Free)
+                                            {settings.fastStart && (
+                                                <motion.span
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    style={{ color: '#1a0533', fontSize: '14px', fontWeight: 'bold' }}
+                                                >
+                                                    ✓
+                                                </motion.span>
+                                            )}
+                                        </div>
+                                        <span
+                                            style={{
+                                                color: settings.fastStart ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
+                                                fontSize: '13px',
+                                                fontWeight: settings.fastStart ? 'bold' : 'normal',
+                                            }}
+                                        >
+                                            {settings.fastStart
+                                                ? 'Fast Start enabled - Great Hall, Parlor & Arcane Focus (locked in)'
+                                                : 'Fast Start: begin with Great Hall, Parlor & Arcane Focus (free)'}
                                         </span>
                                     </motion.div>
+                                    )}
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <label

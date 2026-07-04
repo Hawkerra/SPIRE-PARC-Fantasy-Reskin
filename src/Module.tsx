@@ -12,7 +12,7 @@ export type ModuleType = 'echo chamber' | 'comms' | 'generator' | 'quarters' | '
     | string; // Allow string for modded modules
 
 export enum StationStat {
-    SYSTEMS = 'Systems',
+    SYSTEMS = 'Arcanum',
     COMFORT = 'Comfort',
     PROVISION = 'Provision',
     SECURITY = 'Security',
@@ -31,7 +31,7 @@ export const STATION_STAT_ICONS: Record<StationStat, any> = {
 };
 
 export const STATION_STAT_DESCRIPTIONS: Record<StationStat, string> = {
-    'Systems': 'Structural soundness and enchantment upkeep of the tower',
+    'Arcanum': 'Structural soundness and enchantment upkeep of the tower',
     'Comfort': 'Overall comfort and livability for residents',
     'Provision': 'Availability of food, water, and essential supplies',
     'Security': 'Safety and defense against external and internal threats',
@@ -63,7 +63,7 @@ export enum StatRating {
     EXCELLENT = 'excellent'
 }
 export const STATION_STAT_PROMPTS: Record<StationStat, Record<StatRating, string>> = {
-    'Systems': {
+    'Arcanum': {
         [StatRating.POOR]: 'The tower is plagued by faltering enchantments, groaning masonry, and misbehaving animated fixtures, leaving it barely functional.',
         [StatRating.BELOW_AVERAGE]: 'The tower suffers occasional flickering enchantments and minor structural concerns that need attention.',
         [StatRating.AVERAGE]: 'The tower is generally functional, with routine upkeep keeping its enchantments working, if finicky.',
@@ -334,7 +334,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         roleDescription: `Manage the tower's defenses and ensure the safety of the residents against external and internal threats.`,
         baseImageUrl: 'https://media.charhub.io/7ccddb81-bed6-4395-80c6-912fe2932e53/c58a4f32-270d-4b62-b2b4-bcc1a3dedc94.png',
         defaultImageUrl: 'https://media.charhub.io/090e6a42-62f9-46da-9a29-09de8b469f05/eedf310f-af7a-40b4-ac56-686f4daa5c07.png',
-        cost: {Systems: 1, Wealth: 1},
+        cost: {Arcanum: 1, Wealth: 1},
         action: randomAction,
         available: (stage: Stage) => {
             // Require to have met at least three factions:
@@ -351,7 +351,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         roleDescription: `Tend the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.`,
         baseImageUrl: 'https://media.charhub.io/439bcef8-3c12-4c07-b1fb-5659c0111edb/16e89185-6266-4ccf-a010-cf80090fcb08.png',
         defaultImageUrl: 'https://media.charhub.io/6dbe1503-e10a-48e4-875d-cc7a5038bc43/be0aa5dc-70b6-4573-ae48-c37d8e90022f.png',
-        cost: {Harmony: 2, Systems: 2},
+        cost: {Harmony: 2, Arcanum: 2},
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the cryo management screen
             console.log("Opening cryo screen from cryo bank.");
@@ -371,7 +371,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         roleDescription: `Conduct research on the leyline and its currents, managing the tower's experimental summoning projects.`,
         baseImageUrl: 'https://chub.ai/imagine/project/8ca887ea-ea20-4c53-9536-a4354e565246',
         defaultImageUrl: 'https://media.charhub.io/551ea94a-c64c-4328-a54a-08a8a356f261/ec7e47be-b157-4f71-a14d-4e45110e84f7.png',
-        cost: {Systems: 2, Wealth: 2},
+        cost: {Arcanum: 2, Wealth: 2},
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the attenuation screen
             console.log("Opening aperture screen from aperture module.");
@@ -673,7 +673,7 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
                 `DESCRIPTION: A vivid visual description of the module's appearance, to be fed into image generation.\n` +
                 `ROLE NAME: The simple title of the role associated with this module (1-2 words).\n` +
                 `ROLE DESCRIPTION: A brief summary of the responsibilities and duties associated with this role.\n` +
-                `COST: The resource cost to build this module, specified as 1-3 points of one or two tower stats. Available stats are: Systems, Comfort, Provision, Security, Harmony, Wealth. Format as "StatName X, StatName Y" (e.g., "Wealth 2, Systems 1" or "Provision 2").\n` +
+                `COST: The resource cost to build this module, specified as 1-3 points of one or two tower stats. Available stats are: Arcanum, Comfort, Provision, Security, Harmony, Wealth. Format as "StatName X, StatName Y" (e.g., "Wealth 2, Systems 1" or "Provision 2").\n` +
                 `#END#`) +
             buildPromptSegment(`Example Response`,
                 `MODULE NAME: Homeward Gate\n` +
@@ -681,7 +681,7 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
                 `DESCRIPTION: A solemn stone chamber housing a freestanding archway carved with concentric rings of runes, its interior filled with a calm curtain of silver light.\n` +
                 `ROLE NAME: Gatekeeper\n` +
                 `ROLE DESCRIPTION: Responsible for tending the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.\n` +
-                `COST: Harmony 2, Systems 2\n` +
+                `COST: Harmony 2, Arcanum 2\n` +
                 `#END#`) +
             buildPromptSegment(`Example Response`,
                 `MODULE NAME: Sparring Hall\n` +
@@ -750,7 +750,7 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
     const parsedCost: {[key in StationStat]?: number} = {};
     
     if (costString) {
-        // Parse cost string like "Wealth 2, Systems 1" or "Provision 2"
+        // Parse cost string like "Wealth 2, Arcanum 1" or "Provision 2"
         const costParts = costString.split(',').map(s => s.trim());
         
         for (const part of costParts) {

@@ -647,7 +647,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         // Initialize stationStats if missing
         if (!save.stationStats || Object.keys(save.stationStats).length < 6) {
             save.stationStats = {
-                'Systems': 3,
+                'Arcanum': 3,
                 'Comfort': 3,
                 'Provision': 3,
                 'Security': 3,

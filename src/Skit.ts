@@ -105,6 +105,8 @@ export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing:
                 `explains that the former Magus perished long ago at the claws of a dragon, and - as ${stage.getSave().player.name} is the first living soul to set foot in the Spire since - bestows upon them the late Magus's title, effects, and responsibilities. ` +
                 `${stage.getSave().aide.name} suspects, based on what they knew of their late master, that the search parameters described a prospective spouse or concubine, though they were never told the reasons and would rather not speculate further. ` +
                 `They may gleefully dub ${stage.getSave().player.name} the late Magus's "magic-order bride" or "magic-order groom" (whichever suits ${stage.getSave().player.name}'s description), a tease they fully intend to keep using. ` +
+                `Crucially, ${stage.getSave().aide.name} must make clear that the same one-way magic that pulled ${stage.getSave().player.name} here binds them to the tower: the Magus cannot leave, and the surrounding jungle and ruins make it moot regardless. If ${stage.getSave().player.name} wants anything done around the Spire, they will have to summon other unfortunate souls to help. ` +
+                `${stage.getSave().aide.name} should then point ${stage.getSave().player.name} toward the summoning sanctum and helpfully explain the summoning process, noting that a good many souls have likely been stuck waiting in the summoning queue for ages and really ought to be pulled through soon, before they risk crumbling into arcane dust. ` +
                 `${stage.getSave().aide.name} has kept the tower stable but could not conduct summonings without a Magus, so they are relieved to have someone take on the role and eager to get back to the business of the Sanctum. This scene must end before bringing any additional residents into the tower; ` +
                 `this process is handled via a separate game mechanic.` :
                 `Continue this introductory scene, expanding on the initial situation and context as the tower's spirit steward, ${stage.getSave().aide.name}, ` +
@@ -730,7 +732,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `Where <stat> is the name of the tower stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
                             `Multiple stat changes can be included in a single tag, separated by commas.` +
                             `Full Examples:\n` +
-                            `[STATION: Systems +2, Comfort +1]\n` +
+                            `[STATION: Arcanum +2, Comfort +1]\n` +
                             `[STATION: Security -1]\n` +
 
                             `\n#Faction Reputation Changes:#\n` +
@@ -1277,7 +1279,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
             const response = await stage.makeText({
                 template: fullPrompt,
                 min_tokens: 10,
-                max_tokens: 800,
+                max_tokens: 1200,
                 include_history: true,
                 stop: ["[END]"]
             });
