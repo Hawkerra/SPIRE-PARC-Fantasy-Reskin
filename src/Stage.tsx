@@ -31,6 +31,7 @@ type Timeline = TimelineEvent[];
 export type SaveType = {
     player: {name: string, description: string};
     aide: {name: string, description: string, actorId?: string};
+    solidSpirit?: boolean; // When true, the tower spirit renders without the ghostly effect (manifesting physically)
     directorModule: {name: string, roleName: string, module?: ModuleIntrinsic};
     echoes: (Actor | null)[]; // actors currently in echo slots (can be null for empty slots)
     actors: {[key: string]: Actor};
@@ -95,7 +96,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     // At least one of these is required for a character search; some sort of gender helps indicate that the card represents a singular person.
     readonly actorTags = ['male', 'female', 'woman', 'man', 'masculine', 'feminine', 'non-binary', 'trans', 'genderqueer', 'genderfluid', 'agender', 'androgyne', 'intersex', 'futa', 'futanari', 'hermaphrodite'];
     // At least one of these is required for a faction search; helps indicate that the card has a focus on setting or tone.
-    readonly factionTags = ['sci-fi', 'science fiction', 'cyberpunk', 'post-apocalyptic', 'dystopian', 'space', 'alien', 'robot', 'setting', 'world', 'narrator', 'scenario'];
+    readonly factionTags = ['fantasy', 'magic', 'medieval', 'kingdom', 'mythology', 'fairy tale', 'adventure', 'guild', 'setting', 'world', 'narrator', 'scenario'];
     readonly characterSearchQuery = `https://inference.chub.ai/search?first=${this.FETCH_AT_TIME}&exclude_tags={{EXCLUSIONS}}&page={{PAGE_NUMBER}}&tags={{SEARCH_TAGS}}&sort=random&asc=false&include_forks=false&nsfw=true&nsfl=false` +
         `&nsfw_only=false&require_images=false&require_example_dialogues=false&require_alternate_greetings=false&require_custom_prompt=false&exclude_mine=false&min_tokens=200&max_tokens=5000` +
         `&require_expressions=false&require_lore=false&mine_first=false&require_lore_embedded=false&require_lore_linked=false&my_favorites=false&inclusive_or=true&recommended_verified=false&count=false&min_tags=3`;
@@ -103,7 +104,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
     readonly TONE_MAP: {[key: string]: string} = {
         'Original': 'The universe is a wild and evocative kaleidoscope, rich in diverse characters and organizations. ' +
-            'Stories set in this universe can vary widely in tone—from lighthearted and humorous to dark and introspective—, but generally emphasize slice-of-life dramedy as patients navigate unlikely relationships and personal journeys.',
+            'Stories set in this universe can vary widely in tone—from lighthearted and humorous to dark and introspective—, but generally emphasize slice-of-life dramedy as residents navigate unlikely relationships and personal journeys.',
         'Gritty': 'The universe is a harsh and unforgiving landscape where survival is a constant struggle. ' +
             'Stories set in this universe tend to be dark and intense, with high stakes and morally complex characters. Themes of sacrifice, resilience, and the human spirit prevailing against all odds are common.',
         'Humorous': 'The universe is a whimsical and absurd place, where the bizarre and unexpected are commonplace. ' +
@@ -291,12 +292,12 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         layout.setModuleAt(centerX - 1, centerY - 1, createModule('comms', { id: `comms-${centerX - 1}-${centerY - 1}`, attributes: {} }));
         this.userId = Object.values(users)[0].anonymizedId;
         this.freshSave = { player: {name: Object.values(users)[0].name, description: Object.values(users)[0].chatProfile || ''}, 
-            directorModule: {name: 'Director\'s Cabin', roleName: 'Maid'},
+            directorModule: {name: 'Magus\'s Study', roleName: 'Maid'},
             aide: {
                 name: 'Soji', 
-                description: `Your holographic assistant is acutely familiar with the technical details of your Post-Apocalypse Rehabilitation Center, so you don't have to be! ` +
-                `Your StationAide™ comes pre-programmed with a friendly and non-condescending demeanor that will leave you feeling empowered and never patronized; ` +
-                `your bespoke projection comes with an industry-leading feminine form in a pleasing shade of default blue, but, as always, StationAide™ remains infinitely customizable to suit your tastes.`}, 
+                description: `Every respectable tower comes haunted, and the Spire is no exception! Your resident tower spirit has been bound to these stones since long before your arrival and knows the Spire's workings intimately, so you don't have to. ` +
+                `Fair warning: two centuries of empty halls have left them a touch capricious - expect teasing, dramatics, and open delight in your confusion, as your suffering is (by their own cheerful admission) the finest entertainment they've had in two hundred years. ` +
+                `Rest assured the binding compels honest service no matter how they grumble, and those who earn their trust report the needling softens into something almost like fondness. They are especially fond of introducing you as the late Magus's magic-order bride or groom.`}, 
             echoes: [], actors: {}, factions: {}, layout: layout, day: 1, turn: 0, currentSkit: undefined, typeOutSpeed: this.DEFAULT_TYPE_OUT_SPEED, reserveActors: [] };
 
         // ensure at least one save exists and has a layout
@@ -319,10 +320,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             console.log('Registering tools.');
             this.mcp.registerTool('modify-station-stat',
                 {
-                    title: 'Modify Station Stat',
-                    description: 'If events result in a change to a station stat, use this tool to register a station stat change.',
+                    title: 'Modify Tower Stat',
+                    description: 'If events result in a change to a tower stat, use this tool to register a tower stat change.',
                     inputSchema: {
-                        stat: z.enum(Object.values(StationStat) as [string, ...string[]]).describe('Station stat to modify'),
+                        stat: z.enum(Object.values(StationStat) as [string, ...string[]]).describe('Tower stat to modify'),
                         change: z.number().min(-10).max(10).describe('Amount to change the stat by'),
                     }
                 },
@@ -331,7 +332,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     // this.getSave().currentSkit ...
                     // For now, we're just testing that it works.
                     console.log(`Tool called: modifyStationStat(${stat}, ${change})`);
-                    return { content: [{type: 'text', text: `Station stat ${stat} changed by ${change}.` }] };
+                    return { content: [{type: 'text', text: `Tower stat ${stat} changed by ${change}.` }] };
                 }
             );
 
@@ -577,8 +578,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         
         const placeholderModule = {
             name: this.getSave().directorModule.name,
-            skitPrompt: 'Crew quarters are personal living spaces for station inhabitants. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
-            imagePrompt: 'A sci-fi living quarters with a bed, personal storage, and ambient lighting, reflecting the occupant\'s personality.',
+            skitPrompt: 'Private chambers are personal living spaces for the tower\'s residents. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
+            imagePrompt: 'A cozy tower bedchamber with a bed, personal storage, and warm lantern light, reflecting the occupant\'s personality.',
             baseImageUrl: 'https://media.charhub.io/5e39db53-9d66-459d-8926-281b3b089b36/8ff20bdb-b719-4cf7-bf53-3326d6f9fcaa.png', 
             defaultImageUrl: 'https://media.charhub.io/99ffcdf5-a01b-43cf-81e5-e7098d8058f5/d1ec2e67-9124-4b8b-82d9-9685cfb973d2.png',
             role: this.getSave().directorModule.roleName,
@@ -608,8 +609,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
             // Kick off director module generation
             generateModule(this.getSave().directorModule.name, this, 
-                `This is a module designed specifically around the Director, ${this.getSave().player.name}, and their needs or tastes.\n` +
-                `About the Director, ${this.getSave().player.name}:\n${this.getSave().player.description}`,
+                `This is a room designed specifically around the Magus, ${this.getSave().player.name}, and their needs or tastes.\n` +
+                `About the Magus, ${this.getSave().player.name}:\n${this.getSave().player.description}`,
                 this.getSave().directorModule.roleName).then(module => {
                     if (module) {
                         this.getSave().directorModule.module = module;
@@ -782,7 +783,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 const actorData = {
                     name: save.aide.name,
                     fullPath: '',
-                    personality: `The PARC's StationAide™ holographic assistant: ${save.aide.description}`
+                    personality: `The Spire's bound tower spirit and steward: ${save.aide.description}`
                 }
                 // Retry a few times if it fails (or returns null):
                 for (let attempt = 0; attempt < 3; attempt++) {
@@ -1125,9 +1126,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         const save = this.getSave();
         if (save.currentSkit) {
             if (save.currentSkit.type === SkitType.EXIT_CRYO) {
-                this.pushToTimeline(save, `${save.actors[save.currentSkit.actorId ?? '']?.name || 'An unknown individual'} thawed from cryostasis.`);
+                this.pushToTimeline(save, `${save.actors[save.currentSkit.actorId ?? '']?.name || 'An unknown individual'} returned through the Homeward Gate.`);
             } else if (save.currentSkit.type === SkitType.INTRO_CHARACTER) {
-                this.pushToTimeline(save, `New patient, ${save.actors[save.currentSkit.actorId ?? '']?.name || 'An unknown individual'}, fused from echo.`);
+                this.pushToTimeline(save, `New resident, ${save.actors[save.currentSkit.actorId ?? '']?.name || 'An unknown individual'}, summoned to the Spire.`);
             }
             // Save skit to timeline first, so (most) outcomes save afterward.
             this.pushToTimeline(save, `${save.currentSkit.type} skit.`, save.currentSkit);
@@ -1161,7 +1162,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     // Handle station stat changes here if needed
                     if (save.stationStats && outcome.stat in save.stationStats) {
                         save.stationStats[outcome.stat as StationStat] += outcome.amount;
-                        this.showPriorityMessage(`Station's ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
+                        this.showPriorityMessage(`The Spire's ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
                     }
                 } else if (outcome.type === 'factionReputation' && outcome.factionId && outcome.amount) {
                     if (save.factions[outcome.factionId]) {
@@ -1175,7 +1176,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         // If reputation reaches 0, deactivate faction
                         if (newReputation <= 0 && faction.active) {
                             faction.active = false;
-                            this.pushToTimeline(save, `The ${faction.name} cut ties with the PARC.`);
+                            this.pushToTimeline(save, `The ${faction.name} cut ties with the Spire.`);
                             // Remove any actors belonging to this faction from the PARC:
                             Object.values(save.actors).forEach(actor => {
                                 if (actor.factionId === faction.id) {

@@ -31,12 +31,12 @@ export const STATION_STAT_ICONS: Record<StationStat, any> = {
 };
 
 export const STATION_STAT_DESCRIPTIONS: Record<StationStat, string> = {
-    'Systems': 'Mechanical and structural health of the station',
-    'Comfort': 'Overall comfort and livability for inhabitants',
+    'Systems': 'Structural soundness and enchantment upkeep of the tower',
+    'Comfort': 'Overall comfort and livability for residents',
     'Provision': 'Availability of food, water, and essential supplies',
     'Security': 'Safety and defense against external and internal threats',
     'Harmony': 'Social cohesion and morale among inhabitants',
-    'Wealth': 'Financial resources of the station and its Director'
+    'Wealth': 'Financial resources of the tower and its Magus'
 };
 
 export function getStatRating(score: number): StatRating {
@@ -64,32 +64,32 @@ export enum StatRating {
 }
 export const STATION_STAT_PROMPTS: Record<StationStat, Record<StatRating, string>> = {
     'Systems': {
-        [StatRating.POOR]: 'The station is plagued by frequent mechanical failures, computer glitches, and structural issues, making it barely operational.',
-        [StatRating.BELOW_AVERAGE]: 'The station experiences occasional mechanical and electronic problems and minor structural concerns that need attention.',
-        [StatRating.AVERAGE]: 'The station is generally functional with standard maintenance keeping systems operational, if finicky.',
-        [StatRating.GOOD]: 'The station runs smoothly with well-maintained systems and minimal issues.',
-        [StatRating.EXCELLENT]: 'The station boasts state-of-the-art systems and impeccable structural integrity, operating flawlessly.'
+        [StatRating.POOR]: 'The tower is plagued by faltering enchantments, groaning masonry, and misbehaving animated fixtures, leaving it barely functional.',
+        [StatRating.BELOW_AVERAGE]: 'The tower suffers occasional flickering enchantments and minor structural concerns that need attention.',
+        [StatRating.AVERAGE]: 'The tower is generally functional, with routine upkeep keeping its enchantments working, if finicky.',
+        [StatRating.GOOD]: 'The tower runs smoothly, its enchantments well-tended and its stonework sound.',
+        [StatRating.EXCELLENT]: 'The tower hums with masterwork enchantments and impeccable structural integrity, operating flawlessly.'
     },
     'Comfort': {
         [StatRating.POOR]: 'Living conditions are harsh, filthy, and downright unhealthy, leading to widespread dissatisfaction among inhabitants.',
         [StatRating.BELOW_AVERAGE]: 'Living conditions are subpar, messy, and unpleasant, with many inhabitants feeling uneasy in their environment.',
         [StatRating.AVERAGE]: 'Living conditions and cleanliness are acceptable, providing a basic level of comfort for inhabitants.',
-        [StatRating.GOOD]: 'The station offers a comfortable, clean, and pleasant living environment for its inhabitants.',
+        [StatRating.GOOD]: 'The tower offers a comfortable, clean, and pleasant living environment for its residents.',
         [StatRating.EXCELLENT]: 'Inhabitants enjoy luxurious, impeccable, and healthful living conditions, enhancing their overall well-being.'
     },
     'Provision': {
         [StatRating.POOR]: 'Essential supplies are scarce, leading to frequent shortages and hardships for inhabitants.',
         [StatRating.BELOW_AVERAGE]: 'Provision levels are inconsistent, with occasional shortages of food, water, and supplies.',
-        [StatRating.AVERAGE]: 'The station maintains a steady supply of essentials, meeting the basic needs of inhabitants.',
+        [StatRating.AVERAGE]: 'The tower maintains a steady supply of essentials, meeting the basic needs of residents.',
         [StatRating.GOOD]: 'Provision levels are reliable, ensuring inhabitants have access to necessary supplies without issue.',
-        [StatRating.EXCELLENT]: 'The station is abundantly stocked with essentials, providing more than enough for all inhabitants.'
+        [StatRating.EXCELLENT]: 'The tower is abundantly stocked with essentials, providing more than enough for all residents.'
     },
     'Security': {
-        [StatRating.POOR]: 'The station is vulnerable to threats, with inadequate defenses and frequent security concerns.',
+        [StatRating.POOR]: 'The tower is vulnerable to threats, its wards thin and neglected, with frequent security concerns.',
         [StatRating.BELOW_AVERAGE]: 'Security measures are weak, leading to occasional malfeasance and safety concerns among inhabitants.',
-        [StatRating.AVERAGE]: 'The station has standard security protocols in place; inhabitants may occasionally act out but are generally kept in check.',
-        [StatRating.GOOD]: 'Security is robust, effectively protecting the station and its inhabitants from threats.',
-        [StatRating.EXCELLENT]: 'The station boasts top-tier security systems, ensuring unparalleled safety and protection for all.'
+        [StatRating.AVERAGE]: 'The tower keeps standard wards and watch routines in place; residents may occasionally act out but are generally kept in check.',
+        [StatRating.GOOD]: 'Security is robust, the wards and watch effectively protecting the tower and its residents from threats.',
+        [StatRating.EXCELLENT]: 'The tower is layered in masterwork wards and vigilant sentinels, ensuring unparalleled safety and protection for all.'
     },
     'Harmony': {
         [StatRating.POOR]: 'Social tensions run high and morale is non-existent, leading to frequent conflicts and a toxic atmosphere among inhabitants.',
@@ -101,9 +101,9 @@ export const STATION_STAT_PROMPTS: Record<StationStat, Record<StatRating, string
     'Wealth': { // Wealther is financial resources of the station and its Director and does not necessarily reflect the personal wealth of inhabitants nor the station's overall provision levels
         [StatRating.POOR]: 'Financial resources are critically low, potentially leading to severe budget cuts and creditor threats.',
         [StatRating.BELOW_AVERAGE]: 'Wealth levels are low, leading to budget constraints and creditor complaints.',
-        [StatRating.AVERAGE]: 'The Director maintains a stable financial footing, covering operational costs and bills.',
-        [StatRating.GOOD]: 'The Director is financially healthy, with ample resources in reserve.',
-        [StatRating.EXCELLENT]: 'The Director enjoys significant wealth, capable of lavish spending.'
+        [StatRating.AVERAGE]: 'The Magus maintains a stable financial footing, covering operational costs and bills.',
+        [StatRating.GOOD]: 'The Magus is financially healthy, with ample resources in reserve.',
+        [StatRating.EXCELLENT]: 'The Magus enjoys significant wealth, capable of lavish spending.'
     }
 };
 
@@ -141,11 +141,11 @@ const randomAction = (module: Module, stage: Stage, setScreenType: (type: Screen
 
 export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
     'echo chamber': {
-        name: 'Echo Chamber',
-        skitPrompt: 'The echo chamber is where the player fuses echoes from the nearby black hole. Scenes in this room typically involve newly echofused patients as they get their bearings.',
-        imagePrompt: 'A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.',
-        role: 'Assistant',
-        roleDescription: `Manage station operations, monitoring the crew and supplementing their needs as the director's right hand.`,
+        name: 'Summoning Sanctum',
+        skitPrompt: 'The summoning sanctum is where the Magus completes summonings, drawing people out of the leyline current and bodily into this world. Scenes in this room typically involve newly summoned residents as they get their bearings.',
+        imagePrompt: 'A circular ritual chamber with a glowing summoning circle inlaid in the stone floor, arcane sigils on the walls, candles, and shelves of ritual implements.',
+        role: 'Apprentice',
+        roleDescription: `Manage tower operations, monitoring the residents and supplementing their needs as the Magus's right hand.`,
         baseImageUrl: 'https://media.charhub.io/2f92a39f-02be-41fd-b61d-56de04a9ecc4/62d30715-01e1-4581-beb4-61cf31134955.png',
         defaultImageUrl: 'https://media.charhub.io/026ae01a-7dc8-472d-bfea-61548b87e6ef/84990780-8260-4833-ac0b-79c1a15ddb9e.png',
         cost: {}, // Free; starter module
@@ -161,13 +161,13 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     comms: {
-        name: 'Comms',
-        skitPrompt: `The comms room is the hub for all external and internal station communications. ` +
-            `This room is critical for communicating with external factions, with whom the PARC finds work for patients or conducts trade in exchange for desired resources. ` +
-            `Scenes here often involve receiving important messages, coordinating among the crew, or managing station-wide announcements.`,
-        imagePrompt: 'A sci-fi communications room dominated by a massive screen and associated computers and equipment, as well as some seating.',
-        role: 'Liaison',
-        roleDescription: `Handle all communications for the station, liaising with external entities and managing internal announcements.`,
+        name: 'Translocation Circle',
+        skitPrompt: `The translocation circle is the tower's only practical link to the outside world; the surrounding jungle and ruins make overland travel treacherous at the best of times. ` +
+            `This room is critical for dealing with external factions, whose approved envoys can be brought to the Spire or sent away again, and with whom the Spire finds work for residents or conducts trade in exchange for desired resources. ` +
+            `Scenes here often involve arrivals and departures, messages carried by envoys, or coordinating comings and goings among the residents.`,
+        imagePrompt: 'A grand stone chamber dominated by a raised teleportation circle etched with glowing runes, ringed by braziers, with a modest waiting area to one side.',
+        role: 'Herald',
+        roleDescription: `Oversee the translocation circle and its comings and goings, receiving envoys and managing the tower's dealings with the outside world.`,
         baseImageUrl: 'https://media.charhub.io/e13c7784-9f5f-4ec2-a179-5bab52973b3a/f5e69e63-88bf-4f7d-919b-41c8a2adcc6c.png',
         defaultImageUrl: 'https://media.charhub.io/9293912a-ebf4-4a0f-bac6-b9bfc82115f1/2ce9899c-a8cb-4186-9abb-fb8192ced8bd.png',
         cost: {}, // Free; starter module
@@ -221,11 +221,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     generator: {
-        name: 'Generator',
-        skitPrompt: 'The generator room serves as an engineering hub of sorts, where many of the station\'s mechanical systems can be managed. Scenes here often involve the station\'s overall systems health and stability.',
-        imagePrompt: 'A sci-fi chamber dominated by a large, glowing generator, filled with humming machinery, control panels, and energy conduits.',
-        role: 'Engineer',
-        roleDescription: `Oversee the station's mechanical systems, ensuring all modules receive adequate energy and maintenance to function optimally.`,
+        name: 'Leyline Font',
+        skitPrompt: 'The leyline font is where the tower taps the great leyline nexus beneath it, and serves as a hub for tending the enchantments that keep the Spire running. Scenes here often involve the tower\'s overall stability and upkeep.',
+        imagePrompt: 'A vaulted stone chamber built around a column of radiant leyline energy rising through the floor, ringed by runic conduits, crystal regulators, and arcane control lecterns.',
+        role: 'Artificer',
+        roleDescription: `Tend the tower's enchantments and leyline flows, ensuring every chamber receives adequate magic and maintenance to function properly.`,
         baseImageUrl: 'https://media.charhub.io/e53eeeb3-81a9-4020-a336-070c65edbb8a/4141ed00-9ab7-47f5-a4ce-21983b013e46.png',
         defaultImageUrl: 'https://media.charhub.io/36c3c8b5-1abd-4766-8042-fa7a2af0ce42/6106d6ec-7746-4130-8e13-860c89a325c7.png',
         cost: {}, // Free; starter module
@@ -236,9 +236,9 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     quarters: {
-        name: 'Quarters',
-        skitPrompt: 'Crew quarters are personal living spaces for station inhabitants. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
-        imagePrompt: 'A sci-fi living quarters with a bed, personal storage, and ambient lighting, reflecting the occupant\'s personality.',
+        name: 'Chambers',
+        skitPrompt: 'Private chambers are personal living spaces for the tower\'s residents. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
+        imagePrompt: 'A cozy tower bedchamber with a bed, personal storage, and warm lantern light, reflecting the occupant\'s personality.',
         baseImageUrl: 'https://media.charhub.io/5e39db53-9d66-459d-8926-281b3b089b36/8ff20bdb-b719-4cf7-bf53-3326d6f9fcaa.png', 
         defaultImageUrl: 'https://media.charhub.io/99ffcdf5-a01b-43cf-81e5-e7098d8058f5/d1ec2e67-9124-4b8b-82d9-9685cfb973d2.png',
         cost: {Provision: 1},
@@ -265,11 +265,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     commons: {
-        name: 'Hub',
-        skitPrompt: 'The hub is a place for patients and crew to gather, relax, eat, and interact. Scenes here often involve camaraderie, conflicts, and leisure activities among the crew.',
-        imagePrompt: 'A sci-fi common area with a large table, seating, and storage and kitchen or vending facilities along the far wall.',
-        role: 'Custodian',
-        roleDescription: `Maintain the station's communal areas, ensuring they remain inviting and well-stocked for crew relaxation and socialization.`,
+        name: 'Great Hall',
+        skitPrompt: 'The great hall is a place for residents to gather, relax, eat, and interact. Scenes here often involve camaraderie, conflicts, and leisure activities among the residents.',
+        imagePrompt: 'A warm great hall with a long table and benches, a large hearth, and pantry shelves and cooking facilities along the far wall.',
+        role: 'Steward',
+        roleDescription: `Maintain the tower's communal spaces, ensuring they remain inviting and well-stocked for residents' meals and gatherings.`,
         baseImageUrl: 'https://media.charhub.io/0cee625e-73e7-43b3-86b3-a06c082e73a9/7f958523-48b9-40a4-ae67-59b0cea199d3.png', 
         defaultImageUrl: 'https://media.charhub.io/041617bd-1cb3-424d-8e66-788e60edc80d/3a21ddd2-bd66-40b0-84ca-68b11d8218b2.png',
         cost: {Provision: 1},
@@ -280,11 +280,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     infirmary: {
-        name: 'Infirmary',
-        skitPrompt: 'The infirmary is the station\'s medical facility, where crew members receive treatment and care. Scenes here often involve medical incidents, health concerns, or ways to improve the crew\'s health and well-being.',
-        imagePrompt: 'A futuristic medical bay with treatment beds and advanced diagnostic equipment.',
-        role: 'Medic',
-        roleDescription: `Provide medical care and emergency response for the crew, ensuring their health and well-being.`,
+        name: 'Apothecary',
+        skitPrompt: 'The apothecary is the tower\'s healing hall, where residents receive treatment and care. Scenes here often involve injuries, ailments, or ways to improve the residents\' health and well-being.',
+        imagePrompt: 'A candlelit healing room with cots, herb-drying racks, shelves of potions and poultices, and a healer\'s workbench.',
+        role: 'Healer',
+        roleDescription: `Provide healing and remedies for the residents, ensuring their health and well-being.`,
         baseImageUrl: 'https://media.charhub.io/b62f09a0-7a42-47e7-b0be-f54dfac00f33/fe73db8c-2cb6-4744-9464-6d26ecf776c0.png',
         defaultImageUrl: 'https://media.charhub.io/5e9c6119-51b4-4a2c-a06c-bb8f1c20aea1/c471f9ba-ea5f-495b-8e44-e02723a04938.png',
         cost: {Provision: 1, Comfort: 1},
@@ -295,11 +295,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     gym: {
-        name: 'Gym',
-        skitPrompt: 'The gym is the station\'s fitness center, where crew members work out and maintain their physical health. Scenes here often involve training sessions, fitness challenges, or ways to boost crew morale through physical activity.',
-        imagePrompt: 'A sci-fi gym with advanced exercise equipment and weightlifting stations.',
-        role: 'Trainer',
-        roleDescription: `Oversee the physical fitness and training of the crew, ensuring they remain in peak condition for their duties aboard the station.`,
+        name: 'Sparring Hall',
+        skitPrompt: 'The sparring hall is where residents train and maintain their physical health. Scenes here often involve training sessions, contests, or ways to boost morale through physical activity.',
+        imagePrompt: 'A stone training hall with weapon racks, practice dummies, sparring mats, and tall windows.',
+        role: 'Drillmaster',
+        roleDescription: `Oversee the physical training of the residents, ensuring they remain in fighting form for whatever their duties demand.`,
         baseImageUrl: 'https://media.charhub.io/349ca504-7b7e-4afd-8a52-43dd7b166bc7/d91d37e1-eb9d-4211-a28f-16b8d4d341d1.png',
         defaultImageUrl: 'https://media.charhub.io/7f6bd636-804e-493c-8442-e691856a6703/589a3768-f0da-43c0-ab70-8b7d403f5a62.png',
         cost: {Comfort: 1, Wealth: 1},
@@ -310,11 +310,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     lounge: {
-        name: 'Lounge',
-        skitPrompt: 'The lounge is a recreational area for the station crew, where they can unwind with a drink and socialize. Scenes here often involve leisure activities, social interactions, and ways to boost crew morale through relaxation and entertainment.',
-        imagePrompt: 'A sci-fi lounge with comfortable seating, a wet bar, and entertainment systems.',
-        role: 'Concierge',
-        roleDescription: `Oversee the station's leisure facilities, ensuring crew members have a comfortable and enjoyable environment to relax and socialize.`,
+        name: 'Parlor',
+        skitPrompt: 'The parlor is a recreational room where residents can unwind with a drink and socialize. Scenes here often involve leisure, gossip, games, and ways to boost morale through relaxation and entertainment.',
+        imagePrompt: 'A cozy tower parlor with plush seating, a hearth, a small bar of cordials and wines, and tables for cards and games.',
+        role: 'Host',
+        roleDescription: `Oversee the tower's leisure spaces, ensuring residents have a comfortable and enjoyable place to relax and socialize.`,
         baseImageUrl: 'https://media.charhub.io/323b12cf-8687-4475-851b-7c1bdeff447a/0b71cb51-c160-47c9-848e-fab183eb9314.png',
         defaultImageUrl: 'https://media.charhub.io/2e8bf9fc-67a8-499d-85ec-8198efafeb14/1da73912-d19e-4f4e-aeda-19688e16e474.png',
         cost: {Comfort: 2, Wealth: 1},
@@ -328,10 +328,10 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
     },
     armory: {
         name: 'Armory',
-        skitPrompt: 'The armory is the station\'s defense hub, where weapons and security systems are managed. Scenes here often involve security protocols, incident reports, or ways to enhance the station\'s safety and defense capabilities.',
-        imagePrompt: 'A sci-fi armory with weapon lockers, equipment racks, and security equipment.',
-        role: 'Security Officer',
-        roleDescription: `Manage the station's defenses and ensure the safety of the crew against external and internal threats.`,
+        skitPrompt: 'The armory is the tower\'s defense hub, where weapons, armor, and the Spire\'s protective wards are managed. Scenes here often involve security matters, incident reports, or ways to strengthen the tower\'s defenses.',
+        imagePrompt: 'A stone armory with racks of weapons, armor stands, shields on the walls, and a workbench for maintenance.',
+        role: 'Warden',
+        roleDescription: `Manage the tower's defenses and ensure the safety of the residents against external and internal threats.`,
         baseImageUrl: 'https://media.charhub.io/7ccddb81-bed6-4395-80c6-912fe2932e53/c58a4f32-270d-4b62-b2b4-bcc1a3dedc94.png',
         defaultImageUrl: 'https://media.charhub.io/090e6a42-62f9-46da-9a29-09de8b469f05/eedf310f-af7a-40b4-ac56-686f4daa5c07.png',
         cost: {Systems: 1, Wealth: 1},
@@ -344,11 +344,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     'cryo bank': {
-        name: 'Cryo Bank',
-        skitPrompt: 'The cryo bank is where patients are placed in cryogenic stasis for long-term preservation. Scenes in this room often involve the ethical dilemmas of cryo-sleep, emergencies during stasis, or interactions with newly awakened patients.',
-        imagePrompt: 'A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.',
-        role: 'Keeper',
-        roleDescription: `Oversee the cryogenic systems and ensure the safety and well-being of patients in stasis.`,
+        name: 'Homeward Gate',
+        skitPrompt: 'The homeward gate is a two-way portal that returns residents to their home realities under a recall bond, allowing the Magus to call them back to the Spire at will - far more cheaply than a fresh summoning. The gate refuses to work for the Magus alone. Scenes in this room often involve farewells, returns, homesickness, or the ethics of the recall bond.',
+        imagePrompt: 'A solemn stone chamber housing a freestanding archway carved with concentric rings of runes, its interior filled with a calm curtain of silver light.',
+        role: 'Gatekeeper',
+        roleDescription: `Tend the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.`,
         baseImageUrl: 'https://media.charhub.io/439bcef8-3c12-4c07-b1fb-5659c0111edb/16e89185-6266-4ccf-a010-cf80090fcb08.png',
         defaultImageUrl: 'https://media.charhub.io/6dbe1503-e10a-48e4-875d-cc7a5038bc43/be0aa5dc-70b6-4573-ae48-c37d8e90022f.png',
         cost: {Harmony: 2, Systems: 2},
@@ -364,11 +364,11 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         }
     },
     'aperture': {
-        name: 'Aperture',
-        skitPrompt: 'The aperture module is a specialized focusing mechanism for attenuating or shaping the echoes pulled from the black hole. Scenes here often involve scientific discussions about the ill-understood mechanics of echoefusion or unexpected phenomena.',
-        imagePrompt: 'A sci-fi laboratory filled with advanced equipment. A large, circular machine frames a central window into space. There is a swirling black hole in the distance, with beams encircling it in a spiral pattern.',
-        role: 'Attenuator',
-        roleDescription: `Conduct research on spatial anomalies and manage the station's experimental echo projects.`,
+        name: 'Arcane Focus',
+        skitPrompt: 'The arcane focus is a specialized apparatus for attuning or shaping summonings drawn from the leyline current. Scenes here often involve scholarly discussions about the ill-understood mechanics of summoning or unexpected phenomena.',
+        imagePrompt: 'A wizard\'s observatory-laboratory centered on a great brass and crystal lens array, surrounded by charts and instruments, with motes of light streaming along a glowing leyline through the chamber.',
+        role: 'Attuner',
+        roleDescription: `Conduct research on the leyline and its currents, managing the tower's experimental summoning projects.`,
         baseImageUrl: 'https://chub.ai/imagine/project/8ca887ea-ea20-4c53-9536-a4354e565246',
         defaultImageUrl: 'https://media.charhub.io/551ea94a-c64c-4328-a54a-08a8a356f261/ec7e47be-b157-4f71-a14d-4e45110e84f7.png',
         cost: {Systems: 2, Wealth: 2},
@@ -658,37 +658,37 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
     // Generate a module from a module name, some arbitrary details, and a role title
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content. ` +
-            `The goal is to define a module/room for a space station management game, based primarily upon the name, and potentially some other information, ` +
+            `The goal is to define a module/room for a wizard tower management game, based primarily upon the name, and potentially some other information, ` +
             `while generally avoiding duplicating existing content below. ` +
             buildPromptSegment(`Existing Modules`, Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')) +
             buildPromptSegment(`New Module Details`, `Name: ${name}\nNew Role: ${role || 'N/A'}\nAdditional Information: ${additionalInformation || 'N/A'}`) +
-            buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-                `with the goal of placing these characters into a new role in this universe. ` +
-                `Modules are rooms and facilities that make up the PARC station; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
-                `Every module offers a crew-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.`) +
-            buildPromptSegment(`Instructions`, `After carefully considering the provided details, the System will generate a formatted definition for a distinct and inspired station module that suits the prompt, outputting it in the following strict format:\n` +
+            buildPromptSegment(`Background`, `This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this world. ` +
+                `Modules are rooms and facilities that make up the Spire; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
+                `Every module offers a resident-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.`) +
+            buildPromptSegment(`Instructions`, `After carefully considering the provided details, the System will generate a formatted definition for a distinct and inspired tower module that suits the prompt, outputting it in the following strict format:\n` +
                 `MODULE NAME: The module's simple name (1-2 words)\n` +
-                `PURPOSE: A brief summary of the module's function and role on the station, as well as how that role might affect the station's patients or inform skits at this location.\n` +
+                `PURPOSE: A brief summary of the module's function and role in the tower, as well as how that role might affect the tower's residents or inform skits at this location.\n` +
                 `DESCRIPTION: A vivid visual description of the module's appearance, to be fed into image generation.\n` +
                 `ROLE NAME: The simple title of the role associated with this module (1-2 words).\n` +
                 `ROLE DESCRIPTION: A brief summary of the responsibilities and duties associated with this role.\n` +
-                `COST: The resource cost to build this module, specified as 1-3 points of one or two station stats. Available stats are: Systems, Comfort, Provision, Security, Harmony, Wealth. Format as "StatName X, StatName Y" (e.g., "Wealth 2, Systems 1" or "Provision 2").\n` +
+                `COST: The resource cost to build this module, specified as 1-3 points of one or two tower stats. Available stats are: Systems, Comfort, Provision, Security, Harmony, Wealth. Format as "StatName X, StatName Y" (e.g., "Wealth 2, Systems 1" or "Provision 2").\n` +
                 `#END#`) +
             buildPromptSegment(`Example Response`,
-                `MODULE NAME: Cryo Bank\n` +
-                `PURPOSE: The cryo bank is where patients are placed in cryogenic stasis for long-term preservation. Scenes in this room often involve the ethical dilemmas of cryo-sleep, emergencies during stasis, or interactions with newly awakened patients.\n` +
-                `DESCRIPTION: A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.\n` +
-                `ROLE NAME: Keeper\n` +
-                `ROLE DESCRIPTION: Responsible for managing the cryo bank, overseeing patient stasis, and ensuring the proper functioning of cryogenic equipment.\n` +
+                `MODULE NAME: Homeward Gate\n` +
+                `PURPOSE: The homeward gate is a two-way portal that returns residents to their home realities under a recall bond, letting the Magus call them back at will. Scenes in this room often involve farewells, returns, homesickness, or the ethics of the recall bond.\n` +
+                `DESCRIPTION: A solemn stone chamber housing a freestanding archway carved with concentric rings of runes, its interior filled with a calm curtain of silver light.\n` +
+                `ROLE NAME: Gatekeeper\n` +
+                `ROLE DESCRIPTION: Responsible for tending the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.\n` +
                 `COST: Harmony 2, Systems 2\n` +
                 `#END#`) +
             buildPromptSegment(`Example Response`,
-                `MODULE NAME: Gym\n` +
-                `PURPOSE: The gym is the station's fitness center, where crew members work out and maintain their physical health. Scenes here often involve training sessions, fitness challenges, or ways to boost crew morale through physical activity.\n` +
-                `DESCRIPTION: A sci-fi gym with advanced exercise equipment and weightlifting stations.\n` +
-                `ROLE NAME: Trainer\n` +
-                `ROLE DESCRIPTION: Oversees the physical fitness and training of the crew, ensuring they remain in peak condition for their duties aboard the station.\n` +
+                `MODULE NAME: Sparring Hall\n` +
+                `PURPOSE: The sparring hall is where residents train and maintain their physical health. Scenes here often involve training sessions, contests, or ways to boost morale through physical activity.\n` +
+                `DESCRIPTION: A stone training hall with weapon racks, practice dummies, sparring mats, and tall windows.\n` +
+                `ROLE NAME: Drillmaster\n` +
+                `ROLE DESCRIPTION: Oversees the physical training of the residents, ensuring they remain in fighting form for whatever their duties demand.\n` +
                 `COST: Comfort 1, Wealth 1\n` +
                 `#END#`),
         stop: ['#END'],
@@ -801,7 +801,7 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
 export async function generateModuleImage(module: ModuleIntrinsic, stage: Stage): Promise<void> {
     // Start with a base image:
     const baseImageUrl = await stage.makeImage({
-        prompt: `The detailed interior of an unoccupied futuristic space station module/room. The design should reflect the following description: ${module.imagePrompt}. ` +
+        prompt: `The detailed interior of an unoccupied room within a wizard's tower. The design should reflect the following description: ${module.imagePrompt}. ` +
             `Regardless of aesthetic, the image is rendered in a vibrant, painterly style with thick smudgy lines.`,
         aspect_ratio: AspectRatio.SQUARE
     }, '');
@@ -811,7 +811,7 @@ export async function generateModuleImage(module: ModuleIntrinsic, stage: Stage)
     // Next, create a default variant with Qwen's image-to-image:
     const defaultImageUrl = await stage.makeImageFromImage({
         image: baseImageUrl,
-        prompt: `Apply a visual novel art style to this sci-fi space station room (${module.imagePrompt}). Remove any characters from the scene.`,
+        prompt: `Apply a visual novel art style to this fantasy wizard tower room (${module.imagePrompt}). Remove any characters from the scene.`,
         transfer_type: 'edit'
     }, '');
     if (baseImageUrl && defaultImageUrl) {

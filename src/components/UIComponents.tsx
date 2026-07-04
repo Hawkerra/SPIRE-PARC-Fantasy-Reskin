@@ -162,8 +162,8 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({ currentTurn, totalTurns 
 					>
 						<HourglassIcon
 							style={{
-								color: isSpent ? 'rgba(0, 255, 136, 0.4)' : '#00ff88',
-								filter: isSpent ? 'none' : 'drop-shadow(0 0 8px rgba(0, 255, 136, 0.6))',
+								color: isSpent ? 'rgba(176, 102, 255, 0.4)' : '#b066ff',
+								filter: isSpent ? 'none' : 'drop-shadow(0 0 8px rgba(176, 102, 255, 0.6))',
 								fontSize: '28px',
 							}}
 						/>
@@ -303,8 +303,8 @@ export const MenuItem: FC<MenuItemProps> = ({
 				}}
 				style={{ 
 					overflow: 'hidden',
-					background: 'rgba(0, 20, 40, 0.7)',
-					border: isExpanded ? '2px solid rgba(0, 255, 136, 0.3)' : 'none',
+					background: 'rgba(18, 8, 32, 0.7)',
+					border: isExpanded ? '2px solid rgba(176, 102, 255, 0.3)' : 'none',
 					borderTop: 'none',
 					borderRadius: '0 0 5px 5px',
 				}}

@@ -118,7 +118,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                     style={{
                                         background: 'transparent',
                                         border: 'none',
-                                        color: 'rgba(0, 255, 136, 0.7)',
+                                        color: 'rgba(176, 102, 255, 0.7)',
                                         cursor: 'pointer',
                                         fontSize: '24px',
                                         padding: '5px',
@@ -136,7 +136,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                 display: 'flex',
                                 gap: '10px',
                                 marginBottom: '20px',
-                                borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                 paddingBottom: '10px',
                             }}>
                                 <Button
@@ -213,8 +213,8 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                     onClick={() => handleActorClick(actor)}
                                                     style={{
                                                         cursor: 'pointer',
-                                                        backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                        border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                        backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                        border: '2px solid rgba(176, 102, 255, 0.3)',
                                                         borderRadius: '8px',
                                                         padding: '15px',
                                                         display: 'flex',
@@ -224,10 +224,10 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                         transition: 'border-color 0.2s',
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.6)';
+                                                        e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.6)';
                                                     }}
                                                     onMouseLeave={(e) => {
-                                                        e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+                                                        e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.3)';
                                                     }}
                                                 >
                                                     {/* Actor Avatar */}
@@ -236,7 +236,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                             width: '120px',
                                                             height: '120px',
                                                             borderRadius: '50%',
-                                                            backgroundColor: 'rgba(0, 20, 40, 0.8)',
+                                                            backgroundColor: 'rgba(18, 8, 32, 0.8)',
                                                             border: `3px solid ${actor.themeColor}`,
                                                             backgroundImage: actor.getEmotionImageUrl('neutral') || actor.getEmotionImageUrl('base') || actor.avatarImageUrl 
                                                                 ? `url(${actor.getEmotionImageUrl('neutral') || actor.getEmotionImageUrl('base') || actor.avatarImageUrl})` 
@@ -249,14 +249,14 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                         }}
                                                     >
                                                         {!actor.getEmotionImageUrl('neutral') && !actor.getEmotionImageUrl('base') && !actor.avatarImageUrl && (
-                                                            <Person style={{ fontSize: '50px', color: 'rgba(0, 255, 136, 0.3)' }} />
+                                                            <Person style={{ fontSize: '50px', color: 'rgba(176, 102, 255, 0.3)' }} />
                                                         )}
                                                     </div>
                                                     
                                                     {/* Actor Name */}
                                                     <div
                                                         style={{
-                                                            color: '#00ff88',
+                                                            color: '#b066ff',
                                                             fontSize: '16px',
                                                             fontWeight: 'bold',
                                                             textAlign: 'center',
@@ -315,8 +315,8 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                         onClick={() => handleFactionClick(faction)}
                                                         style={{
                                                             cursor: 'pointer',
-                                                            backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                            backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                            border: '2px solid rgba(176, 102, 255, 0.3)',
                                                             borderRadius: '8px',
                                                             padding: '15px',
                                                             display: 'flex',
@@ -326,10 +326,10 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                             minHeight: '200px',
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.6)';
+                                                            e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.6)';
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+                                                            e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.3)';
                                                         }}
                                                     >
                                                         {/* Faction Background */}
@@ -339,7 +339,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                                     width: '100%',
                                                                     height: '100px',
                                                                     borderRadius: '5px',
-                                                                    backgroundColor: 'rgba(0, 20, 40, 0.8)',
+                                                                    backgroundColor: 'rgba(18, 8, 32, 0.8)',
                                                                     border: `2px solid ${faction.themeColor}`,
                                                                     backgroundImage: `url(${faction.backgroundImageUrl})`,
                                                                     backgroundSize: 'cover',
@@ -370,7 +370,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                         }}>
                                                             <span>Reputation: {faction.reputation}/10</span>
                                                             <span style={{ 
-                                                                color: faction.active ? '#00ff88' : '#ff5555' 
+                                                                color: faction.active ? '#b066ff' : '#ff5555' 
                                                             }}>
                                                                 {faction.active ? 'Active' : 'Inactive'}
                                                             </span>
@@ -422,8 +422,8 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                         onClick={() => handleModuleClick(moduleId)}
                                                         style={{
                                                             cursor: 'pointer',
-                                                            backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                            backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                            border: '2px solid rgba(176, 102, 255, 0.3)',
                                                             borderRadius: '8px',
                                                             padding: '15px',
                                                             display: 'flex',
@@ -433,10 +433,10 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                             minHeight: '220px',
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.6)';
+                                                            e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.6)';
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+                                                            e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.3)';
                                                         }}
                                                     >
                                                         {moduleIntrinsic.defaultImageUrl && (
@@ -445,8 +445,8 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                                     width: '100%',
                                                                     height: '110px',
                                                                     borderRadius: '5px',
-                                                                    backgroundColor: 'rgba(0, 20, 40, 0.8)',
-                                                                    border: '2px solid rgba(0, 255, 136, 0.35)',
+                                                                    backgroundColor: 'rgba(18, 8, 32, 0.8)',
+                                                                    border: '2px solid rgba(176, 102, 255, 0.35)',
                                                                     backgroundImage: `url(${moduleIntrinsic.defaultImageUrl})`,
                                                                     backgroundSize: 'cover',
                                                                     backgroundPosition: 'center',
@@ -456,7 +456,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
 
                                                         <div
                                                             style={{
-                                                                color: '#00ff88',
+                                                                color: '#b066ff',
                                                                 fontSize: '18px',
                                                                 fontWeight: 'bold',
                                                                 textAlign: 'center',

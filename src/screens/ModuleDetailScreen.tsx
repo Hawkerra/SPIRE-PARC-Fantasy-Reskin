@@ -179,7 +179,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                     marginBottom: '20px',
                                     position: 'sticky',
                                     top: 0,
-                                    background: 'rgba(0, 20, 40, 0.95)',
+                                    background: 'rgba(18, 8, 32, 0.95)',
                                     backdropFilter: 'blur(8px)',
                                     padding: '10px 0',
                                     zIndex: 10,
@@ -208,7 +208,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                         style={{
                                             background: 'transparent',
                                             border: 'none',
-                                            color: 'rgba(0, 255, 136, 0.7)',
+                                            color: 'rgba(176, 102, 255, 0.7)',
                                             cursor: 'pointer',
                                             fontSize: '24px',
                                             padding: '5px',
@@ -226,11 +226,11 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                 <section>
                                     <h2
                                         style={{
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '18px',
                                             fontWeight: 'bold',
                                             marginBottom: '15px',
-                                            borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                            borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                             paddingBottom: '5px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -246,7 +246,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -266,7 +266,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -277,14 +277,14 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <textarea
                                                 value={editedModule.skitPrompt}
                                                 onChange={(e) => handleInputChange('skitPrompt', e.target.value)}
-                                                placeholder="Module's function and role on the station"
+                                                placeholder="Room's function and role in the tower"
                                                 style={{
                                                     width: '100%',
                                                     minHeight: '80px',
                                                     padding: '12px',
                                                     fontSize: '14px',
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     color: '#e0f0ff',
                                                     fontFamily: 'inherit',
@@ -297,7 +297,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -314,8 +314,8 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                                     minHeight: '60px',
                                                     padding: '12px',
                                                     fontSize: '14px',
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     color: '#e0f0ff',
                                                     fontFamily: 'inherit',
@@ -328,7 +328,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -348,7 +348,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -365,8 +365,8 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                                     minHeight: '60px',
                                                     padding: '12px',
                                                     fontSize: '14px',
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     color: '#e0f0ff',
                                                     fontFamily: 'inherit',
@@ -379,7 +379,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -395,8 +395,8 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                                         width: '100%',
                                                         height: '220px',
                                                         borderRadius: '5px',
-                                                        backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                        border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                        backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                        border: '2px solid rgba(176, 102, 255, 0.3)',
                                                         backgroundImage: `url(${editedModule.defaultImageUrl})`,
                                                         backgroundSize: 'cover',
                                                         backgroundPosition: 'center',
@@ -413,7 +413,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                                                 top: '50%',
                                                                 left: '50%',
                                                                 transform: 'translate(-50%, -50%)',
-                                                                color: '#00ff88',
+                                                                color: '#b066ff',
                                                                 fontSize: '14px',
                                                                 fontWeight: 'bold',
                                                                 textShadow: '0 0 10px rgba(0, 0, 0, 0.8)',
@@ -446,11 +446,11 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                 <section>
                                     <h2
                                         style={{
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '18px',
                                             fontWeight: 'bold',
                                             marginBottom: '15px',
-                                            borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                            borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                             paddingBottom: '5px',
                                         }}
                                     >
@@ -461,16 +461,16 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                             display: 'grid',
                                             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                                             gap: '15px',
-                                            backgroundColor: 'rgba(0, 20, 40, 0.4)',
+                                            backgroundColor: 'rgba(18, 8, 32, 0.4)',
                                             padding: '15px',
                                             borderRadius: '5px',
-                                            border: '1px solid rgba(0, 255, 136, 0.2)',
+                                            border: '1px solid rgba(176, 102, 255, 0.2)',
                                         }}
                                     >
                                         <div>
                                             <div
                                                 style={{
-                                                    color: 'rgba(0, 255, 136, 0.7)',
+                                                    color: 'rgba(176, 102, 255, 0.7)',
                                                     fontSize: '12px',
                                                     marginBottom: '4px',
                                                 }}
@@ -484,7 +484,7 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                         <div>
                                             <div
                                                 style={{
-                                                    color: 'rgba(0, 255, 136, 0.7)',
+                                                    color: 'rgba(176, 102, 255, 0.7)',
                                                     fontSize: '12px',
                                                     marginBottom: '4px',
                                                 }}
@@ -515,14 +515,14 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                 onClose={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
                 PaperProps={{
                     style: {
-                        backgroundColor: 'rgba(0, 20, 40, 0.95)',
-                        border: '2px solid rgba(0, 255, 136, 0.5)',
+                        backgroundColor: 'rgba(18, 8, 32, 0.95)',
+                        border: '2px solid rgba(176, 102, 255, 0.5)',
                         borderRadius: '8px',
                         color: '#e0f0ff',
                     },
                 }}
             >
-                <DialogTitle style={{ color: '#00ff88' }}>{confirmDialog.title}</DialogTitle>
+                <DialogTitle style={{ color: '#b066ff' }}>{confirmDialog.title}</DialogTitle>
                 <DialogContent>
                     <p style={{ margin: 0, color: '#e0f0ff' }}>{confirmDialog.message}</p>
                 </DialogContent>

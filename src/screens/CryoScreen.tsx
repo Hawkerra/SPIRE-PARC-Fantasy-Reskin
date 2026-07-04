@@ -149,12 +149,12 @@ export const CryoScreen: FC<CryoScreenProps> = ({stage, setScreenType, isVertica
 		});
 
 		// Add timeline event
-		stage().pushToTimeline(stage().getSave(), `${actor.name} placed into cryostasis.`, 
+		stage().pushToTimeline(stage().getSave(), `${actor.name} sent home through the Homeward Gate.`, 
 			{
 				actorId: actor.id,
 				type: SkitType.ENTER_CRYO,
 				moduleId: stage().getSave().layout.getModulesWhere(m => m?.type === 'cryo bank')[0]?.id || '',
-				summary: `${actor.name} was placed into cryostasis.`,
+				summary: `${actor.name} was sent home through the Homeward Gate.`,
 				script: [],
 				context: {}
 			}
@@ -420,7 +420,7 @@ export const CryoScreen: FC<CryoScreenProps> = ({stage, setScreenType, isVertica
 									padding: 'clamp(12px, 2.5vmin, 24px)',
 									transition: 'color 0.3s ease'
 								}}>
-									{selectedStationActorId ? 'Tap here to place character in cryostasis' : 'Drag or tap a character above, then tap a slot to place in cryostasis'}
+									{selectedStationActorId ? 'Tap here to send this character home' : 'Drag or tap a character above, then tap a slot to send them home'}
 								</div>
 							)}
 								</motion.div>
@@ -436,13 +436,13 @@ export const CryoScreen: FC<CryoScreenProps> = ({stage, setScreenType, isVertica
 						disabled={!acceptable}
 						style={{
 							background: acceptable ? 'var(--color-primary)' : 'rgba(255,255,255,0.06)',
-							color: acceptable ? '#002210' : '#9aa0a6'
+							color: acceptable ? '#1a0533' : '#9aa0a6'
 						}}
 					>
 						{availableQuarters.length === 0 
 							? 'No Available Quarters' 
 							: selectedActor 
-								? 'Wake Character'
+								? 'Recall Character'
 								: 'Select a Character'
 						}
 					</Button>
@@ -463,13 +463,13 @@ export const CryoScreen: FC<CryoScreenProps> = ({stage, setScreenType, isVertica
 							disabled={!acceptable}
 							style={{
 								background: acceptable ? 'var(--color-primary)' : 'rgba(255,255,255,0.06)',
-								color: acceptable ? '#002210' : '#9aa0a6'
+								color: acceptable ? '#1a0533' : '#9aa0a6'
 							}}
 						>
 							{availableQuarters.length === 0 
 								? 'No Available Quarters' 
 								: selectedActor 
-									? 'Wake Character'
+									? 'Recall Character'
 									: 'Select a Character'
 							}
 						</Button>

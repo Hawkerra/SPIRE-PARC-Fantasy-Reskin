@@ -255,8 +255,8 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                                     fontSize: 'clamp(12px, 2.5vw, 16px)',
                                     padding: 'clamp(8px, 1.5vh, 12px) clamp(16px, 3vw, 24px)',
                                     background: button.enabled && hoveredButton === button.key 
-                                        ? 'rgba(0, 255, 136, 0.2)' 
-                                        : button.enabled ? 'transparent' : 'rgba(0, 20, 40, 0.5)'
+                                        ? 'rgba(176, 102, 255, 0.2)' 
+                                        : button.enabled ? 'transparent' : 'rgba(18, 8, 32, 0.5)'
                                 }}
                             >
                                 {button.label}
@@ -273,7 +273,7 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                     style={{
                         textAlign: 'center',
                         marginTop: 'clamp(20px, 4vh, 30px)',
-                        color: 'rgba(0, 255, 136, 0.6)',
+                        color: 'rgba(176, 102, 255, 0.6)',
                         fontSize: 'clamp(10px, 1.5vw, 12px)',
                     }}
                 >
@@ -281,12 +281,12 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
                         ? 'v2026.06.10 - Experimenting with skit-generated characters. Still some issues with Soji.'
                         : (
                             <>
-                                This is an unofficial bot; for the latest version for PARC, visit:{' '}
+                                This is a private fantasy rework of PARC; for the original, visit:{' '}
                                 <a 
                                     href="https://chub.ai/characters/JakeH/post-apocalypse-rehabilitation-center-20622f03e7a4" 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    style={{ color: 'rgba(0, 255, 136, 0.8)', textDecoration: 'underline' }}
+                                    style={{ color: 'rgba(176, 102, 255, 0.8)', textDecoration: 'underline' }}
                                 >
                                     chub.ai
                                 </a>

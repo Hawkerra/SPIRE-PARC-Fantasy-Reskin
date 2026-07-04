@@ -326,19 +326,19 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 									alignItems: actor ? 'stretch' : 'center',
 									borderRadius: 12,
 									overflow: 'hidden',
-									background: actor ? undefined : 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,200,255,0.1))',
+									background: actor ? undefined : 'linear-gradient(135deg, rgba(176,102,255,0.15), rgba(0,200,255,0.1))',
 									border: isSelected
 										? `5px solid ${actor?.themeColor || '#ffffff'}` 
 										: selectedReserveActorId
 											? '4px solid rgba(255,215,0,0.8)' // Gold border when ready to place
 											: actor 
-												? `4px solid ${actor.themeColor || '#00ff88'}`
-												: '3px dashed rgba(0,255,136,0.5)',
+												? `4px solid ${actor.themeColor || '#b066ff'}`
+												: '3px dashed rgba(176,102,255,0.5)',
 									boxShadow: isSelected
-										? `0 12px 40px ${actor?.themeColor ? actor.themeColor + '40' : 'rgba(0,255,136,0.25)'}, inset 0 0 50px ${actor?.themeColor ? actor.themeColor + '20' : 'rgba(0,255,136,0.1)'}` 
+										? `0 12px 40px ${actor?.themeColor ? actor.themeColor + '40' : 'rgba(176,102,255,0.25)'}, inset 0 0 50px ${actor?.themeColor ? actor.themeColor + '20' : 'rgba(176,102,255,0.1)'}` 
 										: actor
-											? `0 8px 25px rgba(0,0,0,0.4), inset 0 0 30px ${actor.themeColor ? actor.themeColor + '15' : 'rgba(0,255,136,0.05)'}, 0 0 20px ${actor.themeColor ? actor.themeColor + '30' : 'rgba(0,255,136,0.1)'}`
-											: '0 8px 25px rgba(0,0,0,0.4), inset 0 0 30px rgba(0,255,136,0.05)',
+											? `0 8px 25px rgba(0,0,0,0.4), inset 0 0 30px ${actor.themeColor ? actor.themeColor + '15' : 'rgba(176,102,255,0.05)'}, 0 0 20px ${actor.themeColor ? actor.themeColor + '30' : 'rgba(176,102,255,0.1)'}`
+											: '0 8px 25px rgba(0,0,0,0.4), inset 0 0 30px rgba(176,102,255,0.05)',
 									position: 'relative',
 								}}
 							>
@@ -370,7 +370,7 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 												height: '100%',
 												background: `linear-gradient(
 													135deg, 
-													rgba(0, 255, 136, 0.15) 0%, 
+													rgba(176, 102, 255, 0.15) 0%, 
 													rgba(0, 200, 255, 0.1) 50%, 
 													rgba(109, 87, 131, 0.15) 100%
 												)`,
@@ -429,13 +429,13 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 								</>
 							) : (
 								<div style={{ 
-									color: selectedReserveActorId ? 'rgba(255,215,0,0.9)' : 'rgba(0,255,136,0.7)', 
+									color: selectedReserveActorId ? 'rgba(255,215,0,0.9)' : 'rgba(176,102,255,0.7)', 
 									fontSize: 'clamp(14px, 2.2vmin, 20px)', 
 									textAlign: 'center',
 									padding: 'clamp(12px, 2.5vmin, 24px)',
 									transition: 'color 0.3s ease'
 								}}>
-									{selectedReserveActorId ? 'Tap here to place selected echo' : 'Drag or tap an echo above, then tap here to place'}
+									{selectedReserveActorId ? 'Tap here to place the selected soul' : 'Drag or tap a soul above, then tap here to place'}
 								</div>
 							)}
 								</motion.div>
@@ -451,13 +451,13 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 						disabled={!acceptable}
 						style={{
 							background: acceptable ? 'var(--color-primary)' : 'rgba(255,255,255,0.06)',
-							color: acceptable ? '#002210' : '#9aa0a6'
+							color: acceptable ? '#1a0533' : '#9aa0a6'
 						}}
 					>
 						{availableRooms.length === 0 
 							? 'No Available Quarters' 
 							: selectedActor 
-								? (selectedActor.isPrimaryImageReady ? 'Wake Candidate' : 'Candidate Still Fusing')
+								? (selectedActor.isPrimaryImageReady ? 'Complete Summoning' : 'Still Taking Form')
 								: 'Select a Candidate'
 						}
 					</Button>
@@ -478,13 +478,13 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 							disabled={!acceptable}
 							style={{
 								background: acceptable ? 'var(--color-primary)' : 'rgba(255,255,255,0.06)',
-								color: acceptable ? '#002210' : '#9aa0a6'
+								color: acceptable ? '#1a0533' : '#9aa0a6'
 							}}
 						>
 							{availableRooms.length === 0 
 								? 'No Available Quarters' 
 								: selectedActor 
-									? (selectedActor.isPrimaryImageReady ? 'Wake Candidate' : 'Candidate Still Fusing')
+									? (selectedActor.isPrimaryImageReady ? 'Complete Summoning' : 'Still Taking Form')
 									: 'Select a Candidate'
 							}
 						</Button>

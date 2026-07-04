@@ -110,11 +110,11 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                         alignItems: 'stretch',
                         justifyContent: 'center',
                         background: isCurrentSlot 
-                            ? 'rgba(0, 255, 136, 0.15)' 
+                            ? 'rgba(176, 102, 255, 0.15)' 
                             : hoveredSlot === slotIndex && !(mode === 'load' && isEmpty)
-                                ? 'rgba(0, 255, 136, 0.1)' 
-                                : 'rgba(0, 20, 40, 0.5)',
-                        border: isCurrentSlot ? '2px solid rgba(0, 255, 136, 0.5)' : undefined,
+                                ? 'rgba(176, 102, 255, 0.1)' 
+                                : 'rgba(18, 8, 32, 0.5)',
+                        border: isCurrentSlot ? '2px solid rgba(176, 102, 255, 0.5)' : undefined,
                         position: 'relative',
                         overflow: 'hidden'
                     }}
@@ -177,7 +177,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                             alignItems: 'center',
                             justifyContent: 'center',
                             height: '100%',
-                            color: 'rgba(0, 255, 136, 0.3)',
+                            color: 'rgba(176, 102, 255, 0.3)',
                             fontSize: '14px',
                             fontStyle: 'italic'
                         }}>
@@ -230,14 +230,14 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                             }}>
                                 <div style={{
                                     fontSize: '12px',
-                                    color: 'rgba(0, 255, 136, 0.7)'
+                                    color: 'rgba(176, 102, 255, 0.7)'
                                 }}>
                                     {formatTimestamp(save.timestamp)}
                                 </div>
                                 <div style={{
                                     fontSize: '16px',
                                     fontWeight: 'bold',
-                                    color: 'rgba(0, 255, 136, 1)'
+                                    color: 'rgba(176, 102, 255, 1)'
                                 }}>
                                     {save.player.name} - Day {save.day}
                                 </div>
@@ -258,7 +258,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: '3px',
-                                                        color: 'rgba(0, 255, 136, 0.8)'
+                                                        color: 'rgba(176, 102, 255, 0.8)'
                                                     }}
                                                     title={stat}
                                                 >
@@ -337,7 +337,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: 'rgba(0, 255, 136, 0.7)',
+                            color: 'rgba(176, 102, 255, 0.7)',
                             cursor: 'pointer',
                             fontSize: '24px',
                             padding: '5px',
@@ -354,7 +354,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                 {mode === 'save' && (
                     <div style={{
                         fontSize: '12px',
-                        color: 'rgba(0, 255, 136, 0.6)',
+                        color: 'rgba(176, 102, 255, 0.6)',
                         fontStyle: 'italic',
                         marginBottom: '15px',
                         textAlign: 'left'
@@ -416,7 +416,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                             Delete Save?
                         </Title>
                         <div style={{
-                            color: 'rgba(0, 255, 136, 0.8)',
+                            color: 'rgba(176, 102, 255, 0.8)',
                             textAlign: 'center',
                             fontSize: '14px'
                         }}>
@@ -434,7 +434,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                                 onMouseLeave={() => clearTooltip()}
                                 style={{
                                     padding: '10px 20px',
-                                    background: 'rgba(0, 255, 136, 0.1)'
+                                    background: 'rgba(176, 102, 255, 0.1)'
                                 }}
                             >
                                 Cancel

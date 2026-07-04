@@ -260,7 +260,9 @@ class Actor {
 }
 
 export function isHologram(actor: Actor, save: SaveType, currentLocationId: string): boolean {
-        return !!(save.factions[currentLocationId]) || save.aide.actorId === actor.id;
+        // Faction envoys always render as scrying projections; the tower spirit renders
+        // as a ghost unless the player has toggled a solid manifestation in settings.
+        return !!(save.factions[currentLocationId]) || (save.aide.actorId === actor.id && !save.solidSpirit);
     }
 
 export function getStatDescription(stat: Stat | string): string {
@@ -398,23 +400,24 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory: 
     // Take this data and use text generation to get an updated distillation of this character, including a physical description.
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
-            buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-                `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
+            buildPromptSegment(`Background`, `This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this world. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
                 `Some roles are above board, while others may involve morally ambiguous or covert activities; some may even be illicit or compulsary. ` +
                 `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
             buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
             (includeHistory && historyPrompt ? buildPromptSegment(`Recent Events`, historyPrompt) : '') +
             buildPromptSegment(`Original Details`, `The Original Details below describe a character or scenario (${data.name}) from another universe. This request and response must digest and distill these details to suit the game's narrative scenario, ` +
-                `crafting a character who has been rematerialized into this universe through an "echo chamber," their essence reconstituted from the whispers of a black hole. ` +
-                `As a result of this process, many of this character's traits may have changed, including the loss of most supernatural or arcane abilities, which functioned only within the rules of their former universe. ` +
-                `Their new description and profile should reflect these possible changes and their impact.\n\n` +
+                `crafting a character who has been drawn bodily into this world through the Spire's summoning sanctum, plucked alive - and without their consent - from their home reality by the leyline's one-way current. ` +
+                `This character's supernatural or arcane abilities survive the crossing largely intact; only powers of truly cosmic scale - godhood, omniscience, reality-shaping, and the like - are dampened by the crossing to roughly the tier of a formidable archmage. ` +
+                `Additionally, the Spire's standing wards prevent any ability from being used aggressively against the Magus or the tower's residents while within its walls. ` +
+                `Their new description and profile should reflect their arrival in this world and any such changes.\n\n` +
                 `The provided Original Details reference 'Individual X' who no longer exists in this timeline; ` +
                 `if Individual X remains relevant to this character, Individual X should be replaced with an appropriate name in the distillation.\n\n` +
                 `In addition to the simple display name, physical description, and personality profile, ` +
                 `score the character on a scale of 1-10 for the following traits: BRAWN, SKILL, NERVE, WITS, CHARM, LUST, JOY, and TRUST.\n` +
-                `Bear in mind the character's current, diminished state—as a newly reconstituted and relatively powerless individual—and not their original potential when scoring these traits (but omit your reasons from the response structure); ` +
-                `some characters may not respond well to being essentially resurrected into a new timeline, losing much of what they once had. Others may be grateful for a new beginning.\n\n` +
+                `Score these traits according to the character as they now stand - abilities intact save for any cosmic-tier dampening - reflecting their genuine capabilities in this world (but omit your reasons from the response structure); ` +
+                `some characters may not respond well to being torn from their lives and homes without consent. Others may see an adventure, or a fresh start.\n\n` +
             buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
             buildPromptSegment(`Available Voices`, `${Object.entries(VOICE_MAP).map(([voiceId, voiceDesc]) => '  - ' + voiceId + ': ' + voiceDesc).join('\n')}`) +
             buildPromptSegment(`Instructions`, `After carefully considering this description and the rules provided, the System will generate a concise breakdown for a character based upon these details in the following strict format:\n` +
@@ -450,7 +453,7 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory: 
                 `#END#`) +
             (stage.getSave().attenuation ? 
                 buildPromptSegment(`Attenuation`, 
-                    `The station is currently tuned to modify the resulting character; take the following additional context into account while forming this distillation:\n${stage.getSave().attenuation}`) : 
+                    `The tower's arcane focus is currently attuned to modify the resulting summoning; take the following additional context into account while forming this distillation:\n${stage.getSave().attenuation}`) : 
                 '')),
         stop: ['#END'],
         include_history: true, // There won't be any history, but if this is true, the front-end doesn't automatically apply pre-/post-history prompts.
@@ -727,11 +730,11 @@ export async function generateActorDecor(actor: Actor, module: Module, stage: St
     // Bundle both the description generation and image generation into a single promise
     stage.imageGenerationPromises[`actor/decor/${actor.id}/${module.type}`] = (async () => {
         // Generate a decor prompt for this actor for this space, based on the module's description and the actor's style
-        const descriptionPrompt = `Generate an updated description of this sci-fi room aboard a space station: ${module.getAttribute('name')}.\n` +
+        const descriptionPrompt = `Generate an updated description of this room within a wizard's tower: ${module.getAttribute('name')}.\n` +
             `The current description is: ${module.getAttribute('description')}.\n` +
             `Output an updated description of this room, including additional details for furnishings and decorations to help the description match this aesthetic: ${actor.style}.\n` +
             `Example Response:\n` +
-            `The room is a sleek, modern space with clean lines and minimalist furnishings. The walls are adorned with abstract art pieces in bold colors, and the furniture is made of polished metal and glass. A large window offers a stunning view of the stars outside. The overall vibe is futuristic and sophisticated, with a touch of warmth added by soft lighting and plush textiles.\n#END#\n`;
+            `The room is a warm stone chamber with tidy, well-crafted furnishings. The walls are hung with tapestries in bold colors, and the furniture is carved dark wood with brass fittings. A tall arched window offers a sweeping view of the jungle canopy below. The overall vibe is scholarly and inviting, with warmth added by candlelight and plush textiles.\n#END#\n`;
         const decorDescriptionResponse = await stage.generator.textGen({
             prompt: descriptionPrompt,
             stop: ['#END'],
@@ -742,7 +745,7 @@ export async function generateActorDecor(actor: Actor, module: Module, stage: St
         // Generate a decor image based on the generated room description
         const decorImageUrl = await stage.makeImageFromImage({
             image: module.getAttribute('baseImageUrl') || '',
-            prompt: `Redecorate this sci-fi room aboard a space station to match this description: ${decorDescriptionResponse?.result || module.getAttribute('description')}.\n` +
+            prompt: `Redecorate this room within a wizard's tower to match this description: ${decorDescriptionResponse?.result || module.getAttribute('description')}.\n` +
                     `The scene remains unoccupied; remove any people from the result.`,
             remove_background: false,
             transfer_type: 'edit'
@@ -905,7 +908,7 @@ export function getRole(actor: Actor, save: SaveType): string {
     if (roleModule !== undefined) {
         return roleModule.getAttribute('role') || '';
     } else if (save.aide.actorId === actor.id) {
-        return 'StationAide™';
+        return 'Tower Spirit';
     } else if (actor.factionId && save.factions[actor.factionId]) {
         return save.factions[actor.factionId].name;
     }

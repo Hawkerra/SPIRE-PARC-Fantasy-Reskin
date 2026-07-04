@@ -2,22 +2,15 @@
 #   in which case these values can be managed in the UI.
 
 # The name of the stage.
-project_name: "Post-Apocalypse Rehabilitation Center"
+project_name: "The Spire"
 
 # A short tagline to show in search.
-tagline: "Surviving the Apocalypse is a walk in the PARC"
+tagline: "Sanctum for Planar Intake, Restoration, and Enrichment"
 
 # 'PUBLIC', 'PRIVATE', or 'UNLISTED'.
-visibility: 'PUBLIC'
+visibility: 'PRIVATE'
 
 # 'ADJACENT' | 'NONE' | 'COVER' | 'FULLSCREEN'
-# 'ADJACENT' is default. The frame will display on the side of the
-#   chat on desktop and above/in the top half of the chat on mobile.
-# 'NONE' will not display, only run.
-# 'COVER' will, indeed, cover the chat history completely,
-#   but leave the text input box.
-# 'FULLSCREEN' will make nothing below the header bar
-#   show except for your stage.
 position: 'FULLSCREEN'
 
 # Self-explanatory.
@@ -25,149 +18,143 @@ tags:
  - 'NSFW'
  - 'Stage'
  - 'Game'
- - 'Sci-fi'
+ - 'Fantasy'
  - 'Simulation'
- - 'Post-Apocalyptic'
+ - 'Isekai'
  - 'Management'
- - 'PARC'
+ - 'Spire'
 
 creator_notes: "
 <div class=\"parc-section\">
   <h3>📋 Game Overview</h3>
-  <p>You are the Director of the PARC—a space station orbiting a black hole that serves as a gateway between universes. Your station pulls \"echoes\" of individuals from destroyed realities and gives them new life. Manage resources, build modules, assign roles, and navigate the complex social dynamics of a crew pulled from countless different worlds.</p>
+  <p>You are the Magus of the Spire - a lone wizard's tower rising from a snarl of hostile jungle and ancient ruins, seated atop a great leyline nexus. Summoned here yourself by accident, you have inherited the tower, its title, and its strange apparatus, which draws living people from other realities down the leyline's one-way current. Manage resources, build rooms, assign roles, and navigate the social dynamics of residents plucked from countless different worlds.</p>
   <p>Each playthrough is unique, with characters and factions procedurally loaded from Chub's extensive library, ensuring no two games are alike.</p>
+  <p><em>A fantasy rework of Lord Raven's Post-Apocalypse Rehabilitation Center, made with his blessing.</em></p>
 </div>
 
 <div class=\"parc-section\">
   <h3>✨ Key Features</h3>
   <ul class=\"parc-feature-list\">
     <li><strong>Generative Content:</strong> Leverages Chub's generative endpoints to create character art, voice lines, and dynamic story content.</li>
-    <li><strong>Dynamic Character System:</strong> Characters are loaded from Chub's library, creating unique patients and faction representatives for every playthrough.</li>
-    <li><strong>Interactive Skits:</strong> Visual novel-style scenes where your choices impact relationships, station stats, and story progression.</li>
-    <li><strong>Station Management:</strong> Build critical or frivolous modules, manage six critical station stats, and balance competing needs.</li>
-    <li><strong>Faction Diplomacy:</strong> Navigate relationships with external factions, trade resources, and find employment for your patients.</li>
+    <li><strong>Dynamic Character System:</strong> Characters are loaded from Chub's library, creating unique residents and faction envoys for every playthrough.</li>
+    <li><strong>Interactive Skits:</strong> Visual novel-style scenes where your choices impact relationships, tower stats, and story progression.</li>
+    <li><strong>Tower Management:</strong> Build critical or frivolous rooms, manage six critical tower stats, and balance competing needs.</li>
+    <li><strong>Faction Diplomacy:</strong> Navigate relationships with external factions, trade resources, and find employment for your residents.</li>
     <li><strong>Content Filters:</strong> Extensive content management tools let you tailor the experience to your preferences.</li>
-    <li><strong>Save System:</strong> Full save/load functionality to preserve your progress or experiment with different station choices.</li>
+    <li><strong>Save System:</strong> Full save/load functionality to preserve your progress or experiment with different choices.</li>
   </ul>
 </div>
 
 <div class=\"parc-section\">
-  <h3>📊 Station Stats</h3>
-  <p>Your station's performance is measured across six interconnected statistics. Every decision you make affects these values:</p>
+  <h3>📊 Tower Stats</h3>
+  <p>Your tower's performance is measured across six interconnected statistics. Every decision you make affects these values:</p>
   <div style=\"margin-top: 10px;\">
-    <span class=\"parc-stat\">⚙️ Systems</span> - Mechanical and structural integrity<br>
+    <span class=\"parc-stat\">⚙️ Systems</span> - Structural soundness and enchantment upkeep<br>
     <span class=\"parc-stat\">🛏️ Comfort</span> - Living conditions and livability<br>
     <span class=\"parc-stat\">🍽️ Provision</span> - Food, water, and essential supplies<br>
-    <span class=\"parc-stat\">🛡️ Security</span> - Safety and defense capabilities<br>
-    <span class=\"parc-stat\">💖 Harmony</span> - Social cohesion and crew morale<br>
+    <span class=\"parc-stat\">🛡️ Security</span> - Wards, watchfulness, and defense<br>
+    <span class=\"parc-stat\">💖 Harmony</span> - Social cohesion and morale<br>
     <span class=\"parc-stat\">💰 Wealth</span> - Financial resources<br>
   </div>
 </div>
 
 <div class=\"parc-section\">
-  <h3>🏗️ Core Modules</h3>
-  <p>Build and upgrade your station with specialized modules. Most modules serve a unique function and can be assigned a crew member to manage it.</p>
-  
+  <h3>🏗️ Core Rooms</h3>
+  <p>Build and expand your tower with specialized rooms. Most rooms serve a unique function and can be assigned a resident to manage them.</p>
+
   <div class=\"parc-module\">
-    <h4>Echo Chamber</h4>
-    <p><strong>Role:</strong> Assistant</p>
-    <p>The heart of your operation. Here you \"echofuse\" new patients from the black hole's resonance, pulling them into reality and beginning their rehabilitation journey.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Comms</h4>
-    <p><strong>Role:</strong> Liaison</p>
-    <p>Your connection to the outside universe. Manage communications with external factions, coordinate trades, and find work placements for rehabilitated patients.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Generator</h4>
-    <p><strong>Role:</strong> Engineer</p>
-    <p>The station's power source and engineering hub. Maintains mechanical systems and keeps the station operational.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Quarters</h4>
-    <p><strong>Role:</strong> Resident | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span></p>
-    <p>Personal living spaces for crew members. Build multiple quarters to house your growing population. Visit residents for intimate, personal interactions.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Hub</h4>
-    <p><strong>Role:</strong> Custodian | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span></p>
-    <p>A communal gathering space where crew members socialize, eat, and build relationships. The social heart of your station.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Infirmary</h4>
-    <p><strong>Role:</strong> Medic | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span> <span class=\"parc-stat\">Comfort 1</span></p>
-    <p>Medical facility for treating injuries and illnesses. Essential for maintaining crew health and well-being.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Gym</h4>
-    <p><strong>Role:</strong> Trainer | <strong>Cost:</strong> <span class=\"parc-stat\">Comfort 1</span> <span class=\"parc-stat\">Wealth 1</span></p>
-    <p>Fitness center for physical training and conditioning. Helps maintain crew fitness and morale through exercise.</p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Lounge</h4>
-    <p><strong>Role:</strong> Concierge | <strong>Cost:</strong> <span class=\"parc-stat\">Comfort 2</span> <span class=\"parc-stat\">Wealth 1</span></p>
-    <p>Recreation area with entertainment and refreshments. <em>Requires at least 3 patients on station.</em></p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Armory</h4>
-    <p><strong>Role:</strong> Officer | <strong>Cost:</strong> <span class=\"parc-stat\">Systems 1</span> <span class=\"parc-stat\">Wealth 1</span></p>
-    <p>Security hub managing weapons and defense systems. <em>Requires contact with at least 3 factions.</em></p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Cryo Bank</h4>
-    <p><strong>Role:</strong> Keeper | <strong>Cost:</strong> <span class=\"parc-stat\">Harmony 2</span> <span class=\"parc-stat\">Systems 2</span></p>
-    <p>Advanced cryogenic facility for long-term patient preservation. Manage who stays active and who goes into stasis. <em>Requires at least 5 patients.</em></p>
-  </div>
-  
-  <div class=\"parc-module\">
-    <h4>Aperture</h4>
-    <p><strong>Role:</strong> Attenuator | <strong>Cost:</strong> <span class=\"parc-stat\">Systems 2</span> <span class=\"parc-stat\">Wealth 2</span></p>
-    <p>Experimental research facility for studying and manipulating the echo phenomenon. Shape the nature of who and what gets pulled from the black hole. <em>Requires Systems stat of 5+.</em></p>
+    <h4>Summoning Sanctum</h4>
+    <p><strong>Role:</strong> Apprentice</p>
+    <p>The heart of the tower. Here you complete summonings, drawing living people out of the leyline current and into this world - and here they take their first bewildered steps.</p>
   </div>
 
   <div class=\"parc-module\">
-    <h4>Faction Modules</h4>
+    <h4>Translocation Circle</h4>
+    <p><strong>Role:</strong> Herald</p>
+    <p>The tower's only practical link to the outside world. Approved envoys arrive and depart here, trade is arranged, and residents are sent out to work placements beyond the jungle.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Leyline Font</h4>
+    <p><strong>Role:</strong> Artificer</p>
+    <p>Where the tower taps the leyline nexus beneath it. Tend the enchantments and flows of magic that keep the Spire standing.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Chambers</h4>
+    <p><strong>Role:</strong> Resident | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span></p>
+    <p>Personal living spaces. Build multiple chambers to house your growing population. Visit residents for intimate, personal interactions.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Great Hall</h4>
+    <p><strong>Role:</strong> Steward | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span></p>
+    <p>A communal gathering space where residents eat, socialize, and build relationships. The social heart of your tower.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Apothecary</h4>
+    <p><strong>Role:</strong> Healer | <strong>Cost:</strong> <span class=\"parc-stat\">Provision 1</span> <span class=\"parc-stat\">Comfort 1</span></p>
+    <p>Healing hall for treating injuries and ailments. Essential for maintaining residents' health and well-being.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Sparring Hall</h4>
+    <p><strong>Role:</strong> Drillmaster | <strong>Cost:</strong> <span class=\"parc-stat\">Comfort 1</span> <span class=\"parc-stat\">Wealth 1</span></p>
+    <p>Training hall for physical conditioning. Keeps residents fit and morale high through exercise and contests.</p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Parlor</h4>
+    <p><strong>Role:</strong> Host | <strong>Cost:</strong> <span class=\"parc-stat\">Comfort 2</span> <span class=\"parc-stat\">Wealth 1</span></p>
+    <p>Recreation room with drink and diversions. <em>Requires at least 3 residents in the tower.</em></p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Armory</h4>
+    <p><strong>Role:</strong> Warden | <strong>Cost:</strong> <span class=\"parc-stat\">Systems 1</span> <span class=\"parc-stat\">Wealth 1</span></p>
+    <p>Defense hub managing weapons, armor, and the Spire's protective wards. <em>Requires contact with at least 3 factions.</em></p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Homeward Gate</h4>
+    <p><strong>Role:</strong> Gatekeeper | <strong>Cost:</strong> <span class=\"parc-stat\">Harmony 2</span> <span class=\"parc-stat\">Systems 2</span></p>
+    <p>A two-way portal that sends residents home under a recall bond - and works for everyone but the Magus. Manage who stays and who returns home. <em>Requires at least 5 residents.</em></p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Arcane Focus</h4>
+    <p><strong>Role:</strong> Attuner | <strong>Cost:</strong> <span class=\"parc-stat\">Systems 2</span> <span class=\"parc-stat\">Wealth 2</span></p>
+    <p>Experimental apparatus for studying and shaping the summoning phenomenon. Attune the nature of who and what the leyline delivers. <em>Requires Systems stat of 5+.</em></p>
+  </div>
+
+  <div class=\"parc-module\">
+    <h4>Faction Rooms</h4>
     <p><strong>Role:</strong> Assorted | <strong>Cost:</strong> <span class=\"parc-stat\">Wealth 3</span></p>
-    <p>Every faction offers a distinct, generated module and role, unique to that faction. <em>Requires high reputation with the associated faction.</em></p>
+    <p>Every faction offers a distinct, generated room and role, unique to that faction. <em>Requires high reputation with the associated faction.</em></p>
   </div>
   <div class=\"parc-module\">
-    <h4>Director Module</h4>
-    <p><strong>Role:</strong> Director's Choice</p>
-    <p>Every game allows you to define a custom module and role of your choice; name the module and role and allow the game to generate content accordingly.</p>
+    <h4>Magus's Choice</h4>
+    <p><strong>Role:</strong> Magus's Choice</p>
+    <p>Every game allows you to define a custom room and role of your choice; name the room and role and allow the game to generate content accordingly.</p>
   </div>
 </div>
 
 <div class=\"parc-section\">
   <h3>🎮 How to Play</h3>
   <ol>
-    <li><strong>Visit the PARC:</strong> <a href=\"https://chub.ai/characters/JakeH/post-apocalypse-rehabilitation-center-20622f03e7a4\" class=\"parc-link\">Official Bot Page</a></li> 
-    <li><strong>Configure settings:</strong> Define your director, StationAide™, custom starter module, and content preferences.</li>
-    <li><strong>Choose patients:</strong> Use the Echo Chamber to resurrect your first patients.</li>
-    <li><strong>Build modules:</strong> Construct modules to house and employ your crew.</li>
-    <li><strong>Assign roles:</strong> Give crew members jobs managing different modules.</li>
-    <li><strong>Establish connections:</strong> Work with factions to find employment and trade opportunities for your patients.</li>
+    <li><strong>Configure settings:</strong> Define your Magus, the tower's spirit steward, custom starter room, and content preferences.</li>
+    <li><strong>Choose residents:</strong> Use the Summoning Sanctum to complete your first summonings.</li>
+    <li><strong>Build rooms:</strong> Construct rooms to house and employ your residents.</li>
+    <li><strong>Assign roles:</strong> Give residents duties managing different rooms.</li>
+    <li><strong>Establish connections:</strong> Work with factions to find employment and trade opportunities for your residents.</li>
     <li><strong>Navigate skits:</strong> Make freeform choices in interactive scenes that shape relationships and outcomes.</li>
   </ol>
 </div>
-
-<div style=\"text-align: center; padding: 20px; opacity: 0.7; font-style: italic;\">
-  Thank you for exploring the PARC! Please share your feedback and experiences in the comments!
-</div>
-<style>.parc-section{background:linear-gradient(135deg,rgba(102,126,234,0.12) 0%,rgba(118,75,162,0.08) 100%);border-left:4px solid rgba(102,126,234,0.6);padding:15px;margin:15px 0;border-radius:6px;backdrop-filter:blur(10px)}.parc-section h3{margin-top:0;color:#8b9cf5;font-size:1.3em;text-shadow:0 0 10px rgba(102,126,234,0.3)}.parc-module{background:linear-gradient(135deg,rgba(102,126,234,0.08) 0%,rgba(118,75,162,0.05) 100%);border:1px solid rgba(102,126,234,0.3);padding:12px;margin:10px 0;border-radius:6px;backdrop-filter:blur(5px)}.parc-module h4{color:#a78bfa;margin:0 0 8px 0;font-size:1.1em;text-shadow:0 0 8px rgba(118,75,162,0.3)}.parc-module p{margin:5px 0;opacity:0.9}.parc-stat{display:inline-block;background:linear-gradient(135deg,rgba(102,126,234,0.7) 0%,rgba(118,75,162,0.7) 100%);color:#fff;padding:3px 8px;border-radius:4px;font-size:0.85em;margin:2px;box-shadow:0 0 8px rgba(102,126,234,0.4)}.parc-feature-list{list-style:none;padding-left:0}.parc-feature-list li{padding:8px 0;padding-left:25px;position:relative;opacity:0.95}.parc-feature-list li:before{content:'⚡';position:absolute;left:0;font-size:1.2em;filter:drop-shadow(0 0 3px rgba(102,126,234,0.6))}.parc-link{color:#8b9cf5;text-decoration:none;font-weight:bold;text-shadow:0 0 5px rgba(102,126,234,0.3)}.parc-link:hover{text-decoration:underline;color:#a78bfa}</style>
+<style>.parc-section{background:linear-gradient(135deg,rgba(102,126,234,0.12) 0%,rgba(118,75,162,0.08) 100%);border-left:4px solid rgba(102,126,234,0.6);padding:15px;margin:15px 0;border-radius:6px;backdrop-filter:blur(10px)}.parc-section h3{margin-top:0;color:#8b9cf5;font-size:1.3em;text-shadow:0 0 10px rgba(102,126,234,0.3)}.parc-module{background:linear-gradient(135deg,rgba(102,126,234,0.08) 0%,rgba(118,75,162,0.05) 100%);border:1px solid rgba(102,126,234,0.3);padding:12px;margin:10px 0;border-radius:6px;backdrop-filter:blur(5px)}.parc-module h4{color:#a78bfa;margin:0 0 8px 0;font-size:1.1em;text-shadow:0 0 8px rgba(118,75,162,0.3)}.parc-module p{margin:5px 0;opacity:0.9}.parc-stat{display:inline-block;background:linear-gradient(135deg,rgba(102,126,234,0.7) 0%,rgba(118,75,162,0.7) 100%);color:#fff;padding:3px 8px;border-radius:4px;font-size:0.85em;margin:2px;box-shadow:0 0 8px rgba(102,126,234,0.4)}.parc-feature-list{list-style:none;padding-left:0}.parc-feature-list li{padding:8px 0;padding-left:25px;position:relative;opacity:0.95}.parc-feature-list li:before{content:'✨';position:absolute;left:0;font-size:1.2em;filter:drop-shadow(0 0 3px rgba(102,126,234,0.6))}.parc-link{color:#8b9cf5;text-decoration:none;font-weight:bold;text-shadow:0 0 5px rgba(102,126,234,0.3)}.parc-link:hover{text-decoration:underline;color:#a78bfa}</style>
 "
 
 # The schema of any user-supplied config.
-# If your stage requires a configuration but has no
-#   defined schema, it won't work.
 config_schema:
   type: object
   properties:
@@ -179,9 +166,6 @@ config_schema:
       enum: ["True", "False"]
 
 # The schema of the state that you store.
-# This isn't needed even if you do store state,
-#   and is here more for future use cases to
-#   optimize storage.
 state_schema:
   init:
     type: object
@@ -202,24 +186,5 @@ state_schema:
         items:
           type: integer
 
-# Whether to publish as 'Anonymous' instead of under your username.
-# is_anonymous: false
-
-# Self-explanatory.
-# ratings_disabled: false
-
-# This is here for future cases where ex. you need user secrets,
-#    but currently does nothing.
-# permissions:
-
-# extension_id is automatically generated on push with a new project;
-#    you should not make or set this value.
-# github_path will be added if it does not exist. It is the URL of the repo.
-
-
-
-github_path: 'https://github.com/Lord-Raven/post-apocalypse-rehabilitation-center'
-
-
-extension_id: 'apocalypse-rehabilitation-clinic-1e0e11a3f446'
-
+# github_path and extension_id are intentionally omitted;
+# they will be generated for this fork on first push.

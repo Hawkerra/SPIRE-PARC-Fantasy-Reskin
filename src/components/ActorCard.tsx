@@ -70,8 +70,8 @@ export const ActorCard: FC<ActorCardProps> = ({
 
     // Default hover behavior
     const defaultWhileHover = {
-        backgroundColor: (clickable || draggable) ? 'rgba(0, 255, 136, 0.15)' : undefined,
-        borderColor: (clickable || draggable) ? 'rgba(0, 255, 136, 0.5)' : undefined,
+        backgroundColor: (clickable || draggable) ? 'rgba(176, 102, 255, 0.15)' : undefined,
+        borderColor: (clickable || draggable) ? 'rgba(176, 102, 255, 0.5)' : undefined,
     };
 
     // Create the wrapper element conditionally based on whether draggable or not
@@ -87,7 +87,7 @@ export const ActorCard: FC<ActorCardProps> = ({
         },
         style: {
             padding: '12px',
-            border: `3px solid ${isAway ? '#ffa726' : '#00ff88'}`,
+            border: `3px solid ${isAway ? '#ffa726' : '#b066ff'}`,
             borderRadius: '8px',
             background: isAway ? 'rgba(255, 167, 38, 0.1)' : 'rgba(0, 10, 20, 0.5)',
             cursor: isDragging ? 'grabbing' : (draggable ? 'grab' : (clickable ? 'pointer' : 'default')),
@@ -189,7 +189,7 @@ export const ActorCard: FC<ActorCardProps> = ({
                                 flex: 1,
                                 borderRadius: '6px',
                                 overflow: 'hidden',
-                                border: `2px solid ${actor.themeColor || '#00ff88'}`,
+                                border: `2px solid ${actor.themeColor || '#b066ff'}`,
                                 backgroundImage: `url(${actor.getEmotionImage(actor.getDefaultEmotion())})`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'top center',

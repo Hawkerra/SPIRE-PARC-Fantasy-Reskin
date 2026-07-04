@@ -175,7 +175,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
         opacity: 0.8,
         '&:hover': {
             color: colors.primary.light,
-            backgroundColor: 'rgba(0, 255, 136, 0.12)'
+            backgroundColor: 'rgba(176, 102, 255, 0.12)'
         }
     };
     
@@ -413,7 +413,7 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                             const useHoloFilter = isHologram(actor, stage().getSave(), actorLocationId);
 
                             return {
-                                filter: useHoloFilter ? 'hologram' : undefined,
+                                filter: useHoloFilter ? 'ghost' : undefined,
                                 filterColor: useHoloFilter ? clampHexColor(actor.themeColor) : undefined,
                             };
                         }}

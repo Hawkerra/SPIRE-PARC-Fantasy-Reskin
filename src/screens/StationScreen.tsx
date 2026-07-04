@@ -20,8 +20,8 @@ import { scoreToGrade, assignActorToRole } from '../utils';
 
 // Styled components for the day/turn display
 const StyledDayCard = styled(Card)(({ theme }) => ({
-    background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.08) 100%)',
-    border: '2px solid #00ff88',
+    background: 'linear-gradient(135deg, rgba(176, 102, 255, 0.15) 0%, rgba(0, 200, 100, 0.08) 100%)',
+    border: '2px solid #b066ff',
     borderRadius: '16px',
     marginBottom: '24px',
     overflow: 'visible',
@@ -33,7 +33,7 @@ const StyledDayCard = styled(Card)(({ theme }) => ({
         left: '-2px',
         right: '-2px',
         bottom: '-2px',
-        background: 'linear-gradient(135deg, #00ff88 0%, rgba(0, 255, 136, 0.3) 100%)',
+        background: 'linear-gradient(135deg, #b066ff 0%, rgba(176, 102, 255, 0.3) 100%)',
         borderRadius: '18px',
         zIndex: -1,
         filter: 'blur(4px)',
@@ -521,8 +521,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 sx={{
                                     fontWeight: 900,
                                     fontSize: '2.2rem',
-                                    color: '#00ff88',
-                                    textShadow: '0 0 20px rgba(0, 255, 136, 0.5)',
+                                    color: '#b066ff',
+                                    textShadow: '0 0 20px rgba(176, 102, 255, 0.5)',
                                     letterSpacing: '0.05em',
                                     marginBottom: '4px',
                                 }}
@@ -616,9 +616,9 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 animate={{ 
                                     scale: justDroppedModuleId === module.id ? 1.15 : 1,
                                     boxShadow: hoveredModuleId === module.id && draggedActor 
-                                        ? `0 0 40px rgba(0, 255, 136, 0.8), inset 0 0 30px rgba(0, 255, 136, 0.3)`
+                                        ? `0 0 40px rgba(176, 102, 255, 0.8), inset 0 0 30px rgba(176, 102, 255, 0.3)`
                                         : justDroppedModuleId === module.id
-                                            ? `0 0 50px rgba(0, 255, 136, 1), inset 0 0 40px rgba(0, 255, 136, 0.5)`
+                                            ? `0 0 50px rgba(176, 102, 255, 1), inset 0 0 40px rgba(176, 102, 255, 0.5)`
                                             : isHighlighted
                                                 ? `0 0 25px rgba(255, 200, 0, 0.8), inset 0 0 20px rgba(255, 200, 0, 0.2)`
                                                 : undefined,
@@ -639,12 +639,12 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     border: isHighlighted 
                                         ? '3px solid rgba(255, 200, 0, 0.9)' 
                                         : isInteractable
-                                            ? '3px solid rgba(0, 255, 136, 0.9)'
+                                            ? '3px solid rgba(176, 102, 255, 0.9)'
                                             : '3px solid #006644',
                                     borderRadius: 10,
                                     background: `url(${stage().getSave().actors[module.ownerId || '']?.decorImageUrls[module.type] || module.getAttribute('defaultImageUrl')}) center center / contain no-repeat`,
                                     cursor: 'pointer',
-                                    color: '#dfffe6',
+                                    color: '#ecdfff',
                                     fontWeight: 700,
                                     fontSize: '18px',
                                     textTransform: 'capitalize',
@@ -834,7 +834,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                                     height: `calc(0.6 * ${cellSize})`,
                                                                     userSelect: 'none',
                                                                     pointerEvents: 'none',
-                                                                    filter: isHologram(actor, stage().getSave(), actor.locationId || '') ? 'sepia(100%) hue-rotate(180deg) saturate(200%) brightness(1.2)' : undefined,
+                                                                    filter: isHologram(actor, stage().getSave(), actor.locationId || '') ? 'opacity(0.65) saturate(45%) brightness(1.2) drop-shadow(0 0 6px rgba(176, 102, 255, 0.9))' : undefined,
                                                                 }}
                                                             />
                                                         );
@@ -895,7 +895,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     height: '100%',
                                     borderRadius: 10,
                                     background: 'rgba(0,0,0,0.45)',
-                                    border: '3px dashed rgba(0, 255, 136, 0.9)',
+                                    border: '3px dashed rgba(176, 102, 255, 0.9)',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -949,7 +949,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                     width: isVerticalLayout ? '100vw' : '80vw',
                     height: isVerticalLayout ? '45vh' : '100vh',
                     boxSizing: 'border-box',
-                    background: 'linear-gradient(45deg, #001122 0%, #002244 100%)',
+                    background: 'linear-gradient(45deg, #140a20 0%, #002244 100%)',
                     position: 'relative',
                     overflow: 'hidden',
                     display: 'flex',
@@ -967,10 +967,10 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                         display: 'flex',
                         gap: '0',
                         padding: '0.3vmin 0.5vmin',
-                        background: 'linear-gradient(135deg, rgba(0, 30, 60, 0.85) 0%, rgba(0, 20, 40, 0.85) 100%)',
-                        border: '2px solid #00ff88',
+                        background: 'linear-gradient(135deg, rgba(0, 30, 60, 0.85) 0%, rgba(18, 8, 32, 0.85) 100%)',
+                        border: '2px solid #b066ff',
                         borderRadius: '12px',
-                        boxShadow: '0 0 30px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1)',
+                        boxShadow: '0 0 30px rgba(176, 102, 255, 0.3), inset 0 0 20px rgba(176, 102, 255, 0.1)',
                         backdropFilter: 'blur(10px)',
                         zIndex: 90,
                     }}
@@ -1015,7 +1015,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         {/* Stat Icon */}
                                         <StatIcon style={{ 
                                             fontSize: isVerticalLayout ? '2vmin' : '1.5vmin',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             flexShrink: 0,
                                         }} />
                                         
@@ -1056,7 +1056,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         {Array.from({ length: 10 }, (_, i) => {
                                             const isLit = i < statValue;
                                             // Get color based on grade
-                                            let pipColor = '#00ff88';
+                                            let pipColor = '#b066ff';
                                             if (grade.startsWith('F')) pipColor = '#ff6b6b';
                                             else if (grade.startsWith('D')) pipColor = '#ffb47a';
                                             else if (grade.startsWith('C')) pipColor = '#d0d0d0';
@@ -1117,7 +1117,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 alignItems: 'flex-start',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                color: '#00ff88',
+                                color: '#b066ff',
                             }}
                             onMouseEnter={() => setTooltip('Main Menu', Menu)}
                             onMouseLeave={() => clearTooltip()}
@@ -1137,7 +1137,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 alignItems: 'flex-start',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                color: '#00ff88',
+                                color: '#b066ff',
                             }}
                             onMouseEnter={() => setTooltip('Content Management', EditNote)}
                             onMouseLeave={() => clearTooltip()}
@@ -1164,8 +1164,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                             height: `calc(${gridHeight} * ${cellSize})`,
                             // move the subtle grid onto the centered modules container so lines align with cells
                             backgroundImage: `
-                                linear-gradient(rgba(0, 255, 136, 0.08) 1px, transparent 1px),
-                                linear-gradient(90deg, rgba(0, 255, 136, 0.08) 1px, transparent 1px)
+                                linear-gradient(rgba(176, 102, 255, 0.08) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(176, 102, 255, 0.08) 1px, transparent 1px)
                             `,
                             backgroundSize: `${cellSize} ${cellSize}`,
                             backgroundPosition: '0 0',
@@ -1248,9 +1248,9 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                     width: isVerticalLayout ? '100vw' : '20vw',
                     height: isVerticalLayout ? '50vh' : '100vh',
                     boxSizing: 'border-box',
-                    background: 'rgba(0, 20, 40, 0.9)',
-                    borderLeft: isVerticalLayout ? 'none' : '2px solid #00ff88',
-                    borderTop: isVerticalLayout ? '2px solid #00ff88' : 'none',
+                    background: 'rgba(18, 8, 32, 0.9)',
+                    borderLeft: isVerticalLayout ? 'none' : '2px solid #b066ff',
+                    borderTop: isVerticalLayout ? '2px solid #b066ff' : 'none',
                     padding: isVerticalLayout ? '10px' : '20px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1270,13 +1270,13 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                             justifyContent: 'center',
                             gap: '8px',
                             padding: '0.3vh 1vh',
-                            borderBottom: '1px solid rgba(0, 255, 136, 0.3)',
+                            borderBottom: '1px solid rgba(176, 102, 255, 0.3)',
                         }}>
                             <Typography
                                 sx={{
                                     fontSize: '0.9rem',
                                     fontWeight: 700,
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     letterSpacing: '0.05em',
                                     textTransform: 'uppercase',
                                 }}
@@ -1289,7 +1289,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         key={i}
                                         sx={{
                                             fontSize: '0.9rem',
-                                            color: i < turn ? 'rgba(0, 255, 136, 0.3)' : '#00ff88',
+                                            color: i < turn ? 'rgba(176, 102, 255, 0.3)' : '#b066ff',
                                             transition: 'color 0.3s ease',
                                         }}
                                     />
@@ -1310,22 +1310,22 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     padding: '6px 16px',
                                     fontSize: '0.9rem',
                                     fontWeight: 700,
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     letterSpacing: '0.05em',
                                     textTransform: 'uppercase',
                                     lineHeight: 1,
                                     '&.Mui-selected': {
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                     },
                                 },
                                 '& .MuiTabs-indicator': {
-                                    backgroundColor: '#00ff88',
+                                    backgroundColor: '#b066ff',
                                     height: '3px',
                                 },
                             }}
                         >
-                            <Tab label="PATIENTS" value="patients" />
-                            <Tab label="MODULES" value="modules" />
+                            <Tab label="RESIDENTS" value="patients" />
+                            <Tab label="ROOMS" value="modules" />
                             <Tab label="FACTIONS" value="factions" />
                         </Tabs>
                         {/* Tab content */}
@@ -1345,7 +1345,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     }),
                                 }}>
                                     {stationActors.length === 0 ? (
-                                        <p style={{ color: '#00ff88', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700, margin: 0, ...(isVerticalLayout && { gridColumn: '1 / -1' }) }}>Visit the Echo Chamber to bring on new patients!</p>
+                                        <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700, margin: 0, ...(isVerticalLayout && { gridColumn: '1 / -1' }) }}>Visit the Summoning Sanctum to summon your first residents. </p>
                                     ) : (
                                         stationActors.map((actor: any) => {
                                             const { visitingFaction, visitingFromFaction } = getActorVisitingStatus(actor);
@@ -1374,8 +1374,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                             clearTooltip();
                                                         }}
                                                         whileHover={{
-                                                            backgroundColor: 'rgba(0, 255, 136, 0.15)',
-                                                            borderColor: 'rgba(0, 255, 136, 0.5)',
+                                                            backgroundColor: 'rgba(176, 102, 255, 0.15)',
+                                                            borderColor: 'rgba(176, 102, 255, 0.5)',
                                                             x: isVerticalLayout ? 5 : 10
                                                         }}
                                                         style={{
@@ -1400,7 +1400,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 }}>
                                     {layout.getModulesWhere(m => true).length === 0 ? (
                                         <p style={{ 
-                                            color: '#00ff88', 
+                                            color: '#b066ff', 
                                             opacity: 0.5, 
                                             fontStyle: 'italic', 
                                             fontSize: '0.85rem', 
@@ -1442,7 +1442,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 }}>
                                     {Object.values(stage().getSave().factions)/*.filter(f => f.active)*/.length === 0 ? (
                                         <p style={{ 
-                                            color: '#00ff88', 
+                                            color: '#b066ff', 
                                             opacity: 0.5, 
                                             fontStyle: 'italic', 
                                             fontSize: '0.85rem', 
@@ -1508,9 +1508,9 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         width: '100%',
                                         padding: '15px',
                                         background: isExpanded
-                                            ? 'rgba(0, 255, 136, 0.2)'
+                                            ? 'rgba(176, 102, 255, 0.2)'
                                             : 'transparent',
-                                        border: '3px solid #00ff88',
+                                        border: '3px solid #b066ff',
                                         borderRadius: '5px',
                                         cursor: 'pointer',
                                         textAlign: 'left',
@@ -1537,8 +1537,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 }}
                                 style={{ 
                                     overflow: isExpanded ? 'visible' : 'hidden',
-                                    background: 'rgba(0, 20, 40, 0.7)',
-                                    border: isExpanded ? '2px solid rgba(0, 255, 136, 0.3)' : 'none',
+                                    background: 'rgba(18, 8, 32, 0.7)',
+                                    border: isExpanded ? '2px solid rgba(176, 102, 255, 0.3)' : 'none',
                                     borderTop: 'none',
                                     borderRadius: '0 0 5px 5px',
                                     flex: isExpanded ? '1 1 auto' : '0 0 auto',
@@ -1557,7 +1557,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 {itemKey === 'patients' && (
                                     <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
                                         {stationActors.length === 0 ? (
-                                            <p style={{ color: '#00ff88', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>Visit the Echo Chamber to bring on new patients!</p>
+                                            <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>Visit the Echo Chamber to bring on new patients!</p>
                                         ) : (
                                             stationActors.map((actor: any) => {
                                                 const { visitingFaction, visitingFromFaction } = getActorVisitingStatus(actor);
@@ -1586,8 +1586,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                                 clearTooltip();
                                                             }}
                                                             whileHover={{
-                                                                backgroundColor: 'rgba(0, 255, 136, 0.15)',
-                                                                borderColor: 'rgba(0, 255, 136, 0.5)',
+                                                                backgroundColor: 'rgba(176, 102, 255, 0.15)',
+                                                                borderColor: 'rgba(176, 102, 255, 0.5)',
                                                                 x: 10
                                                             }}
                                                             style={{
@@ -1604,7 +1604,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
                                         {layout.getModulesWhere(m => true).length === 0 ? (
                                             <p style={{ 
-                                                color: '#00ff88', 
+                                                color: '#b066ff', 
                                                 opacity: 0.5, 
                                                 fontStyle: 'italic', 
                                                 fontSize: '0.85rem', 
@@ -1637,7 +1637,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
                                         {Object.values(stage().getSave().factions)/*.filter(f => f.active)*/.length === 0 ? (
                                             <p style={{ 
-                                                color: '#00ff88', 
+                                                color: '#b066ff', 
                                                 opacity: 0.5, 
                                                 fontStyle: 'italic', 
                                                 fontSize: '0.85rem', 
@@ -1696,23 +1696,23 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                             exit={{ scale: 0.8, opacity: 0 }}
                             onClick={(e) => e.stopPropagation()}
                             style={{
-                                background: 'linear-gradient(135deg, rgba(0, 30, 60, 0.95) 0%, rgba(0, 20, 40, 0.95) 100%)',
-                                border: '3px solid #00ff88',
+                                background: 'linear-gradient(135deg, rgba(0, 30, 60, 0.95) 0%, rgba(18, 8, 32, 0.95) 100%)',
+                                border: '3px solid #b066ff',
                                 borderRadius: '20px',
                                 padding: '30px',
                                 maxWidth: '80vw',
                                 maxHeight: '80vh',
                                 overflow: 'auto',
-                                boxShadow: '0 0 40px rgba(0, 255, 136, 0.3)',
+                                boxShadow: '0 0 40px rgba(176, 102, 255, 0.3)',
                             }}
                         >
                             <Typography
                                 variant="h4"
                                 style={{
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     marginBottom: '20px',
                                     textAlign: 'center',
-                                    textShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+                                    textShadow: '0 0 10px rgba(176, 102, 255, 0.5)',
                                     fontWeight: 900,
                                 }}
                             >
@@ -1736,12 +1736,12 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     return (
                                         <motion.div
                                             key={moduleType}
-                                            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(0, 255, 136, 0.5)' }}
+                                            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(176, 102, 255, 0.5)' }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => addModule(moduleType, selectedPosition.x, selectedPosition.y)}
                                             style={{
                                                 background: `url(${moduleDefaults.defaultImageUrl}) center center / cover`,
-                                                border: '2px solid #00ff88',
+                                                border: '2px solid #b066ff',
                                                 borderRadius: '10px',
                                                 padding: '15px',
                                                 cursor: 'pointer',
@@ -1761,7 +1761,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                 <Typography
                                                     variant="h6"
                                                     style={{
-                                                        color: '#00ff88',
+                                                        color: '#b066ff',
                                                         textTransform: 'capitalize',
                                                         fontWeight: 700,
                                                         fontSize: '1rem',
@@ -1773,7 +1773,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                     <Typography
                                                         variant="body2"
                                                         style={{
-                                                            color: '#00ff88',
+                                                            color: '#b066ff',
                                                             opacity: 0.7,
                                                             fontSize: '0.85rem',
                                                             marginTop: '4px',
@@ -1945,9 +1945,9 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     marginTop: '30px',
                                     padding: '12px 30px',
                                     background: 'transparent',
-                                    border: '2px solid #00ff88',
+                                    border: '2px solid #b066ff',
                                     borderRadius: '8px',
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     fontSize: '1rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',

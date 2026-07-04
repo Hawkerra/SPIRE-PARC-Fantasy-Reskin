@@ -132,8 +132,8 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 					<Typography 
 						variant="h4" 
 						sx={{
-							color: '#00ff88',
-							textShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+							color: '#b066ff',
+							textShadow: '0 0 10px rgba(176, 102, 255, 0.5)',
 							marginBottom: isVerticalLayout ? 1.5 : 3,
 							textAlign: 'center',
 							fontWeight: 700
@@ -159,7 +159,7 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 							<Typography 
 								variant="body1" 
 								sx={{
-									color: '#eafff2',
+									color: '#f4ecff',
 									marginBottom: 1,
 									fontWeight: 600
 								}}
@@ -176,16 +176,16 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 								sx={{
 									'& .MuiOutlinedInput-root': {
 										background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
-										color: '#eafff2',
+										color: '#f4ecff',
 										fontSize: isVerticalLayout ? '0.85rem' : '1rem',
 										'& fieldset': {
-											borderColor: 'rgba(0,255,136,0.3)',
+											borderColor: 'rgba(176,102,255,0.3)',
 										},
 										'&:hover fieldset': {
-											borderColor: 'rgba(0,255,136,0.5)',
+											borderColor: 'rgba(176,102,255,0.5)',
 										},
 										'&.Mui-focused fieldset': {
-											borderColor: 'rgba(0,255,136,0.7)',
+											borderColor: 'rgba(176,102,255,0.7)',
 										},
 									},
 									'& .MuiInputBase-input::placeholder': {
@@ -201,7 +201,7 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 							<Typography 
 								variant="body1" 
 								sx={{
-									color: '#eafff2',
+									color: '#f4ecff',
 									marginBottom: 1,
 									fontWeight: 600
 								}}
@@ -219,16 +219,16 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 								sx={{
 									'& .MuiOutlinedInput-root': {
 										background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))',
-										color: '#eafff2',
+										color: '#f4ecff',
 										fontSize: isVerticalLayout ? '0.85rem' : '1rem',
 										'& fieldset': {
-											borderColor: 'rgba(0,255,136,0.3)',
+											borderColor: 'rgba(176,102,255,0.3)',
 										},
 										'&:hover fieldset': {
-											borderColor: 'rgba(0,255,136,0.5)',
+											borderColor: 'rgba(176,102,255,0.5)',
 										},
 										'&.Mui-focused fieldset': {
-											borderColor: 'rgba(0,255,136,0.7)',
+											borderColor: 'rgba(176,102,255,0.7)',
 										},
 									},
 									'& .MuiInputBase-input::placeholder': {
@@ -254,11 +254,11 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 						onClick={handleAttenuate}
 						disabled={isReserveFull || loadingReserve}
 						style={{
-							background: (isReserveFull || loadingReserve) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(90deg,#00ff88,#00b38f)',
-							color: (isReserveFull || loadingReserve) ? '#9aa0a6' : '#002210'
+							background: (isReserveFull || loadingReserve) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(90deg,#b066ff,#00b38f)',
+							color: (isReserveFull || loadingReserve) ? '#9aa0a6' : '#1a0533'
 						}}
 					>
-						{loadingReserve ? 'Attenuating...' : (isReserveFull ? 'Reserve Full' : 'Attenuate')}
+						{loadingReserve ? 'Attuning...' : (isReserveFull ? 'Reserve Full' : 'Attune')}
 					</Button>
 				</Box>
 			</div>

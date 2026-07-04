@@ -1,4 +1,5 @@
 import React, { FC, useState } from 'react';
+import { createModule, DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT } from '../Module';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Stage } from '../Stage';
 import { GlassPanel, Title, Button, TextInput } from '../components/UIComponents';
@@ -23,6 +24,7 @@ interface SettingsData {
     disableEmotionImages: boolean;
     disableDecorImages: boolean;
     disableImpersonation: boolean;
+    solidSpirit: boolean;
     typeOutSpeed: number;
     characterArtStyle: ArtStyle;
     characterArtist: string;
@@ -136,20 +138,21 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
 
     // Load existing settings or use defaults
     const [settings, setSettings] = useState<SettingsData>({
-        playerName: saveFromStage.player?.name || 'Director',
-        playerDescription: saveFromStage.player?.description || 'The PARC\'s enigmatic Director is the station\'s sole authority.',
+        playerName: saveFromStage.player?.name || 'Magus',
+        playerDescription: saveFromStage.player?.description || 'The Spire\'s accidental Magus is the tower\'s sole living authority.',
         aideName: saveFromStage.aide?.name || 'Soji',
         aideDescription: saveFromStage.aide?.description ||
-            (`Your holographic aide is acutely familiar with the technical details of your Post-Apocalypse Rehabilitation Center, so you don't have to be! ` +
-            `Your StationAide™ comes pre-programmed with a friendly and non-condescending demeanor that will leave you feeling empowered but never patronized; ` +
-            `your bespoke projection comes with an industry-leading feminine form in a pleasing shade of default blue, but, as always, StationAide™ remains infinitely customizable to suit your tastes.\n\n` +
-            `StationAide™. "When life gives you space stations..."`),
-        directorModuleName: saveFromStage.directorModule?.name || 'Director\'s Cabin',
+            (`Every respectable tower comes haunted, and the Spire is no exception! Your resident tower spirit has been bound to these stones since long before your arrival and knows the Spire's workings intimately, so you don't have to. ` +
+            `Fair warning: two centuries of empty halls have left them a touch capricious - expect teasing, dramatics, and open delight in your confusion, as your suffering is (by their own cheerful admission) the finest entertainment they've had in two hundred years. ` +
+            `Rest assured the binding compels honest service no matter how they grumble, and those who earn their trust report the needling softens into something almost like fondness.\n\n` +
+            `The Tower Spirit. "Your suffering entertains me, mortal."`),
+        directorModuleName: saveFromStage.directorModule?.name || 'Magus\'s Study',
         directorModuleRoleName: saveFromStage.directorModule?.roleName || 'Maid',
         disableTextToSpeech: saveFromStage.disableTextToSpeech ?? false,
         disableEmotionImages: saveFromStage.disableEmotionImages ?? false,
         disableDecorImages: saveFromStage.disableDecorImages ?? saveFromStage.disableEmotionImages ?? false,
         disableImpersonation: saveFromStage.disableImpersonation ?? false,
+        solidSpirit: saveFromStage.solidSpirit ?? false,
         typeOutSpeed: clampTypeOutSpeed(saveFromStage.typeOutSpeed ?? defaultTypeOutSpeed),
         characterArtStyle: saveFromStage.characterArtStyle ?? 'original',
         characterArtist: saveFromStage.characterArtist ?? '',
@@ -166,6 +169,28 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
 
     // new-writein input
     const [newWriteIn, setNewWriteIn] = useState('');
+
+    const handleFastStart = () => {
+        const st = stage();
+        const save = st.getSave();
+        const fastTypes: string[] = ['commons', 'lounge', 'aperture'];
+        let placed = 0;
+        for (const fastType of fastTypes) {
+            if (save.layout.getModulesWhere(m => m.type === fastType).length > 0) continue;
+            let done = false;
+            for (let y = 0; y < DEFAULT_GRID_HEIGHT && !done; y++) {
+                for (let x = 0; x < DEFAULT_GRID_WIDTH && !done; x++) {
+                    if (!save.layout.getModuleAt(x, y)) {
+                        save.layout.setModuleAt(x, y, createModule(fastType, { id: `${fastType}-fast-${x}-${y}`, attributes: {} }));
+                        placed++;
+                        done = true;
+                    }
+                }
+            }
+        }
+        st.saveGame();
+        st.showPriorityMessage(placed > 0 ? `Fast start: ${placed} room(s) added at no cost.` : 'Fast start rooms are already built.');
+    };
 
     const handleSave = () => {
         console.log('Saving settings:', settings);
@@ -195,6 +220,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
         save.disableEmotionImages = settings.disableEmotionImages;
         save.disableDecorImages = settings.disableDecorImages;
         save.disableImpersonation = settings.disableImpersonation;
+        save.solidSpirit = settings.solidSpirit;
         save.typeOutSpeed = clampTypeOutSpeed(settings.typeOutSpeed);
         save.characterArtStyle = settings.characterArtStyle;
         save.characterArtist = settings.characterArtist;
@@ -346,7 +372,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: 'rgba(0, 255, 136, 0.7)',
+                                    color: 'rgba(176, 102, 255, 0.7)',
                                     cursor: 'pointer',
                                     fontSize: '24px',
                                     padding: '5px',
@@ -367,7 +393,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                     htmlFor="player-name"
                                     style={{
                                         display: 'block',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                         marginBottom: '8px',
@@ -391,7 +417,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                     htmlFor="player-description"
                                     style={{
                                         display: 'block',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                         marginBottom: '8px',
@@ -415,53 +441,53 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 />
                             </div>
 
-                            {/* StationAide™ Name */}
+                            {/* Tower Spirit Name */}
                             {isNewGame && (
                                 <div>
                                     <label 
                                         htmlFor="aide-name"
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '14px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        StationAide™ Name
+                                        Tower Spirit Name
                                     </label>
                                     <TextInput
                                         id="aide-name"
                                         fullWidth
                                         value={settings.aideName}
                                         onChange={(e) => handleInputChange('aideName', e.target.value)}
-                                        placeholder="Enter StationAide™ name"
+                                        placeholder="Enter Tower Spirit name"
                                         style={{ fontSize: '16px' }}
                                     />
                                 </div>
                             )}
 
-                            {/* StationAide™ Description */}
+                            {/* Tower Spirit Description */}
                             {isNewGame && (
                                 <div>
                                     <label 
                                         htmlFor="aide-description"
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '14px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        StationAide™ Description
+                                        Tower Spirit Description
                                     </label>
                                     <textarea
                                         id="aide-description"
                                         className="text-input-primary"
                                         value={settings.aideDescription}
                                         onChange={(e) => handleInputChange('aideDescription', e.target.value)}
-                                        placeholder="Describe your StationAide™..."
+                                        placeholder="Describe your Tower Spirit..."
                                         rows={4}
                                         style={{
                                             width: '100%',
@@ -473,52 +499,52 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 </div>
                             )}
                             
-                            {/* Director's Module Name */}
+                            {/* Magus's Room Name */}
                             {isNewGame && (
                                 <div>
                                     <label 
                                         htmlFor="director-module-name"
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '14px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        Director's Module Name
+                                        Magus's Room Name
                                     </label>
                                     <TextInput
                                         id="director-module-name"
                                         fullWidth
                                         value={settings.directorModuleName}
                                         onChange={(e) => handleInputChange('directorModuleName', e.target.value)}
-                                        placeholder="Enter Director's Module Name"
+                                        placeholder="Enter Magus's Room Name"
                                         style={{ fontSize: '16px' }}
                                     />
                                 </div>
                             )}
-                            {/* Director's Module Job Title */}
+                            {/* Magus's Room Job Title */}
                             {isNewGame && (
                                 <div>
                                     <label 
                                         htmlFor="director-room-role-name"
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '14px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        Director's Module Job Title (a patient-assignable role)
+                                        Magus's Room Job Title (a resident-assignable role)
                                     </label>
                                     <TextInput
                                         id="director-module-role-name"
                                         fullWidth
                                         value={settings.directorModuleRoleName}
                                         onChange={(e) => handleInputChange('directorModuleRoleName', e.target.value)}
-                                        placeholder="Enter Director's Module Job Title"
+                                        placeholder="Enter Magus's Room Job Title"
                                         style={{ fontSize: '16px' }}
                                     />
                                 </div>
@@ -529,7 +555,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 <label 
                                     style={{
                                         display: 'block',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                         marginBottom: '12px',
@@ -546,10 +572,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         style={{
                                             padding: '12px',
                                             background: settings.disableTextToSpeech
-                                                ? 'rgba(0, 255, 136, 0.15)'
-                                                : 'rgba(0, 20, 40, 0.7)',
+                                                ? 'rgba(176, 102, 255, 0.15)'
+                                                : 'rgba(18, 8, 32, 0.7)',
                                             border: settings.disableTextToSpeech
-                                                ? '2px solid rgba(0, 255, 136, 0.5)'
+                                                ? '2px solid rgba(176, 102, 255, 0.5)'
                                                 : '2px solid rgba(255, 255, 255, 0.1)',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
@@ -564,8 +590,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 width: '20px',
                                                 height: '20px',
                                                 borderRadius: '4px',
-                                                background: settings.disableTextToSpeech ? '#00ff88' : 'rgba(255, 255, 255, 0.1)',
-                                                border: '2px solid ' + (settings.disableTextToSpeech ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'),
+                                                background: settings.disableTextToSpeech ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.disableTextToSpeech ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -578,7 +604,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     style={{
-                                                        color: '#002210',
+                                                        color: '#1a0533',
                                                         fontSize: '14px',
                                                         fontWeight: 'bold',
                                                     }}
@@ -589,7 +615,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </div>
                                         <span
                                             style={{
-                                                color: settings.disableTextToSpeech ? '#00ff88' : 'rgba(255, 255, 255, 0.7)',
+                                                color: settings.disableTextToSpeech ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
                                                 fontSize: '13px',
                                                 fontWeight: settings.disableTextToSpeech ? 'bold' : 'normal',
                                             }}
@@ -606,10 +632,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         style={{
                                             padding: '12px',
                                             background: settings.disableEmotionImages
-                                                ? 'rgba(0, 255, 136, 0.15)'
-                                                : 'rgba(0, 20, 40, 0.7)',
+                                                ? 'rgba(176, 102, 255, 0.15)'
+                                                : 'rgba(18, 8, 32, 0.7)',
                                             border: settings.disableEmotionImages
-                                                ? '2px solid rgba(0, 255, 136, 0.5)'
+                                                ? '2px solid rgba(176, 102, 255, 0.5)'
                                                 : '2px solid rgba(255, 255, 255, 0.1)',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
@@ -624,8 +650,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 width: '20px',
                                                 height: '20px',
                                                 borderRadius: '4px',
-                                                background: settings.disableEmotionImages ? '#00ff88' : 'rgba(255, 255, 255, 0.1)',
-                                                border: '2px solid ' + (settings.disableEmotionImages ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'),
+                                                background: settings.disableEmotionImages ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.disableEmotionImages ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -638,7 +664,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     style={{
-                                                        color: '#002210',
+                                                        color: '#1a0533',
                                                         fontSize: '14px',
                                                         fontWeight: 'bold',
                                                     }}
@@ -649,7 +675,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </div>
                                         <span
                                             style={{
-                                                color: settings.disableEmotionImages ? '#00ff88' : 'rgba(255, 255, 255, 0.7)',
+                                                color: settings.disableEmotionImages ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
                                                 fontSize: '13px',
                                                 fontWeight: settings.disableEmotionImages ? 'bold' : 'normal',
                                             }}
@@ -666,10 +692,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         style={{
                                             padding: '12px',
                                             background: settings.disableDecorImages
-                                                ? 'rgba(0, 255, 136, 0.15)'
-                                                : 'rgba(0, 20, 40, 0.7)',
+                                                ? 'rgba(176, 102, 255, 0.15)'
+                                                : 'rgba(18, 8, 32, 0.7)',
                                             border: settings.disableDecorImages
-                                                ? '2px solid rgba(0, 255, 136, 0.5)'
+                                                ? '2px solid rgba(176, 102, 255, 0.5)'
                                                 : '2px solid rgba(255, 255, 255, 0.1)',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
@@ -684,8 +710,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 width: '20px',
                                                 height: '20px',
                                                 borderRadius: '4px',
-                                                background: settings.disableDecorImages ? '#00ff88' : 'rgba(255, 255, 255, 0.1)',
-                                                border: '2px solid ' + (settings.disableDecorImages ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'),
+                                                background: settings.disableDecorImages ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.disableDecorImages ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -698,7 +724,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     style={{
-                                                        color: '#002210',
+                                                        color: '#1a0533',
                                                         fontSize: '14px',
                                                         fontWeight: 'bold',
                                                     }}
@@ -709,7 +735,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </div>
                                         <span
                                             style={{
-                                                color: settings.disableDecorImages ? '#00ff88' : 'rgba(255, 255, 255, 0.7)',
+                                                color: settings.disableDecorImages ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
                                                 fontSize: '13px',
                                                 fontWeight: settings.disableDecorImages ? 'bold' : 'normal',
                                             }}
@@ -726,10 +752,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         style={{
                                             padding: '12px',
                                             background: settings.disableImpersonation
-                                                ? 'rgba(0, 255, 136, 0.15)'
-                                                : 'rgba(0, 20, 40, 0.7)',
+                                                ? 'rgba(176, 102, 255, 0.15)'
+                                                : 'rgba(18, 8, 32, 0.7)',
                                             border: settings.disableImpersonation
-                                                ? '2px solid rgba(0, 255, 136, 0.5)'
+                                                ? '2px solid rgba(176, 102, 255, 0.5)'
                                                 : '2px solid rgba(255, 255, 255, 0.1)',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
@@ -744,8 +770,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 width: '20px',
                                                 height: '20px',
                                                 borderRadius: '4px',
-                                                background: settings.disableImpersonation ? '#00ff88' : 'rgba(255, 255, 255, 0.1)',
-                                                border: '2px solid ' + (settings.disableImpersonation ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'),
+                                                background: settings.disableImpersonation ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.disableImpersonation ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -758,7 +784,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     style={{
-                                                        color: '#002210',
+                                                        color: '#1a0533',
                                                         fontSize: '14px',
                                                         fontWeight: 'bold',
                                                     }}
@@ -769,12 +795,100 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </div>
                                         <span
                                             style={{
-                                                color: settings.disableImpersonation ? '#00ff88' : 'rgba(255, 255, 255, 0.7)',
+                                                color: settings.disableImpersonation ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
                                                 fontSize: '13px',
                                                 fontWeight: settings.disableImpersonation ? 'bold' : 'normal',
                                             }}
                                         >
                                             Disable Impersonation
+                                        </span>
+                                    </motion.div>
+
+                                    {/* Solid Spirit Toggle */}
+                                    <motion.div
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        onClick={() => setSettings(prev => ({ ...prev, solidSpirit: !prev.solidSpirit }))}
+                                        style={{
+                                            padding: '12px',
+                                            background: settings.solidSpirit
+                                                ? 'rgba(176, 102, 255, 0.15)'
+                                                : 'rgba(18, 8, 32, 0.7)',
+                                            border: settings.solidSpirit
+                                                ? '2px solid rgba(176, 102, 255, 0.5)'
+                                                : '2px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '4px',
+                                                background: settings.solidSpirit ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                border: '2px solid ' + (settings.solidSpirit ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0,
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {settings.solidSpirit && (
+                                                <motion.span
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    style={{
+                                                        color: '#1a0533',
+                                                        fontSize: '14px',
+                                                        fontWeight: 'bold',
+                                                    }}
+                                                >
+                                                    ✓
+                                                </motion.span>
+                                            )}
+                                        </div>
+                                        <span
+                                            style={{
+                                                color: settings.solidSpirit ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
+                                                fontSize: '13px',
+                                                fontWeight: settings.solidSpirit ? 'bold' : 'normal',
+                                            }}
+                                        >
+                                            Solid Spirit (No Ghostly Effect)
+                                        </span>
+                                    </motion.div>
+
+                                    {/* Fast Start */}
+                                    <motion.div
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        onClick={handleFastStart}
+                                        style={{
+                                            padding: '12px',
+                                            background: 'rgba(18, 8, 32, 0.7)',
+                                            border: '2px solid rgba(176, 102, 255, 0.5)',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                color: '#b066ff',
+                                                fontSize: '13px',
+                                                fontWeight: 'bold',
+                                            }}
+                                        >
+                                            ⚡ Fast Start: Add Great Hall, Parlor & Arcane Focus (Free)
                                         </span>
                                     </motion.div>
 
@@ -792,7 +906,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         <div
                                             style={{
                                                 padding: '12px',
-                                                background: 'rgba(0, 20, 40, 0.7)',
+                                                background: 'rgba(18, 8, 32, 0.7)',
                                                 border: '2px solid rgba(255, 255, 255, 0.1)',
                                                 borderRadius: '8px',
                                                 display: 'flex',
@@ -813,7 +927,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 }))}
                                                 style={{
                                                     width: '100%',
-                                                    accentColor: '#00ff88',
+                                                    accentColor: '#b066ff',
                                                     cursor: 'pointer',
                                                 }}
                                             />
@@ -828,7 +942,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 }}
                                             >
                                                 <span>Faster</span>
-                                                <span style={{ color: '#00ff88', fontWeight: 'bold' }}>
+                                                <span style={{ color: '#b066ff', fontWeight: 'bold' }}>
                                                     {settings.typeOutSpeed} ms/char
                                                 </span>
                                                 <span>Slower</span>
@@ -852,10 +966,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             onChange={(e) => setSettings(prev => ({ ...prev, characterArtStyle: e.target.value as ArtStyle }))}
                                             style={{
                                                 padding: '10px',
-                                                background: 'rgba(0, 20, 40, 0.7)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                background: 'rgba(18, 8, 32, 0.7)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '8px',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '13px',
                                                 fontWeight: 'bold',
                                                 cursor: 'pointer',
@@ -863,22 +977,22 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                 transition: 'all 0.2s ease',
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.5)';
-                                                e.currentTarget.style.background = 'rgba(0, 255, 136, 0.1)';
+                                                e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.5)';
+                                                e.currentTarget.style.background = 'rgba(176, 102, 255, 0.1)';
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.currentTarget.style.borderColor = 'rgba(0, 255, 136, 0.3)';
-                                                e.currentTarget.style.background = 'rgba(0, 20, 40, 0.7)';
+                                                e.currentTarget.style.borderColor = 'rgba(176, 102, 255, 0.3)';
+                                                e.currentTarget.style.background = 'rgba(18, 8, 32, 0.7)';
                                             }}
                                         >
-                                            <option value="original" style={{ background: '#001520', color: '#00ff88' }}>Original</option>
-                                            <option value="anime" style={{ background: '#001520', color: '#00ff88' }}>Anime</option>
-                                            <option value="chibi" style={{ background: '#001520', color: '#00ff88' }}>Chibi</option>
-                                            <option value="comic" style={{ background: '#001520', color: '#00ff88' }}>Comic</option>
-                                            <option value="pixel art" style={{ background: '#001520', color: '#00ff88' }}>Pixel Art</option>
-                                            <option value="hyper-realistic" style={{ background: '#001520', color: '#00ff88' }}>Hyper-Realistic</option>
-                                            <option value="realistic" style={{ background: '#001520', color: '#00ff88' }}>Realistic</option>
-                                            <option value="specific artist" style={{ background: '#001520', color: '#00ff88' }}>Specific Artist</option>
+                                            <option value="original" style={{ background: '#001520', color: '#b066ff' }}>Original</option>
+                                            <option value="anime" style={{ background: '#001520', color: '#b066ff' }}>Anime</option>
+                                            <option value="chibi" style={{ background: '#001520', color: '#b066ff' }}>Chibi</option>
+                                            <option value="comic" style={{ background: '#001520', color: '#b066ff' }}>Comic</option>
+                                            <option value="pixel art" style={{ background: '#001520', color: '#b066ff' }}>Pixel Art</option>
+                                            <option value="hyper-realistic" style={{ background: '#001520', color: '#b066ff' }}>Hyper-Realistic</option>
+                                            <option value="realistic" style={{ background: '#001520', color: '#b066ff' }}>Realistic</option>
+                                            <option value="specific artist" style={{ background: '#001520', color: '#b066ff' }}>Specific Artist</option>
                                         </select>
                                     </div>
 
@@ -958,8 +1072,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                             left: 0,
                                                             right: 0,
                                                             marginTop: '4px',
-                                                            background: 'rgba(0, 20, 40, 0.95)',
-                                                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                            background: 'rgba(18, 8, 32, 0.95)',
+                                                            border: '2px solid rgba(176, 102, 255, 0.3)',
                                                             borderRadius: '8px',
                                                             overflow: 'hidden',
                                                             zIndex: 1000,
@@ -982,12 +1096,12 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                                     fontSize: '13px',
                                                                     transition: 'all 0.15s ease',
                                                                     borderBottom: index < languageSuggestions.length - 1 
-                                                                        ? '1px solid rgba(0, 255, 136, 0.1)' 
+                                                                        ? '1px solid rgba(176, 102, 255, 0.1)' 
                                                                         : 'none',
                                                                 }}
                                                                 onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.background = 'rgba(0, 255, 136, 0.15)';
-                                                                    e.currentTarget.style.color = '#00ff88';
+                                                                    e.currentTarget.style.background = 'rgba(176, 102, 255, 0.15)';
+                                                                    e.currentTarget.style.color = '#b066ff';
                                                                 }}
                                                                 onMouseLeave={(e) => {
                                                                     e.currentTarget.style.background = 'transparent';
@@ -1022,10 +1136,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             onChange={(e) => handleTonePresetChange(e.target.value)}
                                             style={{
                                                 padding: '10px',
-                                                background: 'rgba(0, 20, 40, 0.7)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                background: 'rgba(18, 8, 32, 0.7)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '8px',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '13px',
                                                 fontWeight: 'bold',
                                                 cursor: 'pointer',
@@ -1034,11 +1148,11 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             }}
                                         >
                                             {toneEntries.map(([key]) => (
-                                                <option key={key} value={key} style={{ background: '#001520', color: '#00ff88' }}>
+                                                <option key={key} value={key} style={{ background: '#001520', color: '#b066ff' }}>
                                                     {key}
                                                 </option>
                                             ))}
-                                            <option value={CUSTOM_TONE_KEY} style={{ background: '#001520', color: '#00ff88' }}>
+                                            <option value={CUSTOM_TONE_KEY} style={{ background: '#001520', color: '#b066ff' }}>
                                                 {CUSTOM_TONE_KEY}
                                             </option>
                                         </select>
@@ -1065,7 +1179,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 <label 
                                     style={{
                                         display: 'block',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                         marginBottom: '12px',
@@ -1089,10 +1203,10 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             style={{
                                                 padding: '12px',
                                                 background: value 
-                                                    ? 'rgba(0, 255, 136, 0.15)' 
-                                                    : 'rgba(0, 20, 40, 0.7)',
+                                                    ? 'rgba(176, 102, 255, 0.15)' 
+                                                    : 'rgba(18, 8, 32, 0.7)',
                                                 border: value
-                                                    ? '2px solid rgba(0, 255, 136, 0.5)'
+                                                    ? '2px solid rgba(176, 102, 255, 0.5)'
                                                     : '2px solid rgba(255, 255, 255, 0.1)',
                                                 borderRadius: '8px',
                                                 cursor: 'pointer',
@@ -1107,8 +1221,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                     width: '20px',
                                                     height: '20px',
                                                     borderRadius: '4px',
-                                                    background: value ? '#00ff88' : 'rgba(255, 255, 255, 0.1)',
-                                                    border: '2px solid ' + (value ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'),
+                                                    background: value ? '#b066ff' : 'rgba(255, 255, 255, 0.1)',
+                                                    border: '2px solid ' + (value ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
@@ -1121,7 +1235,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                                         initial={{ scale: 0 }}
                                                         animate={{ scale: 1 }}
                                                         style={{
-                                                            color: '#002210',
+                                                            color: '#1a0533',
                                                             fontSize: '14px',
                                                             fontWeight: 'bold',
                                                         }}
@@ -1132,7 +1246,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             </div>
                                             <span
                                                 style={{
-                                                    color: value ? '#00ff88' : 'rgba(255, 255, 255, 0.7)',
+                                                    color: value ? '#b066ff' : 'rgba(255, 255, 255, 0.7)',
                                                     fontSize: '13px',
                                                     fontWeight: value ? 'bold' : 'normal',
                                                 }}
@@ -1150,7 +1264,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             whileTap={{ scale: 0.98 }}
                                             style={{
                                                 padding: '8px',
-                                                background: 'rgba(0, 20, 40, 0.7)',
+                                                background: 'rgba(18, 8, 32, 0.7)',
                                                 border: '2px solid rgba(255, 255, 255, 0.1)',
                                                 borderRadius: '8px',
                                                 display: 'flex',
@@ -1210,7 +1324,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         whileTap={{ scale: 0.98 }}
                                         style={{
                                             padding: '8px',
-                                            background: 'rgba(0, 20, 40, 0.7)',
+                                            background: 'rgba(18, 8, 32, 0.7)',
                                             border: '2px dashed rgba(255, 255, 255, 0.08)',
                                             borderRadius: '8px',
                                             display: 'flex',

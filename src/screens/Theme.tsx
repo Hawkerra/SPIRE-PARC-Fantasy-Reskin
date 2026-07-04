@@ -9,18 +9,18 @@ import { warning } from 'framer-motion';
 // Shared palette for all screen classes.
 export const colors = {
   primary: {
-    main: '#00ff88',
-    light: '#00e67a',
-    dark: '#00cc66',
-    darker: '#00aa55',
-    pale: '#bfffd0',
-    veryPale: '#e9fff7',
-    contrastText: '#002210',
+    main: '#b066ff',
+    light: '#a259f7',
+    dark: '#9440e8',
+    darker: '#7a2ecc',
+    pale: '#e3ccff',
+    veryPale: '#f5edff',
+    contrastText: '#1a0533',
   },
   secondary: {
-    main: '#87ceeb',
-    light: '#b8e6ff',
-    dark: '#5ba8cf',
+    main: '#e8c368',
+    light: '#f5dc9a',
+    dark: '#c9a04a',
   },
   accent: {
     warning: '#ffaa00',
@@ -28,16 +28,16 @@ export const colors = {
     neutral: '#d0d0d0',
   },
   background: {
-    default: '#001122',
-    paper: 'rgba(10, 20, 30, 0.95)',
-    overlay: 'rgba(0, 20, 40, 0.9)',
+    default: '#140a20',
+    paper: 'rgba(20, 12, 30, 0.95)',
+    overlay: 'rgba(18, 8, 32, 0.9)',
     glass: 'rgba(0, 0, 0, 0.8)',
     glassDarker: 'rgba(0, 0, 0, 0.85)',
   },
   text: {
-    primary: '#e8fff0',
-    secondary: '#dfffe6',
-    pale: '#eafff2',
+    primary: '#f3eaff',
+    secondary: '#ecdfff',
+    pale: '#f4ecff',
     muted: 'rgba(255, 255, 255, 0.9)',
     veryMuted: 'rgba(255, 255, 255, 0.6)',
     warning: '#ffb347',
@@ -67,7 +67,7 @@ export const theme = createTheme({
       secondary: colors.text.secondary,
       disabled: colors.text.veryMuted,
     },
-    divider: 'rgba(0, 255, 136, 0.12)',
+    divider: 'rgba(176, 102, 255, 0.12)',
     error: {
       main: colors.accent.danger,
     },
@@ -84,7 +84,7 @@ export const theme = createTheme({
       fontWeight: 900,
       letterSpacing: '0.05em',
       color: colors.primary.main,
-      textShadow: '0 0 20px rgba(0, 255, 136, 0.5)',
+      textShadow: '0 0 20px rgba(176, 102, 255, 0.5)',
     },
     h2: {
       fontWeight: 800,
@@ -99,7 +99,7 @@ export const theme = createTheme({
     h4: {
       fontWeight: 700,
       color: colors.primary.main,
-      textShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+      textShadow: '0 0 10px rgba(176, 102, 255, 0.5)',
     },
     h5: {
       fontWeight: 700,
@@ -159,7 +159,7 @@ export const theme = createTheme({
           margin: 0,
           padding: 0,
           color: colors.text.primary,
-          background: 'linear-gradient(45deg, #001122 0%, #002244 100%)',
+          background: 'linear-gradient(45deg, #140a20 0%, #002244 100%)',
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
         },
@@ -173,7 +173,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: colors.background.paper,
-          border: '2px solid rgba(0, 255, 136, 0.12)',
+          border: '2px solid rgba(176, 102, 255, 0.12)',
           color: colors.text.primary,
           backdropFilter: 'blur(8px)',
         },
@@ -182,7 +182,7 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.08) 100%)',
+          background: 'linear-gradient(135deg, rgba(176, 102, 255, 0.15) 0%, rgba(0, 200, 100, 0.08) 100%)',
           border: `2px solid ${colors.primary.main}`,
           borderRadius: 16,
           color: colors.text.primary,
@@ -200,13 +200,13 @@ export const theme = createTheme({
           transition: 'all 0.2s ease',
           '&.Mui-disabled': {
             background: 'rgba(255, 255, 255, 0.06)',
-            color: 'rgba(0, 255, 136, 0.4)',
+            color: 'rgba(176, 102, 255, 0.4)',
           },
         },
         containedPrimary: {
           background: colors.primary.main,
           color: colors.primary.contrastText,
-          border: '2px solid rgba(0, 255, 136, 0.15)',
+          border: '2px solid rgba(176, 102, 255, 0.15)',
           '&:hover': {
             background: colors.primary.light,
           },
@@ -215,7 +215,7 @@ export const theme = createTheme({
           border: `2px solid ${colors.primary.main}`,
           color: colors.primary.main,
           '&:hover': {
-            background: 'rgba(0, 255, 136, 0.2)',
+            background: 'rgba(176, 102, 255, 0.2)',
             borderColor: colors.primary.light,
           },
         },
@@ -233,7 +233,7 @@ export const theme = createTheme({
             borderColor: 'rgba(255, 255, 255, 0.12)',
           },
           '&.Mui-focused fieldset': {
-            borderColor: 'rgba(0, 255, 136, 0.3)',
+            borderColor: 'rgba(176, 102, 255, 0.3)',
           },
           '&.Mui-disabled fieldset': {
             borderColor: 'rgba(255, 255, 255, 0.04)',
@@ -251,7 +251,7 @@ export const theme = createTheme({
       styleOverrides: {
         indicator: {
           backgroundColor: colors.primary.main,
-          boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+          boxShadow: '0 0 10px rgba(176, 102, 255, 0.5)',
         },
       },
     },
@@ -261,7 +261,7 @@ export const theme = createTheme({
           color: 'rgba(255, 255, 255, 0.8)',
           '&.Mui-selected': {
             color: colors.primary.main,
-            textShadow: '0 0 8px rgba(0, 255, 136, 0.4)',
+            textShadow: '0 0 8px rgba(176, 102, 255, 0.4)',
           },
         },
       },
@@ -286,7 +286,7 @@ export const theme = createTheme({
         },
         bar: {
           backgroundColor: colors.primary.main,
-          boxShadow: '0 0 8px rgba(0, 255, 136, 0.5)',
+          boxShadow: '0 0 8px rgba(176, 102, 255, 0.5)',
         },
       },
     },

@@ -53,8 +53,8 @@ export const FactionCard: FC<FactionCardProps> = ({
     // Default hover behavior
     const defaultWhileHover = {
         x: 10,
-        backgroundColor: 'rgba(0, 255, 136, 0.15)',
-        borderColor: 'rgba(0, 255, 136, 0.5)',
+        backgroundColor: 'rgba(176, 102, 255, 0.15)',
+        borderColor: 'rgba(176, 102, 255, 0.5)',
     };
 
     return (
@@ -68,7 +68,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                 opacity: (hasCutTies || isUnmet) ? 0.5 : 1
             }}
             style={{
-                border: `3px solid ${hasCutTies ? '#ff6b6b' : (isUnmet ? '#888888' : '#00ff88')}`,
+                border: `3px solid ${hasCutTies ? '#ff6b6b' : (isUnmet ? '#888888' : '#b066ff')}`,
                 borderRadius: '8px',
                 background: hasCutTies ? 'rgba(255, 107, 107, 0.1)' : (isUnmet ? 'rgba(128, 128, 128, 0.1)' : 'rgba(0, 10, 20, 0.5)'),
                 cursor: 'pointer',
@@ -124,7 +124,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                         display: 'flex', 
                         justifyContent: 'center',
                         background: 'rgba(0, 0, 0, 0.7)',
-                        borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                        borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                         flexShrink: 0
                     }}>
                         <Nameplate 
@@ -152,7 +152,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                                 flex: '0 0 50%',
                                 padding: '12px',
                                 background: 'rgba(0, 0, 0, 0.8)',
-                                borderRight: '2px solid rgba(0, 255, 136, 0.3)',
+                                borderRight: '2px solid rgba(176, 102, 255, 0.3)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '12px',
@@ -161,7 +161,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                         >
                             {/* Description */}
                             <div style={{
-                                color: '#00ff88',
+                                color: '#b066ff',
                                 fontSize: '0.8rem',
                                 lineHeight: '1.4',
                                 fontWeight: 600,
@@ -181,7 +181,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                                     <span
                                         style={{
                                             fontSize: '0.85rem',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontWeight: 700,
                                             textShadow: '0 1px 0 rgba(0,0,0,0.6)',
                                         }}
@@ -214,7 +214,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                                     {Array.from({ length: 10 }, (_, i) => {
                                         const isLit = i < reputation;
                                         // Get color based on grade
-                                        let pipColor = '#00ff88';
+                                        let pipColor = '#b066ff';
                                         if (grade.startsWith('F')) pipColor = '#ff6b6b';
                                         else if (grade.startsWith('D')) pipColor = '#ffb47a';
                                         else if (grade.startsWith('C')) pipColor = '#d0d0d0';
@@ -296,7 +296,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                             justifyContent: 'center', 
                             padding: '8px',
                             background: 'rgba(0, 0, 0, 0.7)',
-                            borderTop: '2px solid rgba(0, 255, 136, 0.3)',
+                            borderTop: '2px solid rgba(176, 102, 255, 0.3)',
                             flexShrink: 0 
                         }}>
                             <AuthorLink actor={representative} />
@@ -417,7 +417,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                             padding: '10px',
                             background: 'rgba(0, 0, 0, 0.75)',
                             borderRadius: '6px',
-                            border: '1px solid rgba(0, 255, 136, 0.3)',
+                            border: '1px solid rgba(176, 102, 255, 0.3)',
                             zIndex: 2,
                         }}
                     >
@@ -430,7 +430,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                             <span
                                 style={{
                                     fontSize: '0.85rem',
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     fontWeight: 700,
                                     textShadow: '0 1px 0 rgba(0,0,0,0.6)',
                                 }}
@@ -463,7 +463,7 @@ export const FactionCard: FC<FactionCardProps> = ({
                             {Array.from({ length: 10 }, (_, i) => {
                                 const isLit = i < reputation;
                                 // Get color based on grade
-                                let pipColor = '#00ff88';
+                                let pipColor = '#b066ff';
                                 if (grade.startsWith('F')) pipColor = '#ff6b6b';
                                 else if (grade.startsWith('D')) pipColor = '#ffb47a';
                                 else if (grade.startsWith('C')) pipColor = '#d0d0d0';

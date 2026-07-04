@@ -619,7 +619,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         });
 
         // Add special locations
-        options.push({ value: 'cryo', label: 'Cryo' });
+        options.push({ value: 'cryo', label: 'Home' });
         options.push({ value: 'dead', label: 'Dead' });
 
         return options;
@@ -686,7 +686,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             marginBottom: '20px',
                             position: 'sticky',
                             top: 0,
-                            background: 'rgba(0, 20, 40, 0.95)',
+                            background: 'rgba(18, 8, 32, 0.95)',
                             backdropFilter: 'blur(8px)',
                             padding: '10px 0',
                             zIndex: 10,
@@ -714,7 +714,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     style={{
                                         background: 'transparent',
                                         border: 'none',
-                                        color: 'rgba(0, 255, 136, 0.7)',
+                                        color: 'rgba(176, 102, 255, 0.7)',
                                         cursor: 'pointer',
                                         fontSize: '24px',
                                         padding: '5px',
@@ -734,11 +734,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Basic Info Section */}
                             <section>
                                 <h2 style={{ 
-                                    color: '#00ff88', 
+                                    color: '#b066ff', 
                                     fontSize: '18px', 
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px'
                                 }}>
                                     Basic Information
@@ -750,7 +750,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -771,7 +771,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -786,8 +786,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 width: '100%',
                                                 padding: '12px',
                                                 fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '5px',
                                                 color: '#e0f0ff',
                                                 fontFamily: 'inherit',
@@ -808,7 +808,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -825,8 +825,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 minHeight: '100px',
                                                 padding: '12px',
                                                 fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '5px',
                                                 color: '#e0f0ff',
                                                 fontFamily: 'inherit',
@@ -840,7 +840,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -857,8 +857,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 minHeight: '80px',
                                                 padding: '12px',
                                                 fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '5px',
                                                 color: '#e0f0ff',
                                                 fontFamily: 'inherit',
@@ -872,7 +872,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -889,8 +889,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 minHeight: '60px',
                                                 padding: '12px',
                                                 fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '5px',
                                                 color: '#e0f0ff',
                                                 fontFamily: 'inherit',
@@ -904,11 +904,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Theme & Voice Section */}
                             <section>
                                 <h2 style={{ 
-                                    color: '#00ff88', 
+                                    color: '#b066ff', 
                                     fontSize: '18px', 
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px'
                                 }}>
                                     Theme & Voice
@@ -920,7 +920,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -936,8 +936,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     flex: 1,
                                                     padding: '12px',
                                                     fontSize: '14px',
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     color: '#e0f0ff',
                                                     fontFamily: 'inherit',
@@ -963,7 +963,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 }}
                                             >
                                                 {isGeneratingDemoSpeech ? (
-                                                    <CircularProgress size={14} style={{ color: '#00ff88' }} />
+                                                    <CircularProgress size={14} style={{ color: '#b066ff' }} />
                                                 ) : (
                                                     <PlayArrow style={{ fontSize: '18px' }} />
                                                 )}
@@ -976,7 +976,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -996,7 +996,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     width: '50px',
                                                     height: '38px',
                                                     backgroundColor: editedActor.themeColor,
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                 }}
                                             />
@@ -1008,7 +1008,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label 
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -1029,11 +1029,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Stats Section */}
                             <section>
                                 <h2 style={{ 
-                                    color: '#00ff88', 
+                                    color: '#b066ff', 
                                     fontSize: '18px', 
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px'
                                 }}>
                                     Character Stats
@@ -1050,8 +1050,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             <div 
                                                 key={stat}
                                                 style={{
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     padding: '12px',
                                                 }}
@@ -1064,10 +1064,10 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     marginBottom: '8px'
                                                 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <StatIcon style={{ color: '#00ff88', fontSize: '20px' }} />
+                                                        <StatIcon style={{ color: '#b066ff', fontSize: '20px' }} />
                                                         <span
                                                             style={{
-                                                                color: '#00ff88',
+                                                                color: '#b066ff',
                                                                 fontSize: '14px',
                                                                 fontWeight: 'bold',
                                                                 textTransform: 'capitalize',
@@ -1080,7 +1080,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                         style={{
                                                             fontSize: '24px',
                                                             fontWeight: 'bold',
-                                                            color: '#00ff88',
+                                                            color: '#b066ff',
                                                         }}
                                                     >
                                                         {scoreToGrade(actor.stats[stat])}
@@ -1095,11 +1095,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Outfit Section */}
                             <section>
                                 <h2 style={{
-                                    color: '#00ff88',
+                                    color: '#b066ff',
                                     fontSize: '18px',
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px'
                                 }}>
                                     Outfit
@@ -1111,7 +1111,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -1126,8 +1126,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     width: '100%',
                                                     padding: '12px',
                                                     fontSize: '14px',
-                                                    backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                    border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
                                                     borderRadius: '5px',
                                                     color: '#e0f0ff',
                                                     fontFamily: 'inherit',
@@ -1146,7 +1146,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             <label
                                                 style={{
                                                     display: 'block',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '14px',
                                                     fontWeight: 'bold',
                                                     marginBottom: '8px',
@@ -1180,7 +1180,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         <label
                                             style={{
                                                 display: 'block',
-                                                color: '#00ff88',
+                                                color: '#b066ff',
                                                 fontSize: '14px',
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
@@ -1197,8 +1197,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 minHeight: '100px',
                                                 padding: '12px',
                                                 fontSize: '14px',
-                                                backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                border: '2px solid rgba(0, 255, 136, 0.3)',
+                                                backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                border: '2px solid rgba(176, 102, 255, 0.3)',
                                                 borderRadius: '5px',
                                                 color: '#e0f0ff',
                                                 fontFamily: 'inherit',
@@ -1212,11 +1212,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Emotion Images Section */}
                             <section>
                                 <h2 style={{ 
-                                    color: '#00ff88', 
+                                    color: '#b066ff', 
                                     fontSize: '18px', 
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1248,8 +1248,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             style={{
                                                 width: '120px',
                                                 height: '120px',
-                                                backgroundColor: getSelectedOutfitImageUrl('base') ? 'transparent' : 'rgba(0, 20, 40, 0.6)',
-                                                border: `2px solid ${getSelectedOutfitImageUrl('base') ? 'rgba(255, 136, 0, 0.5)' : 'rgba(0, 255, 136, 0.2)'}`,
+                                                backgroundColor: getSelectedOutfitImageUrl('base') ? 'transparent' : 'rgba(18, 8, 32, 0.6)',
+                                                border: `2px solid ${getSelectedOutfitImageUrl('base') ? 'rgba(255, 136, 0, 0.5)' : 'rgba(176, 102, 255, 0.2)'}`,
                                                 borderRadius: '8px',
                                                 backgroundImage: getSelectedOutfitImageUrl('base') ? `url(${getSelectedOutfitImageUrl('base')})` : 'none',
                                                 backgroundSize: 'cover',
@@ -1263,7 +1263,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         >
                                             {!getSelectedOutfitImageUrl('base') && (
                                                 <div style={{
-                                                    color: 'rgba(0, 255, 136, 0.3)',
+                                                    color: 'rgba(176, 102, 255, 0.3)',
                                                     fontSize: '12px',
                                                     textAlign: 'center',
                                                     padding: '10px'
@@ -1282,7 +1282,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    color: '#00ff88',
+                                                    color: '#b066ff',
                                                     fontSize: '12px',
                                                 }}>
                                                     Generating...
@@ -1322,8 +1322,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                     style={{
                                                         width: '120px',
                                                         height: '120px',
-                                                        backgroundColor: hasImage ? 'transparent' : 'rgba(0, 20, 40, 0.6)',
-                                                        border: `2px solid ${hasImage ? 'rgba(0, 255, 136, 0.5)' : 'rgba(0, 255, 136, 0.2)'}`,
+                                                        backgroundColor: hasImage ? 'transparent' : 'rgba(18, 8, 32, 0.6)',
+                                                        border: `2px solid ${hasImage ? 'rgba(176, 102, 255, 0.5)' : 'rgba(176, 102, 255, 0.2)'}`,
                                                         borderRadius: '8px',
                                                         backgroundImage: hasImage ? `url(${imageUrl})` : 'none',
                                                         backgroundSize: 'cover',
@@ -1337,7 +1337,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 >
                                                     {!hasImage && (
                                                         <div style={{
-                                                            color: 'rgba(0, 255, 136, 0.3)',
+                                                            color: 'rgba(176, 102, 255, 0.3)',
                                                             fontSize: '12px',
                                                             textAlign: 'center',
                                                             padding: '10px'
@@ -1356,7 +1356,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
-                                                            color: '#00ff88',
+                                                            color: '#b066ff',
                                                             fontSize: '12px',
                                                         }}>
                                                             Generating...
@@ -1366,7 +1366,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                 <Chip style={{
                                                     fontSize: '11px',
                                                     textTransform: 'capitalize',
-                                                    backgroundColor: hasImage ? 'rgba(0, 255, 136, 0.2)' : 'rgba(0, 20, 40, 0.6)',
+                                                    backgroundColor: hasImage ? 'rgba(176, 102, 255, 0.2)' : 'rgba(18, 8, 32, 0.6)',
                                                 }}>
                                                     {emotion}
                                                 </Chip>
@@ -1380,11 +1380,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {decorImages.length > 0 && (
                                 <section>
                                     <h2 style={{ 
-                                        color: '#00ff88', 
+                                        color: '#b066ff', 
                                         fontSize: '18px', 
                                         fontWeight: 'bold',
                                         marginBottom: '15px',
-                                        borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                        borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                         paddingBottom: '5px',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -1419,8 +1419,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                         style={{
                                                             width: '200px',
                                                             height: '150px',
-                                                            backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                                            border: '2px solid rgba(0, 255, 136, 0.5)',
+                                                            backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                            border: '2px solid rgba(176, 102, 255, 0.5)',
                                                             borderRadius: '8px',
                                                             backgroundImage: `url(${imageUrl})`,
                                                             backgroundSize: 'cover',
@@ -1440,7 +1440,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                color: '#00ff88',
+                                                                color: '#b066ff',
                                                                 fontSize: '12px',
                                                             }}>
                                                                 Generating...
@@ -1463,11 +1463,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             {/* Read-only Info Section */}
                             <section>
                                 <h2 style={{ 
-                                    color: '#00ff88', 
+                                    color: '#b066ff', 
                                     fontSize: '18px', 
                                     fontWeight: 'bold',
                                     marginBottom: '15px',
-                                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                                     paddingBottom: '5px'
                                 }}>
                                     Additional Information
@@ -1477,13 +1477,13 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     display: 'grid', 
                                     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
                                     gap: '15px',
-                                    backgroundColor: 'rgba(0, 20, 40, 0.4)',
+                                    backgroundColor: 'rgba(18, 8, 32, 0.4)',
                                     padding: '15px',
                                     borderRadius: '5px',
-                                    border: '1px solid rgba(0, 255, 136, 0.2)',
+                                    border: '1px solid rgba(176, 102, 255, 0.2)',
                                 }}>
                                     <div>
-                                        <div style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                        <div style={{ color: 'rgba(176, 102, 255, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
                                             Actor ID
                                         </div>
                                         <div style={{ color: '#e0f0ff', fontSize: '14px', fontFamily: 'monospace' }}>
@@ -1491,7 +1491,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         </div>
                                     </div>
                                     <div>
-                                        <div style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                        <div style={{ color: 'rgba(176, 102, 255, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
                                             Participations
                                         </div>
                                         <div style={{ color: '#e0f0ff', fontSize: '14px' }}>
@@ -1499,7 +1499,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         </div>
                                     </div>
                                     <div>
-                                        <div style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                        <div style={{ color: 'rgba(176, 102, 255, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
                                             Origin
                                         </div>
                                         <div style={{ color: '#e0f0ff', fontSize: '14px', textTransform: 'capitalize' }}>
@@ -1508,7 +1508,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     </div>
                                     {actor.fullPath && (
                                         <div style={{ gridColumn: '1 / -1' }}>
-                                            <div style={{ color: 'rgba(0, 255, 136, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                            <div style={{ color: 'rgba(176, 102, 255, 0.7)', fontSize: '12px', marginBottom: '4px' }}>
                                                 Source Path
                                             </div>
                                             <div style={{ 
@@ -1536,9 +1536,9 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 slotProps={{
                     paper: {
                         style: {
-                            backgroundColor: 'rgba(0, 20, 40, 0.95)',
+                            backgroundColor: 'rgba(18, 8, 32, 0.95)',
                             backdropFilter: 'blur(10px)',
-                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                            border: '2px solid rgba(176, 102, 255, 0.3)',
                             borderRadius: '8px',
                             color: '#e0f0ff',
                             minWidth: '700px',
@@ -1548,10 +1548,10 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 }}
             >
                 <DialogTitle style={{
-                    color: '#00ff88',
+                    color: '#b066ff',
                     fontSize: '18px',
                     fontWeight: 'bold',
-                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                     paddingBottom: '10px',
                     textTransform: 'capitalize',
                 }}>
@@ -1603,8 +1603,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     width: '100%',
                                     minHeight: '360px',
                                     height: '100%',
-                                    backgroundColor: currentImageUrl ? 'transparent' : 'rgba(0, 20, 40, 0.6)',
-                                    border: `2px dashed ${isImageDropActive ? 'rgba(0, 255, 136, 0.8)' : 'rgba(0, 255, 136, 0.35)'}`,
+                                    backgroundColor: currentImageUrl ? 'transparent' : 'rgba(18, 8, 32, 0.6)',
+                                    border: `2px dashed ${isImageDropActive ? 'rgba(176, 102, 255, 0.8)' : 'rgba(176, 102, 255, 0.35)'}`,
                                     borderRadius: '8px',
                                     backgroundImage: currentImageUrl ? `url(${currentImageUrl})` : 'none',
                                     backgroundSize: 'contain',
@@ -1620,7 +1620,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                             >
                                 {!currentImageUrl && (
                                     <div style={{
-                                        color: 'rgba(0, 255, 136, 0.5)',
+                                        color: 'rgba(176, 102, 255, 0.5)',
                                         fontSize: '14px',
                                         textAlign: 'center',
                                         padding: '16px',
@@ -1639,11 +1639,11 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         left: 0,
                                         right: 0,
                                         bottom: 0,
-                                        backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                                        backgroundColor: 'rgba(176, 102, 255, 0.2)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '16px',
                                         fontWeight: 'bold',
                                     }}>
@@ -1662,7 +1662,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                     }}>
@@ -1681,7 +1681,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: '#00ff88',
+                                        color: '#b066ff',
                                         fontSize: '14px',
                                         fontWeight: 'bold',
                                     }}>
@@ -1704,7 +1704,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     <label
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '13px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
@@ -1719,8 +1719,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             width: '100%',
                                             padding: '12px',
                                             fontSize: '14px',
-                                            backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                                            backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                            border: '2px solid rgba(176, 102, 255, 0.3)',
                                             borderRadius: '5px',
                                             color: '#e0f0ff',
                                             fontFamily: 'inherit',
@@ -1740,7 +1740,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     <label
                                         style={{
                                             display: 'block',
-                                            color: '#00ff88',
+                                            color: '#b066ff',
                                             fontSize: '13px',
                                             fontWeight: 'bold',
                                             marginBottom: '8px',
@@ -1757,8 +1757,8 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             minHeight: '120px',
                                             padding: '12px',
                                             fontSize: '13px',
-                                            backgroundColor: 'rgba(0, 20, 40, 0.6)',
-                                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                                            backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                            border: '2px solid rgba(176, 102, 255, 0.3)',
                                             borderRadius: '5px',
                                             color: '#e0f0ff',
                                             fontFamily: 'inherit',
@@ -1802,9 +1802,9 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 slotProps={{
                     paper: {
                         style: {
-                            backgroundColor: 'rgba(0, 20, 40, 0.95)',
+                            backgroundColor: 'rgba(18, 8, 32, 0.95)',
                             backdropFilter: 'blur(10px)',
-                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                            border: '2px solid rgba(176, 102, 255, 0.3)',
                             borderRadius: '8px',
                             color: '#e0f0ff',
                             minWidth: '400px',
@@ -1813,10 +1813,10 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                 }}
             >
                 <DialogTitle style={{
-                    color: '#00ff88',
+                    color: '#b066ff',
                     fontSize: '18px',
                     fontWeight: 'bold',
-                    borderBottom: '2px solid rgba(0, 255, 136, 0.3)',
+                    borderBottom: '2px solid rgba(176, 102, 255, 0.3)',
                     paddingBottom: '10px',
                 }}>
                     {confirmDialog.title}

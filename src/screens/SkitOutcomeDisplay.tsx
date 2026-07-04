@@ -315,12 +315,12 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
     const resolveActorName = (actorId?: string): string => {
         if (!actorId) return 'Unknown';
         if (actorId === 'player') return save.player.name;
-        if (actorId === 'STATION') return 'PARC';
+        if (actorId === 'STATION') return 'The Spire';
         return save.actors[actorId]?.name || actorId;
     };
 
     const resolveFactionName = (factionId?: string): string => {
-        if (!factionId) return 'PARC';
+        if (!factionId) return 'The Spire';
         return save.factions[factionId]?.name || factionId;
     };
 
@@ -332,7 +332,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             case 'stationStat':
                 return (outcome.amount || 0) < 0
                     ? { border: 'rgba(255,80,80,0.32)', background: 'rgba(255,80,80,0.10)', color: '#ff7b7b' }
-                    : { border: 'rgba(0,255,136,0.32)', background: 'rgba(0,255,136,0.10)', color: '#00ff88' };
+                    : { border: 'rgba(176,102,255,0.32)', background: 'rgba(176,102,255,0.10)', color: '#b066ff' };
             case 'roleChange':
                 return { border: 'rgba(100,180,255,0.32)', background: 'rgba(100,180,255,0.10)', color: '#64b4ff' };
             case 'factionChange':
@@ -340,7 +340,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             case 'factionReputation':
                 return (outcome.amount || 0) < 0
                     ? { border: 'rgba(255,80,80,0.32)', background: 'rgba(255,80,80,0.10)', color: '#ff5050' }
-                    : { border: 'rgba(0,255,136,0.32)', background: 'rgba(0,255,136,0.10)', color: '#00ff88' };
+                    : { border: 'rgba(176,102,255,0.32)', background: 'rgba(176,102,255,0.10)', color: '#b066ff' };
             case 'newModule':
                 return { border: 'rgba(99,102,241,0.32)', background: 'linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(99,102,241,0.22) 50%, rgba(139,92,246,0.12) 100%)', color: '#a5b4fc' };
             case 'newOutfit':
@@ -409,7 +409,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             case 'actorStat':
                 return `${resolveActorName(outcome.actorId)}: ${String(outcome.stat || 'Stat')} ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
             case 'stationStat':
-                return `${String(outcome.stat || 'Station Stat')}: ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
+                return `${String(outcome.stat || 'Tower Stat')}: ${(outcome.amount || 0) >= 0 ? '+' : ''}${outcome.amount || 0}`;
             case 'roleChange':
                 return `${resolveActorName(outcome.actorId)} is now ${outcome.role && outcome.role.trim().length > 0 ? outcome.role : 'Patient'}`;
             case 'factionChange':
@@ -425,7 +425,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
             case 'newActor':
                 return outcome.actor?.name
                     ? `New character: ${outcome.actor.name}`
-                    : 'New character joined the PARC';
+                    : 'New character joined the Spire';
             case 'movement': {
                 const movement = getMovementPresentation(outcome);
                 if (movement) {
@@ -866,7 +866,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     style={{ marginBottom: '12px' }}
                                 >
                                     <OutcomePortraitBox
-                                        border="2px solid rgba(0,255,136,0.4)"
+                                        border="2px solid rgba(176,102,255,0.4)"
                                         baseImageUrl={movementPresentation?.backgroundImage || (group.actor ? group.actor.getEmotionImage(group.actor.getDefaultEmotion()) : undefined)}
                                         overlayImageUrl={movementPresentation ? group.actor?.getEmotionImage(group.actor.getDefaultEmotion()) : undefined}
                                         height="150px"
@@ -918,7 +918,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     style={{ marginBottom: '12px' }}
                                 >
                                     <OutcomePortraitBox
-                                        border="2px solid rgba(0,255,136,0.4)"
+                                        border="2px solid rgba(176,102,255,0.4)"
                                         baseImageUrl={PARC_BACKGROUND_IMAGE}
                                         height="150px"
                                         basePosition="50% 15%"
@@ -932,7 +932,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                                     transition={{ duration: 0.4, delay: 0.7 + actorOutcomeGroups.length * 0.2 }}
                                     style={{ marginBottom: '12px' }}
                                 >
-                                    <Nameplate name="PARC" size="large" layout="inline" />
+                                    <Nameplate name="The Spire" size="large" layout="inline" />
                                 </motion.div>
                                 {stationStatEntries.length > 0 && renderStatEntries(stationStatEntries, actorOutcomeGroups.length, true)}
                                 {parcModuleEntries.length > 0 && renderParcModuleEntries(parcModuleEntries)}
@@ -950,7 +950,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
                 {/* Faction groups — reputation changes and faction-bound new characters */}
                 {factionOutcomeGroups.map((group, groupIndex) => {
                     const accentColor = group.reputationOutcomes.length > 0
-                        ? ((group.reputationOutcomes[0].outcome.amount || 0) < 0 ? '#ff5050' : '#00ff88')
+                        ? ((group.reputationOutcomes[0].outcome.amount || 0) < 0 ? '#ff5050' : '#b066ff')
                         : '#ffc800';
                     const representative = group.faction?.representativeId
                         ? save.actors[group.faction.representativeId]

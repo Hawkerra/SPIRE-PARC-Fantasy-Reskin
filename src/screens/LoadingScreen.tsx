@@ -15,8 +15,8 @@ interface LoadingScreenProps {
 
 const LOADING_PHASES = [
     { message: "Generating content (this may take a while)", duration: 15000, progress: 20 },
-    { message: "Expanding StationAide details.", duration: 15000, progress: 50 },
-    { message: "Visualizing StationAide.", duration: 30000, progress: 75 },
+    { message: "Expanding Tower Spirit details.", duration: 15000, progress: 50 },
+    { message: "Visualizing Tower Spirit.", duration: 30000, progress: 75 },
     { message: "Wrapping up", duration: Infinity, progress: 90 },
 ];
 
@@ -78,7 +78,7 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                 justifyContent: 'center',
                 height: '100vh',
                 width: '100vw',
-                background: 'linear-gradient(45deg, #001122 0%, #002244 100%)',
+                background: 'linear-gradient(45deg, #140a20 0%, #002244 100%)',
             }}
         >
             <Box
@@ -93,14 +93,14 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                 <Typography
                     variant="h5"
                     sx={{
-                        color: '#00ff88',
+                        color: '#b066ff',
                         fontWeight: 700,
-                        textShadow: '0 0 20px rgba(0, 255, 136, 0.5)',
+                        textShadow: '0 0 20px rgba(176, 102, 255, 0.5)',
                         marginBottom: 4,
                         textAlign: 'center',
                     }}
                 >
-                    Initializing StationAide™
+                    Awakening the Tower Spirit
                 </Typography>
 
                 <Box sx={{ width: '100%', marginBottom: 2 }}>
@@ -110,10 +110,10 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                         sx={{
                             height: 10,
                             borderRadius: 5,
-                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            backgroundColor: 'rgba(176, 102, 255, 0.1)',
                             '& .MuiLinearProgress-bar': {
-                                backgroundColor: '#00ff88',
-                                boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)',
+                                backgroundColor: '#b066ff',
+                                boxShadow: '0 0 10px rgba(176, 102, 255, 0.5)',
                                 borderRadius: 5,
                             },
                         }}
@@ -123,7 +123,7 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                 <Typography
                     variant="body1"
                     sx={{
-                        color: '#00cc66',
+                        color: '#9440e8',
                         fontWeight: 500,
                         textAlign: 'center',
                         minHeight: '24px',

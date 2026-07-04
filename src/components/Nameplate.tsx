@@ -55,7 +55,7 @@ export const Nameplate: FC<NameplateProps> = ({
 
     const sizeStyles = getSizeStyles();
     const displayName = actor?.name || name || '';
-    const displayRole = role || 'Patient';
+    const displayRole = role || 'Resident';
 
     // Measure and scale font based on available container width
     useEffect(() => {
@@ -191,7 +191,7 @@ export const Nameplate: FC<NameplateProps> = ({
 
 /**
  * Helper function to get an actor's role from the layout.
- * Returns the role name from their assigned role module, or 'Patient' if none.
+ * Returns the role name from their assigned role module, or 'Resident' if none.
  */
 export const getActorRole = (actorId: string, layout: any): string => {
     const roleModules = layout.getModulesWhere((m: any) => 
@@ -201,10 +201,10 @@ export const getActorRole = (actorId: string, layout: any): string => {
     if (roleModules.length > 0) {
         const roleModule = roleModules[0];
         // Get the role from MODULE_DEFAULTS
-        return roleModule.getAttribute('role') || 'Patient';
+        return roleModule.getAttribute('role') || 'Resident';
     }
     
-    return 'Patient';
+    return 'Resident';
 };
 
 export default Nameplate;

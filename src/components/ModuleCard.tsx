@@ -34,8 +34,8 @@ export const ModuleCard: FC<ModuleCardProps> = ({
     // Default hover behavior
     const defaultWhileHover = {
         x: 10,
-        backgroundColor: 'rgba(0, 255, 136, 0.15)',
-        borderColor: 'rgba(0, 255, 136, 0.5)',
+        backgroundColor: 'rgba(176, 102, 255, 0.15)',
+        borderColor: 'rgba(176, 102, 255, 0.5)',
     };
 
     return (
@@ -48,7 +48,7 @@ export const ModuleCard: FC<ModuleCardProps> = ({
                 position: 'relative',
                 width: '100%',
                 height: '80px',
-                border: '3px solid #00ff88',
+                border: '3px solid #b066ff',
                 borderRadius: '8px',
                 overflow: 'hidden',
                 cursor: onClick ? 'pointer' : 'default',
@@ -64,7 +64,7 @@ export const ModuleCard: FC<ModuleCardProps> = ({
                     width: '80px',
                     height: '100%',
                     flexShrink: 0,
-                    borderRight: '2px solid rgba(0, 255, 136, 0.3)',
+                    borderRight: '2px solid rgba(176, 102, 255, 0.3)',
                 }}
             >
                 {/* Module background image */}
@@ -110,7 +110,7 @@ export const ModuleCard: FC<ModuleCardProps> = ({
                 {/* Module name */}
                 <div
                     style={{
-                        color: '#00ff88',
+                        color: '#b066ff',
                         fontSize: '0.9rem',
                         fontWeight: 700,
                         textTransform: 'capitalize',
@@ -127,7 +127,7 @@ export const ModuleCard: FC<ModuleCardProps> = ({
                 {/* Role and assignment */}
                 <div
                     style={{
-                        color: actor ? '#ffc800' : '#00ff88',
+                        color: actor ? '#ffc800' : '#b066ff',
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         textShadow: '0 1px 0 rgba(0,0,0,0.6)',

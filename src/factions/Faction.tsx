@@ -58,23 +58,23 @@ class Faction {
     }
 
     /**
-     * Get a prompt-style description of the PARC's relationship with this faction based on reputation
+     * Get a prompt-style description of the Spire's relationship with this faction based on reputation
      */
     getReputationDescription(): string {
         if (this.reputation <= 0) {
-            return 'They have cut ties with the PARC.';
+            return 'They have cut ties with the Spire.';
         } else if (this.reputation <= 1) {
-            return 'They have a very poor opinion of the PARC; if pushed, they will cut ties with the PARC entirely.';
+            return 'They have a very poor opinion of the Spire; if pushed, they will cut ties with the Spire entirely.';
         } else if (this.reputation <= 2) {
-            return 'They have a low opinion of the PARC and consider the relationship strained.';
+            return 'They have a low opinion of the Spire and consider the relationship strained.';
         } else if (this.reputation <= 4) {
-            return 'They view the PARC with caution and maintain only necessary interactions.';
+            return 'They view the Spire with caution and maintain only necessary interactions.';
         } else if (this.reputation <= 6) {
-            return 'They have a neutral, professional relationship with the PARC.';
+            return 'They have a neutral, professional relationship with the Spire.';
         } else if (this.reputation <= 8) {
-            return 'They regard the PARC favorably and maintain a positive working relationship.';
+            return 'They regard the Spire favorably and maintain a positive working relationship.';
         } else {
-            return 'They hold the PARC in high esteem and consider them a trusted partner.';
+            return 'They hold the Spire in high esteem and consider them a trusted partner.';
         }
     }
 }
@@ -135,22 +135,22 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
         // Generate faction distillation
         const generatedResponse = await stage.makeText({
             prompt: `{{messages}}This is preparatory request for structured and formatted game content.` +
-                buildPromptSegment(`Background`, `This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-                    `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-                    `with the goal of placing these characters into a new role in this universe. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
+                buildPromptSegment(`Background`, `This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
+                    `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
+                    `with the goal of placing these characters into a new role in this world. These new roles are offered by external factions, generally in exchange for a finder's fee or reputation boost. ` +
                     `Some roles are above board, while others may involve morally ambiguous or covert activities; many may even be illicit, sexual, or compulsory (essentially human trafficking). ` +
                     `The player's motives and ethics are open-ended; they may be benevolent or self-serving, and the characters they interact with may respond accordingly. `) +
                 buildPromptSegment(`Narrative Tone`, `${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
                 (Object.values(stage.getSave().factions).length > 0 ? buildPromptSegment(`Established Factions`, `${Object.values(stage.getSave().factions).map(faction => `- ${faction.name}: ${faction.description}. Representative: ${stage.getSave().actors[faction.representativeId || '']}`).join('\n')}`) : '') +
-                buildPromptSegment(`Original Details`, `The Original Details below describe a character, faction, organization, or setting (${data.name}) from another universe. ` +
+                buildPromptSegment(`Original Details`, `The Original Details below describe a character, faction, organization, or setting (${data.name}) from another world. ` +
                     `This request and response must digest and distill these details into a new faction that suits the game's narrative scenario, ` +
-                    `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied sci-fi setting. ` +
+                    `crafting a complex and intriguing organization that fits seamlessly into the game's expansive, flavorful, and varied fantasy setting. ` +
                     (Object.values(stage.getSave().factions).length > 0 ? `Ensure that this new faction feels distinct from or complementary to the Established Factions, as the primary goal is engaging diversity.` : '') +
                     `The Original Details may not lend themselves directly to a faction, so creative interpretation is encouraged; pull from the dominant themes found in the details and lean into some of the quirks to create something truly unique. `) +
                 buildPromptSegment(`Original Details about ${data.name}`, `${data.personality}`) +
                 buildPromptSegment(`Instructions`, `After carefully considering this description, the System will generate details for a distinct faction based upon these details in the following strict format:\n` +
                     `DESCRIPTION: A vivid description of the faction's purpose, values, and role in the galaxy.\n` +
-                    `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the PARC.\n` +
+                    `ROLES: A list of simple job roles that this faction may offer to recruit or purchase from the Spire.\n` +
                     `VISUALSTYLE: A concise description of the faction's aesthetic, architectural style, uniform/clothing design, and overall visual identity.\n` +
                     `COLOR: A hex color that reflects the faction's theme or mood—use darker or richer colors that will contrast with white text.\n` +
                     `FONT: A web-safe font family that reflects the faction's personality or style.\n` +
@@ -231,7 +231,7 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
 
         // Generate a background image for the faction:
         stage.generator.makeImage({
-            prompt: `An evocative visual novel background from a futuristic sci-fi universe. ` +
+            prompt: `An evocative visual novel background from a rich fantasy world. ` +
                 `The scene should encapsulate the essence of this description: ${newFaction.description}. ` +
                 `Include suitable design elements: ${newFaction.visualStyle}. `,
             aspect_ratio: AspectRatio.SQUARE
@@ -257,7 +257,7 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
         fullPath: faction.fullPath,
         personality: `This original character is a representative for the ${faction.name}. ${faction.description}. ${faction.visualStyle}.\n` +
             `The character should embody the values and style of the faction they represent, while still feeling like a distinct individual with their own traits and personality. ` +
-            `They will be the primary contact for the PARC when dealing with this faction. ` +
+            `They will be the primary contact for the Spire when dealing with this faction. ` +
             `Give them a suitable yet memorable name and background, avoiding any similarity to the following established character names: ${Object.values(stage.getSave().actors).map(a => a.name).join(', ')}.`
     }
     // retry a few times if it fails (or returns null):
@@ -279,29 +279,29 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
 export async function generateFactionModule(faction: Faction, stage: Stage): Promise<string|null> {
     // Generate a module design for the faction
     const generatedResponse = await stage.makeText({
-        prompt: `{{messages}}This is preparatory request for structured and formatted game content. The goal is to define a faction-themed module/room for a space station management game. ` +
+        prompt: `{{messages}}This is preparatory request for structured and formatted game content. The goal is to define a faction-themed module/room for a wizard tower management game. ` +
             // Provide existing module names/roles to avoid overly similar suggestions
             buildPromptSegment(`Existing Modules`,`${Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')}`) +
             buildPromptSegment(`New Module Faction`,`${faction.name}\n${faction.description}\n${faction.visualStyle}`) +
-            buildPromptSegment(`Background`,`This game is a futuristic multiverse setting that pulls characters from across eras and timelines and settings. ` +
-                `The player of this game, ${stage.getSave().player.name}, manages a space station called the Post-Apocalypse Rehabilitation Center, or PARC, which resurrects victims of a multiversal calamity and helps them adapt to a new life, ` +
-                `with the goal of placing these characters into a new role in this universe.`) +
+            buildPromptSegment(`Background`,`This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
+                `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
+                `with the goal of placing these characters into a new role in this world.`) +
             buildPromptSegment(`Narrative Tone`,`${stage.getSave().tone || stage.TONE_MAP['Original']}`) +
-            buildPromptSegment(`Modules`,`Modules are rooms and facilities that make up the station; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
-                `Each of the game's factions can offer the player a unique module to unlock for their station, generally following the themes of that faction, while avoiding content that is too similar to the Existing Modules. ` +
-                `Every module similarly offers a crew-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.\n\n`) +
-            buildPromptSegment(`Instructions`,`After carefully considering this faction's description, generate a formatted definition for a distinct and inspired station module that reflects the faction's aesthetic and values in the following strict format:\n` +
+            buildPromptSegment(`Modules`,`Modules are rooms and facilities that make up the tower; each module has a function varying between utility and entertainment or anything inbetween, and serve as a backdrop for various interactions and events. ` +
+                `Each of the game's factions can offer the player a unique room to unlock for their tower, generally following the themes of that faction, while avoiding content that is too similar to the Existing Modules. ` +
+                `Every module similarly offers a resident-assignable role with an associated responsibility or purpose, which can again vary wildly between practical and whimsical.\n\n`) +
+            buildPromptSegment(`Instructions`,`After carefully considering this faction's description, generate a formatted definition for a distinct and inspired tower module that reflects the faction's aesthetic and values in the following strict format:\n` +
                 `MODULE NAME: The module's simple name (1-2 words)\n` +
-                `PURPOSE: A brief summary of the module's function and role on the station, as well as how that role might affect the station's patients or inform skits at this location.\n` +
+                `PURPOSE: A brief summary of the module's function and role in the tower, as well as how that role might affect the tower's residents or inform skits at this location.\n` +
                 `DESCRIPTION: A vivid visual description of the module's appearance, to be fed into image generation.\n` +
                 `ROLE NAME: The simple title of the role associated with this module (1-2 words).\n` +
                 `ROLE DESCRIPTION: A brief summary of the responsibilities and duties associated with this role.\n` +
                 `#END#\n\n`) +
-            buildPromptSegment(`Example Response`,`MODULE NAME: Cryo Bank\n` +
-                `PURPOSE: The cryo bank is where patients are placed in cryogenic stasis for long-term preservation. Scenes in this room often involve the ethical dilemmas of cryo-sleep, emergencies during stasis, or interactions with newly awakened patients.\n` +
-                `DESCRIPTION: A futuristic lab with a bank of cryo pods along the left wall and some advanced computer systems against the right wall.\n` +
-                `ROLE NAME: Keeper\n` +
-                `ROLE DESCRIPTION: Responsible for managing the cryo bank, overseeing patient stasis, and ensuring the proper functioning of cryogenic equipment.\n` +
+            buildPromptSegment(`Example Response`,`MODULE NAME: Homeward Gate\n` +
+                `PURPOSE: The homeward gate is a two-way portal that returns residents to their home realities under a recall bond, letting the Magus call them back at will. Scenes in this room often involve farewells, returns, homesickness, or the ethics of the recall bond.\n` +
+                `DESCRIPTION: A solemn stone chamber housing a freestanding archway carved with concentric rings of runes, its interior filled with a calm curtain of silver light.\n` +
+                `ROLE NAME: Gatekeeper\n` +
+                `ROLE DESCRIPTION: Responsible for tending the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.\n` +
                 `#END#`),
         stop: ['#END'],
         include_history: true,
@@ -381,7 +381,7 @@ export async function generateFactionModule(faction: Faction, stage: Stage): Pro
 export async function generateFactionModuleImage(faction: Faction, module: ModuleIntrinsic, stage: Stage): Promise<void> {
     // Start with a base image:
     const baseImageUrl = await stage.makeImage({
-        prompt: `The detailed interior of an unoccupied futuristic space station module/room. The design should reflect the following description: ${module.imagePrompt}. ` +
+        prompt: `The detailed interior of an unoccupied room within a wizard's tower. The design should reflect the following description: ${module.imagePrompt}. ` +
             `Regardless of aesthetic, the image is rendered in a vibrant, painterly style with thick smudgy lines.`,
         aspect_ratio: AspectRatio.SQUARE
     }, '');
@@ -391,7 +391,7 @@ export async function generateFactionModuleImage(faction: Faction, module: Modul
     // Next, create a default variant with Qwen's image-to-image:
     const defaultImageUrl = await stage.makeImageFromImage({
         image: baseImageUrl,
-        prompt: `Apply a visual novel art style to this sci-fi space station room (${module.imagePrompt}). Remove any characters from the scene.`,
+        prompt: `Apply a visual novel art style to this fantasy wizard tower room (${module.imagePrompt}). Remove any characters from the scene.`,
         transfer_type: 'edit'
     }, '');
     if (baseImageUrl && defaultImageUrl) {

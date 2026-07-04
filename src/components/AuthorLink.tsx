@@ -35,7 +35,7 @@ export const AuthorLink: FC<AuthorLinkProps> = ({ actor, style }) => {
 				borderRadius: '4px',
 				background: 'rgba(0, 0, 0, 0.6)',
 				border: '1px solid rgba(255, 255, 255, 0.2)',
-				color: '#00ff88',
+				color: '#b066ff',
 				fontSize: '11px',
 				textDecoration: 'none',
 				cursor: 'pointer',

@@ -5,40 +5,40 @@
   -moz-osx-font-smoothing: grayscale;
   
   /* Theme Colors - Cyan/Green Palette */
-  --color-primary: #00ff88;
-  --color-primary-dark: #00cc66;
-  --color-primary-darker: #00aa55;
-  --color-primary-light: #00e67a;
-  --color-primary-pale: #bfffd0;
-  --color-primary-very-pale: #e9fff7;
+  --color-primary: #b066ff;
+  --color-primary-dark: #9440e8;
+  --color-primary-darker: #7a2ecc;
+  --color-primary-light: #a259f7;
+  --color-primary-pale: #e3ccff;
+  --color-primary-very-pale: #f5edff;
   
   /* Opacity variants */
-  --color-primary-05: rgba(0, 255, 136, 0.05);
-  --color-primary-08: rgba(0, 255, 136, 0.08);
-  --color-primary-10: rgba(0, 255, 136, 0.1);
-  --color-primary-12: rgba(0, 255, 136, 0.12);
-  --color-primary-15: rgba(0, 255, 136, 0.15);
-  --color-primary-20: rgba(0, 255, 136, 0.2);
-  --color-primary-30: rgba(0, 255, 136, 0.3);
-  --color-primary-40: rgba(0, 255, 136, 0.4);
-  --color-primary-50: rgba(0, 255, 136, 0.5);
+  --color-primary-05: rgba(176, 102, 255, 0.05);
+  --color-primary-08: rgba(176, 102, 255, 0.08);
+  --color-primary-10: rgba(176, 102, 255, 0.1);
+  --color-primary-12: rgba(176, 102, 255, 0.12);
+  --color-primary-15: rgba(176, 102, 255, 0.15);
+  --color-primary-20: rgba(176, 102, 255, 0.2);
+  --color-primary-30: rgba(176, 102, 255, 0.3);
+  --color-primary-40: rgba(176, 102, 255, 0.4);
+  --color-primary-50: rgba(176, 102, 255, 0.5);
   
   /* Secondary/Accent Colors */
-  --color-secondary: #87CEEB;
-  --color-dialogue: #87CEEB;
+  --color-secondary: #e8c368;
+  --color-dialogue: #e8c368;
   
   /* Backgrounds - Dark Blue/Navy */
-  --bg-dark-blue: rgba(0, 20, 40, 0.9);
-  --bg-darker-blue: rgba(10, 20, 30, 0.95);
+  --bg-dark-blue: rgba(18, 8, 32, 0.9);
+  --bg-darker-blue: rgba(20, 12, 30, 0.95);
   --bg-darkest-blue: rgba(0, 10, 20, 0.5);
-  --bg-navy-gradient: linear-gradient(45deg, #001122 0%, #002244 100%);
+  --bg-navy-gradient: linear-gradient(45deg, #140a20 0%, #002244 100%);
   --bg-glass-dark: rgba(0, 0, 0, 0.8);
   --bg-glass-darker: rgba(0, 0, 0, 0.85);
   
   /* Text Colors */
-  --text-primary: #e8fff0;
-  --text-secondary: #dfffe6;
-  --text-pale: #eafff2;
+  --text-primary: #f3eaff;
+  --text-secondary: #ecdfff;
+  --text-pale: #f4ecff;
   --text-muted: rgba(255, 255, 255, 0.9);
   --text-very-muted: rgba(255, 255, 255, 0.6);
   
@@ -334,7 +334,7 @@ html, body, #root {
   border-radius: 8px;
   border: 2px solid var(--color-primary-15);
   background: var(--color-primary);
-  color: #002210;
+  color: #1a0533;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s ease;
