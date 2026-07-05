@@ -139,7 +139,7 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 							fontWeight: 700
 						}}
 					>
-						Aperture
+						Arcane Focus
 					</Typography>
 
 					<Typography 

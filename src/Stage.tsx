@@ -3,7 +3,7 @@ import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@ch
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
 import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
-import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, Module, registerModule } from './Module';
+import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
 import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
 import { smartRehydrate } from "./SaveRehydration";
@@ -91,7 +91,20 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         'famous people',
         'celebrity',
         'real person',
-        'feral'
+        'feral',
+        'sci-fi',
+        'science fiction',
+        'scifi',
+        'cyberpunk',
+        'space',
+        'futuristic',
+        'spaceship',
+        'robot',
+        'android',
+        'cyborg',
+        'mecha',
+        'post-apocalyptic',
+        'dystopian'
     ];
     // At least one of these is required for a character search; some sort of gender helps indicate that the card represents a singular person.
     readonly actorTags = ['male', 'female', 'woman', 'man', 'masculine', 'feminine', 'non-binary', 'trans', 'genderqueer', 'genderfluid', 'agender', 'androgyne', 'intersex', 'futa', 'futanari', 'hermaphrodite'];
@@ -499,6 +512,39 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         }
         this.currentSave = this.getFreshSave();
         this.saveGame();
+        // Kick off fresh, theme-appropriate art for the starting rooms in the background.
+        // They ship with placeholder images so play can begin immediately; these replace them as they finish.
+        void this.refreshStartingModuleImages();
+    }
+
+    // Regenerates images for all currently-placed modules using their imagePrompt, one at a time
+    // to avoid overloading the image service. Runs in the background; failures are non-fatal and
+    // simply leave the placeholder image in place.
+    async refreshStartingModuleImages(): Promise<void> {
+        try {
+            const modules = this.getSave().layout.getModulesWhere(() => true);
+            for (const module of modules) {
+                try {
+                    // generateModuleImage expects a ModuleIntrinsic; build one from the live module,
+                    // then write the freshly generated URLs back into the module's instance attributes
+                    // so the display layer (which reads getAttribute('defaultImageUrl')) picks them up.
+                    const intrinsic = { ...module.getAttributes(), cost: module.getAttribute('cost') || {} };
+                    await generateModuleImage(intrinsic, this);
+                    if (intrinsic.baseImageUrl && intrinsic.defaultImageUrl) {
+                        module.attributes = {
+                            ...(module.attributes || {}),
+                            baseImageUrl: intrinsic.baseImageUrl,
+                            defaultImageUrl: intrinsic.defaultImageUrl,
+                        };
+                        this.saveGame();
+                    }
+                } catch (err) {
+                    console.error(`Failed to auto-generate image for module ${module.type}`, err);
+                }
+            }
+        } catch (err) {
+            console.error('Error during starting module image refresh', err);
+        }
     }
 
     saveGame() {
