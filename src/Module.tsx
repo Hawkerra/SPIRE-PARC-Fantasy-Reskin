@@ -486,87 +486,158 @@ export const DEFAULT_GRID_HEIGHT = 5;
 
 export type LayoutChangeHandler = (grid: Module[]) => void;
 
+// The buildable footprint of each floor: a circle-like shape within the 8x5 grid,
+// a 3x3 center (cols 3-5, rows 1-3) plus three cells extending in each cardinal direction.
+export const FLOOR_FOOTPRINT: ReadonlyArray<{ x: number; y: number }> = [
+    // center 3x3
+    {x:3,y:1},{x:4,y:1},{x:5,y:1},
+    {x:3,y:2},{x:4,y:2},{x:5,y:2},
+    {x:3,y:3},{x:4,y:3},{x:5,y:3},
+    // top arm
+    {x:3,y:0},{x:4,y:0},{x:5,y:0},
+    // bottom arm
+    {x:3,y:4},{x:4,y:4},{x:5,y:4},
+    // left arm
+    {x:2,y:1},{x:2,y:2},{x:2,y:3},
+    // right arm
+    {x:6,y:1},{x:6,y:2},{x:6,y:3},
+];
+
+export function isFootprintCell(x: number, y: number): boolean {
+    return FLOOR_FOOTPRINT.some(c => c.x === x && c.y === y);
+}
+
+// UI cells for floor navigation (NOT modules - characters cannot route to these).
+export const BUILD_UP_CELL = { x: 2, y: 0 };   // upper-left: "build next floor" / "go up" once built
+export const GO_DOWN_CELL = { x: 2, y: 4 };    // lower-left: "go down" appears on floors above the first
+
+export const MAX_FLOORS = 5;
+
+// Escalating cost to build each floor, indexed by the floor being built (floor 2 = index 2).
+// Floor 1 exists for free at game start. Values are tower-stat point costs.
+export const FLOOR_BUILD_COSTS: Record<number, Partial<Record<StationStat, number>>> = {
+    2: { [StationStat.COMFORT]: 1, [StationStat.HARMONY]: 1 },
+    3: { [StationStat.HARMONY]: 1, [StationStat.SYSTEMS]: 1, [StationStat.WEALTH]: 1 },
+    4: { [StationStat.HARMONY]: 2, [StationStat.SYSTEMS]: 1, [StationStat.SECURITY]: 1 },
+    5: { [StationStat.HARMONY]: 2, [StationStat.SYSTEMS]: 2, [StationStat.SECURITY]: 1, [StationStat.WEALTH]: 1 },
+};
+
+
 export class Layout {
-    public grid: (Module | null)[][];
+    // Multi-floor storage. floors[f] is a 2D grid (grid[y][x]) for floor f (0-indexed).
+    // Floor 0 is the ground floor. currentFloor is the floor currently displayed/edited.
+    public floors: (Module | null)[][][];
+    public currentFloor: number;
     public gridWidth: number;
     public gridHeight: number;
+
     // Deprecated: gridSize kept for backward compatibility
     public get gridSize(): number {
         return Math.max(this.gridWidth, this.gridHeight);
     }
 
+    // The active floor's grid. Existing code that reads `layout.grid` keeps working,
+    // operating on whichever floor is currently displayed.
+    public get grid(): (Module | null)[][] {
+        return this.floors[this.currentFloor];
+    }
+    public set grid(g: (Module | null)[][]) {
+        this.floors[this.currentFloor] = g;
+    }
+
+    private static emptyGrid(width: number, height: number): (Module | null)[][] {
+        return Array.from({ length: height }, () => Array.from({ length: width }, () => null));
+    }
+
     constructor(width: number = DEFAULT_GRID_WIDTH, height: number = DEFAULT_GRID_HEIGHT, initial?: (Module | null)[][]) {
         this.gridWidth = width;
         this.gridHeight = height;
-        this.grid = initial || Array.from({ length: this.gridHeight }, () =>
-            Array.from({ length: this.gridWidth }, () => null)
-        );
+        this.floors = [initial || Layout.emptyGrid(width, height)];
+        this.currentFloor = 0;
+    }
+
+    /** Number of floors that have been built. */
+    get floorCount(): number {
+        return this.floors.length;
+    }
+
+    /** Adds a new empty floor on top and returns its index. Caller enforces MAX_FLOORS and cost. */
+    addFloor(): number {
+        if (this.floors.length >= MAX_FLOORS) return this.floors.length - 1;
+        this.floors.push(Layout.emptyGrid(this.gridWidth, this.gridHeight));
+        return this.floors.length - 1;
+    }
+
+    setCurrentFloor(index: number): void {
+        if (index >= 0 && index < this.floors.length) {
+            this.currentFloor = index;
+        }
+    }
+
+    /** True when every buildable footprint cell on the given floor holds a module. */
+    isFloorFull(floorIndex: number): boolean {
+        const grid = this.floors[floorIndex];
+        if (!grid) return false;
+        return FLOOR_FOOTPRINT.every(cell => grid[cell.y]?.[cell.x]);
     }
 
     /**
-     * Rehydrate a Layout from saved data
+     * Rehydrate a Layout from saved data. Supports:
+     *  - new multi-floor saves (savedLayout.floors)
+     *  - old single-grid saves (savedLayout.grid) -> becomes floor 0
      */
     static fromSave(savedLayout: any): Layout {
-        const layout = Object.create(Layout.prototype);
-        
-        // Support both old square grids and new rectangular grids
+        const layout: Layout = Object.create(Layout.prototype);
+
         if (savedLayout.gridWidth !== undefined && savedLayout.gridHeight !== undefined) {
             layout.gridWidth = savedLayout.gridWidth;
             layout.gridHeight = savedLayout.gridHeight;
         } else {
-            // Old save format - convert square grid to rectangular
-            const oldSize = savedLayout.gridSize || DEFAULT_GRID_SIZE;
             layout.gridWidth = DEFAULT_GRID_WIDTH;
             layout.gridHeight = DEFAULT_GRID_HEIGHT;
         }
-        
-        // Rehydrate grid with proper Module instances
-        const oldGrid = savedLayout.grid?.map((row: any[]) => 
-            row?.map((savedModule: any) => 
-                savedModule ? Module.fromSave(savedModule) : null
-            )
-        ) || [];
-        
-        // Create new grid with target dimensions
-        layout.grid = Array.from({ length: layout.gridHeight }, () => 
-            Array.from({ length: layout.gridWidth }, () => null)
-        );
-        
-        // Copy modules from old grid, migrating out-of-bounds ones
-        const modulesToRelocate: Module[] = [];
-        
-        for (let y = 0; y < oldGrid.length; y++) {
-            for (let x = 0; x < (oldGrid[y]?.length || 0); x++) {
-                const module = oldGrid[y][x];
-                if (module) {
-                    // Check if module fits in new grid
+
+        const rehydrateGrid = (rawGrid: any[]): (Module | null)[][] => {
+            const source = rawGrid?.map((row: any[]) =>
+                row?.map((savedModule: any) => savedModule ? Module.fromSave(savedModule) : null)
+            ) || [];
+            const grid = Layout.emptyGrid(layout.gridWidth, layout.gridHeight);
+            const relocate: Module[] = [];
+            for (let y = 0; y < source.length; y++) {
+                for (let x = 0; x < (source[y]?.length || 0); x++) {
+                    const module = source[y][x];
+                    if (!module) continue;
                     if (y < layout.gridHeight && x < layout.gridWidth) {
-                        layout.grid[y][x] = module;
+                        grid[y][x] = module;
                     } else {
-                        // Module is out of bounds, needs relocation
-                        modulesToRelocate.push(module);
+                        relocate.push(module);
                     }
                 }
             }
-        }
-        
-        // Relocate out-of-bounds modules to first available empty spots
-        for (const module of modulesToRelocate) {
-            let relocated = false;
-            for (let y = 0; y < layout.gridHeight && !relocated; y++) {
-                for (let x = 0; x < layout.gridWidth && !relocated; x++) {
-                    if (!layout.grid[y][x]) {
-                        layout.grid[y][x] = module;
-                        relocated = true;
-                        console.log(`Migrated module ${module.type} from out-of-bounds to (${x}, ${y})`);
+            for (const module of relocate) {
+                let placed = false;
+                for (let y = 0; y < layout.gridHeight && !placed; y++) {
+                    for (let x = 0; x < layout.gridWidth && !placed; x++) {
+                        if (!grid[y][x]) { grid[y][x] = module; placed = true; }
                     }
                 }
             }
-            if (!relocated) {
-                console.warn(`Could not relocate module ${module.type} - grid is full`);
+            return grid;
+        };
+
+        if (Array.isArray(savedLayout.floors)) {
+            layout.floors = savedLayout.floors.map((floorGrid: any[]) => rehydrateGrid(floorGrid));
+            if (layout.floors.length === 0) {
+                layout.floors = [Layout.emptyGrid(layout.gridWidth, layout.gridHeight)];
             }
+        } else {
+            // Legacy single-floor save
+            layout.floors = [rehydrateGrid(savedLayout.grid)];
         }
-        
+        layout.currentFloor = (typeof savedLayout.currentFloor === 'number' &&
+            savedLayout.currentFloor >= 0 && savedLayout.currentFloor < layout.floors.length)
+            ? savedLayout.currentFloor : 0;
+
         return layout;
     }
 
@@ -582,62 +653,86 @@ export class Layout {
         return Object.values(save.actors).filter(actor => actor.locationId === module.id);
     }
 
+    /** Scans the CURRENT floor only. */
     getModulesWhere(predicate: (module: Module) => boolean): Module[] {
         const modules: Module[] = [];
+        const grid = this.grid;
         for (let y = 0; y < this.gridHeight; y++) {
             for (let x = 0; x < this.gridWidth; x++) {
-                const module = this.grid[y][x];
-                if (module && predicate(module)) {
-                    modules.push(module);
+                const module = grid[y][x];
+                if (module && predicate(module)) modules.push(module);
+            }
+        }
+        return modules;
+    }
+
+    /** Scans ALL floors. Used for movement/lookup so characters can reach rooms on any floor. */
+    getAllModulesWhere(predicate: (module: Module) => boolean): Module[] {
+        const modules: Module[] = [];
+        for (const grid of this.floors) {
+            for (let y = 0; y < this.gridHeight; y++) {
+                for (let x = 0; x < this.gridWidth; x++) {
+                    const module = grid[y][x];
+                    if (module && predicate(module)) modules.push(module);
                 }
             }
         }
         return modules;
     }
 
+    /** Searches every floor by id. */
     getModuleById(id: string): Module | null {
-        for (let y = 0; y < this.gridHeight; y++) {
-            for (let x = 0; x < this.gridWidth; x++) {
-                const module = this.grid[y][x];
-                if (module && module.id === id) {
-                    return module;
+        for (const grid of this.floors) {
+            for (let y = 0; y < this.gridHeight; y++) {
+                for (let x = 0; x < this.gridWidth; x++) {
+                    const module = grid[y][x];
+                    if (module && module.id === id) return module;
                 }
             }
         }
         return null;
     }
 
+    /** Returns the floor index a module lives on, or -1. */
+    getModuleFloor(id: string): number {
+        for (let f = 0; f < this.floors.length; f++) {
+            const grid = this.floors[f];
+            for (let y = 0; y < this.gridHeight; y++) {
+                for (let x = 0; x < this.gridWidth; x++) {
+                    if (grid[y][x]?.id === id) return f;
+                }
+            }
+        }
+        return -1;
+    }
+
     getModuleAt(x: number, y: number): Module | null {
         return this.grid[y]?.[x] ?? null;
     }
 
+    /** Coordinates on the CURRENT floor. */
     getModuleCoordinates(module: Module | null): { x: number; y: number } {
+        const grid = this.grid;
         for (let y = 0; y < this.gridHeight; y++) {
             for (let x = 0; x < this.gridWidth; x++) {
-                if (module && this.grid[y][x]?.id === module?.id) {
-                    return { x, y };
-                }
+                if (module && grid[y][x]?.id === module?.id) return { x, y };
             }
         }
         return {x: -1000, y: -1000};
     }
 
     setModuleAt(x: number, y: number, module: Module) {
-        console.log(`Setting module at (${x}, ${y}):`, module);
         if (!this.grid[y]) return;
         this.grid[y][x] = module;
-        console.log(`Module set. Current module at (${x}, ${y}):`, this.grid[y][x]);
     }
 
+    /** Removes a module by identity, searching every floor. */
     removeModule(module: Module | null): boolean {
         if (!module) return false;
-        
-        for (let y = 0; y < this.gridHeight; y++) {
-            for (let x = 0; x < this.gridWidth; x++) {
-                if (this.grid[y][x]?.id === module.id) {
-                    this.grid[y][x] = null;
-                    console.log(`Removed module ${module.id} at (${x}, ${y})`);
-                    return true;
+        for (const grid of this.floors) {
+            for (let y = 0; y < this.gridHeight; y++) {
+                for (let x = 0; x < this.gridWidth; x++) {
+                    if (grid[y][x]?.id === module.id) { grid[y][x] = null; return true; }
                 }
             }
         }
@@ -646,10 +741,7 @@ export class Layout {
 
     removeModuleAt(x: number, y: number): Module | null {
         const module = this.grid[y]?.[x] || null;
-        if (module && this.grid[y]) {
-            this.grid[y][x] = null;
-            console.log(`Removed module ${module.id} at (${x}, ${y})`);
-        }
+        if (module && this.grid[y]) this.grid[y][x] = null;
         return module;
     }
 }

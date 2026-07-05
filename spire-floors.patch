@@ -1,0 +1,655 @@
+diff --git a/src/Module.tsx b/src/Module.tsx
+index 90b3303..47db523 100644
+--- a/src/Module.tsx
++++ b/src/Module.tsx
+@@ -486,87 +486,158 @@ export const DEFAULT_GRID_HEIGHT = 5;
+ 
+ export type LayoutChangeHandler = (grid: Module[]) => void;
+ 
++// The buildable footprint of each floor: a circle-like shape within the 8x5 grid,
++// a 3x3 center (cols 3-5, rows 1-3) plus three cells extending in each cardinal direction.
++export const FLOOR_FOOTPRINT: ReadonlyArray<{ x: number; y: number }> = [
++    // center 3x3
++    {x:3,y:1},{x:4,y:1},{x:5,y:1},
++    {x:3,y:2},{x:4,y:2},{x:5,y:2},
++    {x:3,y:3},{x:4,y:3},{x:5,y:3},
++    // top arm
++    {x:3,y:0},{x:4,y:0},{x:5,y:0},
++    // bottom arm
++    {x:3,y:4},{x:4,y:4},{x:5,y:4},
++    // left arm
++    {x:2,y:1},{x:2,y:2},{x:2,y:3},
++    // right arm
++    {x:6,y:1},{x:6,y:2},{x:6,y:3},
++];
++
++export function isFootprintCell(x: number, y: number): boolean {
++    return FLOOR_FOOTPRINT.some(c => c.x === x && c.y === y);
++}
++
++// UI cells for floor navigation (NOT modules - characters cannot route to these).
++export const BUILD_UP_CELL = { x: 2, y: 0 };   // upper-left: "build next floor" / "go up" once built
++export const GO_DOWN_CELL = { x: 2, y: 4 };    // lower-left: "go down" appears on floors above the first
++
++export const MAX_FLOORS = 5;
++
++// Escalating cost to build each floor, indexed by the floor being built (floor 2 = index 2).
++// Floor 1 exists for free at game start. Values are tower-stat point costs.
++export const FLOOR_BUILD_COSTS: Record<number, Partial<Record<StationStat, number>>> = {
++    2: { [StationStat.COMFORT]: 1, [StationStat.HARMONY]: 1 },
++    3: { [StationStat.HARMONY]: 1, [StationStat.SYSTEMS]: 1, [StationStat.WEALTH]: 1 },
++    4: { [StationStat.HARMONY]: 2, [StationStat.SYSTEMS]: 1, [StationStat.SECURITY]: 1 },
++    5: { [StationStat.HARMONY]: 2, [StationStat.SYSTEMS]: 2, [StationStat.SECURITY]: 1, [StationStat.WEALTH]: 1 },
++};
++
++
+ export class Layout {
+-    public grid: (Module | null)[][];
++    // Multi-floor storage. floors[f] is a 2D grid (grid[y][x]) for floor f (0-indexed).
++    // Floor 0 is the ground floor. currentFloor is the floor currently displayed/edited.
++    public floors: (Module | null)[][][];
++    public currentFloor: number;
+     public gridWidth: number;
+     public gridHeight: number;
++
+     // Deprecated: gridSize kept for backward compatibility
+     public get gridSize(): number {
+         return Math.max(this.gridWidth, this.gridHeight);
+     }
+ 
++    // The active floor's grid. Existing code that reads `layout.grid` keeps working,
++    // operating on whichever floor is currently displayed.
++    public get grid(): (Module | null)[][] {
++        return this.floors[this.currentFloor];
++    }
++    public set grid(g: (Module | null)[][]) {
++        this.floors[this.currentFloor] = g;
++    }
++
++    private static emptyGrid(width: number, height: number): (Module | null)[][] {
++        return Array.from({ length: height }, () => Array.from({ length: width }, () => null));
++    }
++
+     constructor(width: number = DEFAULT_GRID_WIDTH, height: number = DEFAULT_GRID_HEIGHT, initial?: (Module | null)[][]) {
+         this.gridWidth = width;
+         this.gridHeight = height;
+-        this.grid = initial || Array.from({ length: this.gridHeight }, () =>
+-            Array.from({ length: this.gridWidth }, () => null)
+-        );
++        this.floors = [initial || Layout.emptyGrid(width, height)];
++        this.currentFloor = 0;
++    }
++
++    /** Number of floors that have been built. */
++    get floorCount(): number {
++        return this.floors.length;
++    }
++
++    /** Adds a new empty floor on top and returns its index. Caller enforces MAX_FLOORS and cost. */
++    addFloor(): number {
++        if (this.floors.length >= MAX_FLOORS) return this.floors.length - 1;
++        this.floors.push(Layout.emptyGrid(this.gridWidth, this.gridHeight));
++        return this.floors.length - 1;
++    }
++
++    setCurrentFloor(index: number): void {
++        if (index >= 0 && index < this.floors.length) {
++            this.currentFloor = index;
++        }
++    }
++
++    /** True when every buildable footprint cell on the given floor holds a module. */
++    isFloorFull(floorIndex: number): boolean {
++        const grid = this.floors[floorIndex];
++        if (!grid) return false;
++        return FLOOR_FOOTPRINT.every(cell => grid[cell.y]?.[cell.x]);
+     }
+ 
+     /**
+-     * Rehydrate a Layout from saved data
++     * Rehydrate a Layout from saved data. Supports:
++     *  - new multi-floor saves (savedLayout.floors)
++     *  - old single-grid saves (savedLayout.grid) -> becomes floor 0
+      */
+     static fromSave(savedLayout: any): Layout {
+-        const layout = Object.create(Layout.prototype);
+-        
+-        // Support both old square grids and new rectangular grids
++        const layout: Layout = Object.create(Layout.prototype);
++
+         if (savedLayout.gridWidth !== undefined && savedLayout.gridHeight !== undefined) {
+             layout.gridWidth = savedLayout.gridWidth;
+             layout.gridHeight = savedLayout.gridHeight;
+         } else {
+-            // Old save format - convert square grid to rectangular
+-            const oldSize = savedLayout.gridSize || DEFAULT_GRID_SIZE;
+             layout.gridWidth = DEFAULT_GRID_WIDTH;
+             layout.gridHeight = DEFAULT_GRID_HEIGHT;
+         }
+-        
+-        // Rehydrate grid with proper Module instances
+-        const oldGrid = savedLayout.grid?.map((row: any[]) => 
+-            row?.map((savedModule: any) => 
+-                savedModule ? Module.fromSave(savedModule) : null
+-            )
+-        ) || [];
+-        
+-        // Create new grid with target dimensions
+-        layout.grid = Array.from({ length: layout.gridHeight }, () => 
+-            Array.from({ length: layout.gridWidth }, () => null)
+-        );
+-        
+-        // Copy modules from old grid, migrating out-of-bounds ones
+-        const modulesToRelocate: Module[] = [];
+-        
+-        for (let y = 0; y < oldGrid.length; y++) {
+-            for (let x = 0; x < (oldGrid[y]?.length || 0); x++) {
+-                const module = oldGrid[y][x];
+-                if (module) {
+-                    // Check if module fits in new grid
++
++        const rehydrateGrid = (rawGrid: any[]): (Module | null)[][] => {
++            const source = rawGrid?.map((row: any[]) =>
++                row?.map((savedModule: any) => savedModule ? Module.fromSave(savedModule) : null)
++            ) || [];
++            const grid = Layout.emptyGrid(layout.gridWidth, layout.gridHeight);
++            const relocate: Module[] = [];
++            for (let y = 0; y < source.length; y++) {
++                for (let x = 0; x < (source[y]?.length || 0); x++) {
++                    const module = source[y][x];
++                    if (!module) continue;
+                     if (y < layout.gridHeight && x < layout.gridWidth) {
+-                        layout.grid[y][x] = module;
++                        grid[y][x] = module;
+                     } else {
+-                        // Module is out of bounds, needs relocation
+-                        modulesToRelocate.push(module);
++                        relocate.push(module);
+                     }
+                 }
+             }
+-        }
+-        
+-        // Relocate out-of-bounds modules to first available empty spots
+-        for (const module of modulesToRelocate) {
+-            let relocated = false;
+-            for (let y = 0; y < layout.gridHeight && !relocated; y++) {
+-                for (let x = 0; x < layout.gridWidth && !relocated; x++) {
+-                    if (!layout.grid[y][x]) {
+-                        layout.grid[y][x] = module;
+-                        relocated = true;
+-                        console.log(`Migrated module ${module.type} from out-of-bounds to (${x}, ${y})`);
++            for (const module of relocate) {
++                let placed = false;
++                for (let y = 0; y < layout.gridHeight && !placed; y++) {
++                    for (let x = 0; x < layout.gridWidth && !placed; x++) {
++                        if (!grid[y][x]) { grid[y][x] = module; placed = true; }
+                     }
+                 }
+             }
+-            if (!relocated) {
+-                console.warn(`Could not relocate module ${module.type} - grid is full`);
++            return grid;
++        };
++
++        if (Array.isArray(savedLayout.floors)) {
++            layout.floors = savedLayout.floors.map((floorGrid: any[]) => rehydrateGrid(floorGrid));
++            if (layout.floors.length === 0) {
++                layout.floors = [Layout.emptyGrid(layout.gridWidth, layout.gridHeight)];
+             }
++        } else {
++            // Legacy single-floor save
++            layout.floors = [rehydrateGrid(savedLayout.grid)];
+         }
+-        
++        layout.currentFloor = (typeof savedLayout.currentFloor === 'number' &&
++            savedLayout.currentFloor >= 0 && savedLayout.currentFloor < layout.floors.length)
++            ? savedLayout.currentFloor : 0;
++
+         return layout;
+     }
+ 
+@@ -582,62 +653,86 @@ export class Layout {
+         return Object.values(save.actors).filter(actor => actor.locationId === module.id);
+     }
+ 
++    /** Scans the CURRENT floor only. */
+     getModulesWhere(predicate: (module: Module) => boolean): Module[] {
+         const modules: Module[] = [];
++        const grid = this.grid;
+         for (let y = 0; y < this.gridHeight; y++) {
+             for (let x = 0; x < this.gridWidth; x++) {
+-                const module = this.grid[y][x];
+-                if (module && predicate(module)) {
+-                    modules.push(module);
++                const module = grid[y][x];
++                if (module && predicate(module)) modules.push(module);
++            }
++        }
++        return modules;
++    }
++
++    /** Scans ALL floors. Used for movement/lookup so characters can reach rooms on any floor. */
++    getAllModulesWhere(predicate: (module: Module) => boolean): Module[] {
++        const modules: Module[] = [];
++        for (const grid of this.floors) {
++            for (let y = 0; y < this.gridHeight; y++) {
++                for (let x = 0; x < this.gridWidth; x++) {
++                    const module = grid[y][x];
++                    if (module && predicate(module)) modules.push(module);
+                 }
+             }
+         }
+         return modules;
+     }
+ 
++    /** Searches every floor by id. */
+     getModuleById(id: string): Module | null {
+-        for (let y = 0; y < this.gridHeight; y++) {
+-            for (let x = 0; x < this.gridWidth; x++) {
+-                const module = this.grid[y][x];
+-                if (module && module.id === id) {
+-                    return module;
++        for (const grid of this.floors) {
++            for (let y = 0; y < this.gridHeight; y++) {
++                for (let x = 0; x < this.gridWidth; x++) {
++                    const module = grid[y][x];
++                    if (module && module.id === id) return module;
+                 }
+             }
+         }
+         return null;
+     }
+ 
++    /** Returns the floor index a module lives on, or -1. */
++    getModuleFloor(id: string): number {
++        for (let f = 0; f < this.floors.length; f++) {
++            const grid = this.floors[f];
++            for (let y = 0; y < this.gridHeight; y++) {
++                for (let x = 0; x < this.gridWidth; x++) {
++                    if (grid[y][x]?.id === id) return f;
++                }
++            }
++        }
++        return -1;
++    }
++
+     getModuleAt(x: number, y: number): Module | null {
+         return this.grid[y]?.[x] ?? null;
+     }
+ 
++    /** Coordinates on the CURRENT floor. */
+     getModuleCoordinates(module: Module | null): { x: number; y: number } {
++        const grid = this.grid;
+         for (let y = 0; y < this.gridHeight; y++) {
+             for (let x = 0; x < this.gridWidth; x++) {
+-                if (module && this.grid[y][x]?.id === module?.id) {
+-                    return { x, y };
+-                }
++                if (module && grid[y][x]?.id === module?.id) return { x, y };
+             }
+         }
+         return {x: -1000, y: -1000};
+     }
+ 
+     setModuleAt(x: number, y: number, module: Module) {
+-        console.log(`Setting module at (${x}, ${y}):`, module);
+         if (!this.grid[y]) return;
+         this.grid[y][x] = module;
+-        console.log(`Module set. Current module at (${x}, ${y}):`, this.grid[y][x]);
+     }
+ 
++    /** Removes a module by identity, searching every floor. */
+     removeModule(module: Module | null): boolean {
+         if (!module) return false;
+-        
+-        for (let y = 0; y < this.gridHeight; y++) {
+-            for (let x = 0; x < this.gridWidth; x++) {
+-                if (this.grid[y][x]?.id === module.id) {
+-                    this.grid[y][x] = null;
+-                    console.log(`Removed module ${module.id} at (${x}, ${y})`);
+-                    return true;
++        for (const grid of this.floors) {
++            for (let y = 0; y < this.gridHeight; y++) {
++                for (let x = 0; x < this.gridWidth; x++) {
++                    if (grid[y][x]?.id === module.id) { grid[y][x] = null; return true; }
+                 }
+             }
+         }
+@@ -646,10 +741,7 @@ export class Layout {
+ 
+     removeModuleAt(x: number, y: number): Module | null {
+         const module = this.grid[y]?.[x] || null;
+-        if (module && this.grid[y]) {
+-            this.grid[y][x] = null;
+-            console.log(`Removed module ${module.id} at (${x}, ${y})`);
+-        }
++        if (module && this.grid[y]) this.grid[y][x] = null;
+         return module;
+     }
+ }
+diff --git a/src/Skit.ts b/src/Skit.ts
+index ca7e8ff..c8fc349 100644
+--- a/src/Skit.ts
++++ b/src/Skit.ts
+@@ -403,7 +403,7 @@ function processSceneMovementTag(rawTag: string, stage: Stage): string | null {
+     if (!sceneMovementMatch) return null;
+ 
+     const destinationName = sceneMovementMatch[1].trim();
+-    const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
++    const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
+     const modulesWithName = modules.map(m => ({
+         name: `${m.getAttribute('name') || ''} ${m.type}`.trim(),
+         module: m
+@@ -486,7 +486,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
+         const quartersOwner = findBestNameMatch(quartersOwnerName, allActors);
+         if (quartersOwner) {
+             // Find the quarters module owned by this actor
+-            const quartersModule = stage.getLayout().getModulesWhere(m => 
++            const quartersModule = stage.getLayout().getAllModulesWhere(m => 
+                 m.type === 'quarters' && m.ownerId === quartersOwner.id
+             )[0];
+             if (quartersModule) {
+@@ -499,7 +499,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
+         }
+     } else if (destinationName.toLowerCase().endsWith('quarters') || destinationName.toLowerCase().endsWith('chambers') || ['home', 'their room', 'another module', 'another room', 'elsewhere'].includes(destinationName.toLowerCase())) {
+         // Character's own quarters (if they have any)
+-        const ownQuarters = stage.getLayout().getModulesWhere(m => 
++        const ownQuarters = stage.getLayout().getAllModulesWhere(m => 
+             m.type === 'quarters' && m.ownerId === matched.id
+         )[0];
+         if (ownQuarters) {
+@@ -509,14 +509,14 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
+         }
+     } else if (['parc', 'spire', 'tower'].includes(destinationName.toLowerCase())) {
+         // Move to the translocation circle by default for vague "tower" references
+-        destinationModuleId = stage.getSave().layout.getModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
++        destinationModuleId = stage.getSave().layout.getAllModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
+     } else if (skit && ['here', 'this module', 'this room', 'this location', 'this area', 'current module', 'current room'].includes(destinationName.toLowerCase())) {
+         // Move to current skit module
+         destinationModuleId = currentSceneModuleId || getCurrentSceneModuleId(skit, -1) || skit.moduleId || '';
+     } else {
+         // Try to find a module by type name
+         // Use findBestNameMatch:
+-        const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
++        const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
+         const modulesWithName = modules.map(m => ({ name: m.getAttribute('name') || '', module: m }));
+         const targetModuleMatch = findBestNameMatch(destinationName, modulesWithName);
+         if (targetModuleMatch) {
+@@ -631,7 +631,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
+         ) : '') +
+         (
+             // If module is a quarters, present it as "Owner's quarters" or "vacant quarters": module type otherwise.
+-            buildPromptSegment('Rooms and Roles', save.layout.getModulesWhere(module => true).map(module => module.type == 'quarters' ? 
++            buildPromptSegment('Rooms and Roles', save.layout.getAllModulesWhere(module => true).map(module => module.type == 'quarters' ? 
+                 (module.ownerId ? `  ${save.actors[module.ownerId]?.name || 'Unknown'}'s Chambers` : '  Vacant Chambers') : 
+                 `  ${module.getAttribute('name')} ${module.getAttribute('role') ? `(${module.getAttribute('role')} : ${module.ownerId ? `${save.actors[module.ownerId]?.name || 'Unknown'}` : 'None'})` : ''}`).join('\n'))
+         ) +
+@@ -640,7 +640,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
+         // List non-present characters for reference; just need description and profile:
+         buildPromptSegment('Absent Characters (Available to Add)', absentPatients.map(actor => {
+             // Roll name and current location
+-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
++            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
+                 m && m.type !== 'quarters' && m.ownerId === actor.id
+             )[0];
+             const module = save.layout.getModuleById(actor.locationId);
+@@ -655,7 +655,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
+         // List away characters for reference; just need description and profile:
+         buildPromptSegment('Away Characters (On Assignment Away from the Spire)', awayPatients.map(actor => {
+             // Just role name and faction on loan to
+-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
++            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
+                 m && m.type !== 'quarters' && m.ownerId === actor.id
+             )[0];
+             const atFaction = save.factions[actor.locationId];
+@@ -699,7 +699,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
+             `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}`) : '') +
+         // List characters who are here, along with full stat details:
+         buildPromptSegment('Present Characters (Currently in the Scene)', `${presentPatients.map(actor => {
+-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
++            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
+                 m && m.type !== 'quarters' && m.ownerId === actor.id
+             )[0];
+             const birthDay = save.timeline?.find(event => event.skit?.actorId === actor.id && event.skit?.type === SkitType.INTRO_CHARACTER)?.day || save.day;
+@@ -873,7 +873,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[]
+         const roleNameRaw = roleMatch[2].trim();
+         const matchedActor = findBestNameMatch(characterNameRaw, allActors);
+         const currentRole = matchedActor ? getRole(matchedActor, stage.getSave()) : null;
+-        const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
++        const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getAllModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
+         const newRole = ['NONE', 'PATIENT', 'RESIDENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';
+         if (matchedActor && currentRole !== newRole) {
+             return [{
+@@ -961,7 +961,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[]
+ 
+             let moduleId = '';
+ 
+-            const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
++            const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
+             const modulesWithAliases = modules.flatMap(module => [
+                 { name: module.getAttribute('name') || '', module },
+                 { name: module.type || '', module },
+diff --git a/src/Stage.tsx b/src/Stage.tsx
+index f9436bc..bddef77 100644
+--- a/src/Stage.tsx
++++ b/src/Stage.tsx
+@@ -3,7 +3,7 @@ import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@ch
+ import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
+ import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage } from "./actors/Actor";
+ import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
+-import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule } from './Module';
++import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
+ import { BaseScreen, ScreenType } from "./screens/BaseScreen";
+ import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
+ import { smartRehydrate } from "./SaveRehydration";
+@@ -975,6 +975,66 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
+         return this.getSave().layout;
+     }
+ 
++    // ===== Multi-floor management =====
++
++    /** The cost to build the next floor, or null if already at max floors. */
++    getNextFloorCost(): Partial<Record<StationStat, number>> | null {
++        const layout = this.getLayout();
++        const nextFloorNumber = layout.floorCount + 1; // 1-indexed floor being built
++        if (nextFloorNumber > MAX_FLOORS) return null;
++        return FLOOR_BUILD_COSTS[nextFloorNumber] || null;
++    }
++
++    /** True if the current top floor is fully built out (all footprint cells filled). */
++    isTopFloorFull(): boolean {
++        const layout = this.getLayout();
++        return layout.isFloorFull(layout.floorCount - 1);
++    }
++
++    /** True if the player can currently build the next floor: not at max, top floor full, and affordable. */
++    canBuildNextFloor(): boolean {
++        const layout = this.getLayout();
++        if (layout.floorCount >= MAX_FLOORS) return false;
++        if (!this.isTopFloorFull()) return false;
++        const cost = this.getNextFloorCost();
++        if (!cost) return false;
++        const stats = this.getSave().stationStats;
++        if (!stats) return false;
++        for (const [stat, amount] of Object.entries(cost)) {
++            if ((stats[stat as StationStat] ?? 1) - (amount as number) < 1) return false;
++        }
++        return true;
++    }
++
++    /**
++     * Charges the cost and adds a new floor, switching the view to it.
++     * Returns the new floor index, or -1 if it could not be built.
++     */
++    buildNextFloor(): number {
++        if (!this.canBuildNextFloor()) return -1;
++        const save = this.getSave();
++        const cost = this.getNextFloorCost();
++        if (!cost || !save.stationStats) return -1;
++        for (const [stat, amount] of Object.entries(cost)) {
++            save.stationStats[stat as StationStat] = Math.max(1, (save.stationStats[stat as StationStat] ?? 1) - (amount as number));
++        }
++        const newIndex = save.layout.addFloor();
++        save.layout.setCurrentFloor(newIndex);
++        this.pushToTimeline(save, `The Magus raised a new floor of the Spire (floor ${newIndex + 1}).`);
++        this.saveGame();
++        return newIndex;
++    }
++
++    /** Switch the displayed floor. */
++    setCurrentFloor(index: number): void {
++        this.getLayout().setCurrentFloor(index);
++        this.saveGame();
++    }
++
++    getCurrentFloor(): number {
++        return this.getLayout().currentFloor;
++    }
++
+     async setState(state: MessageStateType): Promise<void> {
+     }
+ 
+diff --git a/src/screens/StationScreen.tsx b/src/screens/StationScreen.tsx
+index 7cd8b00..e56011d 100644
+--- a/src/screens/StationScreen.tsx
++++ b/src/screens/StationScreen.tsx
+@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
+ import { Typography, Card, CardContent, Tabs, Tab } from '@mui/material';
+ import { styled } from '@mui/material/styles';
+ import { ScreenType } from './BaseScreen';
+-import { Layout, Module, createModule, ModuleType, MODULE_TEMPLATES, StationStat, STATION_STAT_DESCRIPTIONS, STATION_STAT_ICONS, DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT } from '../Module';
++import { Layout, Module, createModule, ModuleType, MODULE_TEMPLATES, StationStat, STATION_STAT_DESCRIPTIONS, STATION_STAT_ICONS, DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, isFootprintCell, BUILD_UP_CELL, GO_DOWN_CELL, MAX_FLOORS } from '../Module';
+ import { Stage } from '../Stage';
+ import ActorCard from '../components/ActorCard';
+ import ModuleCard from '../components/ModuleCard';
+@@ -11,7 +11,7 @@ import FactionCard from '../components/FactionCard';
+ import { TurnIndicator as SharedTurnIndicator } from '../components/UIComponents';
+ import { useTooltip } from '../contexts/TooltipContext';
+ import { ContentManagementScreen } from './ContentManagementScreen';
+-import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete } from '@mui/icons-material';
++import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete, ArrowUpward, ArrowDownward, Add as AddIcon } from '@mui/icons-material';
+ import { EditNote } from '@mui/icons-material';
+ import { SkitType } from '../Skit';
+ import Actor from '../actors/Actor';
+@@ -55,6 +55,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
+     const [turn, setTurn] = React.useState<number>(stage().getSave().turn);
+ 
+     const [layout, setLayout] = React.useState<Layout>(stage()?.getLayout());
++    const [, setFloorRefresh] = React.useState<number>(0);
++    const forceUpdate = () => { setLayout(stage().getLayout()); setFloorRefresh(n => n + 1); };
+     const hasCheckedBeginingSkit = React.useRef<boolean>(false);
+     
+     // Module selection state
+@@ -744,8 +746,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
+                                     const dropX = Math.floor(relX / cellSizeNum);
+                                     const dropY = Math.floor(relY / cellSizeNum);
+                                     
+-                                    // Validate drop position
+-                                    if (dropX >= 0 && dropX < gridWidth && dropY >= 0 && dropY < gridHeight) {
++                                    // Validate drop position - must be in bounds and within the tower's circular footprint
++                                    if (dropX >= 0 && dropX < gridWidth && dropY >= 0 && dropY < gridHeight && isFootprintCell(dropX, dropY)) {
+                                         handleModuleDrop(dropX, dropY);
+                                     } else {
+                                         setDraggedModule(null);
+@@ -876,14 +878,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
+                             </motion.div>
+                         ) : null}
+ 
+-                        {/* Render + placeholders for adjacent empty spaces as a full darkened dotted box. Test that there is a neighboring module */}
+-                        {layout.getLayout().flat().some(m => {
+-                            const {x: mx, y: my} = layout.getModuleCoordinates(m);
+-                            // Check if adjacent and not the dragged module's original position
+-                            const isAdjacent = Math.abs(mx - x) + Math.abs(my - y) === 1;
+-                            const isDraggedOrigin = draggedModule && draggedModule.fromX === x && draggedModule.fromY === y;
+-                            return isAdjacent && !isDraggedOrigin;
+-                        }) && !module && (
++                        {/* Add-room + placeholder: only within the tower's circular footprint, and only on empty footprint cells. */}
++                        {!module && isFootprintCell(x, y) && (
+                             <motion.div
+                                 className="add-module-placeholder"
+                                 onClick={() => openModuleSelector(x, y)}
+@@ -907,6 +903,83 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
+                                 <div style={{ fontSize: isVerticalLayout ? '2.5vh' : '3vh', lineHeight: 1, fontWeight: 800, userSelect: 'none' }}>+</div>
+                             </motion.div>
+                         )}
++
++                        {/* Floor navigation & build controls (not modules; characters cannot route here). */}
++                        {(() => {
++                            const st = stage();
++                            const curFloor = layout.currentFloor;
++                            const topFloor = layout.floorCount - 1;
++                            const atBuildCell = x === BUILD_UP_CELL.x && y === BUILD_UP_CELL.y;
++                            const atDownCell = x === GO_DOWN_CELL.x && y === GO_DOWN_CELL.y;
++
++                            // Build-next-floor control: shown on the top floor's build cell when that floor is full and more floors remain.
++                            if (atBuildCell && !module && curFloor === topFloor && layout.floorCount < MAX_FLOORS && st.isTopFloorFull()) {
++                                const canBuild = st.canBuildNextFloor();
++                                const cost = st.getNextFloorCost() || {};
++                                const costLabel = Object.entries(cost).map(([s, v]) => `${v} ${s}`).join(', ');
++                                return (
++                                    <motion.div
++                                        onClick={() => { if (canBuild) { st.buildNextFloor(); forceUpdate(); } }}
++                                        whileHover={canBuild ? { scale: 1.04 } : undefined}
++                                        whileTap={canBuild ? { scale: 0.96 } : undefined}
++                                        title={canBuild ? `Build the next floor (${costLabel})` : `Not enough resources (needs ${costLabel})`}
++                                        style={{
++                                            width: '100%', height: '100%', borderRadius: 10,
++                                            background: canBuild ? 'rgba(176, 102, 255, 0.18)' : 'rgba(0,0,0,0.5)',
++                                            border: '3px dashed rgba(176, 102, 255, 0.9)',
++                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
++                                            color: canBuild ? '#d9b8ff' : 'rgba(255,255,255,0.4)',
++                                            cursor: canBuild ? 'pointer' : 'not-allowed', gap: 2, textAlign: 'center', padding: 4,
++                                        }}
++                                    >
++                                        <ArrowUpward style={{ fontSize: `calc(${cellSize} * 0.22)` }} />
++                                        <div style={{ fontSize: `calc(${cellSize} * 0.085)`, fontWeight: 700, lineHeight: 1.1 }}>Build Floor</div>
++                                        <div style={{ fontSize: `calc(${cellSize} * 0.07)`, opacity: 0.85, lineHeight: 1.1 }}>{costLabel}</div>
++                                    </motion.div>
++                                );
++                            }
++
++                            // Go-up control: on any floor below one that already exists, at the build cell.
++                            if (atBuildCell && !module && curFloor < topFloor) {
++                                return (
++                                    <motion.div
++                                        onClick={() => { st.setCurrentFloor(curFloor + 1); forceUpdate(); }}
++                                        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
++                                        title={`Go up to floor ${curFloor + 2}`}
++                                        style={{
++                                            width: '100%', height: '100%', borderRadius: 10,
++                                            background: 'rgba(176, 102, 255, 0.12)', border: '3px solid rgba(176, 102, 255, 0.7)',
++                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
++                                            color: '#d9b8ff', cursor: 'pointer',
++                                        }}
++                                    >
++                                        <ArrowUpward style={{ fontSize: `calc(${cellSize} * 0.3)` }} />
++                                        <div style={{ fontSize: `calc(${cellSize} * 0.08)`, fontWeight: 700 }}>Floor {curFloor + 2}</div>
++                                    </motion.div>
++                                );
++                            }
++
++                            // Go-down control: on any floor above the ground, at the down cell.
++                            if (atDownCell && !module && curFloor > 0) {
++                                return (
++                                    <motion.div
++                                        onClick={() => { st.setCurrentFloor(curFloor - 1); forceUpdate(); }}
++                                        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
++                                        title={`Go down to floor ${curFloor}`}
++                                        style={{
++                                            width: '100%', height: '100%', borderRadius: 10,
++                                            background: 'rgba(176, 102, 255, 0.12)', border: '3px solid rgba(176, 102, 255, 0.7)',
++                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
++                                            color: '#d9b8ff', cursor: 'pointer',
++                                        }}
++                                    >
++                                        <ArrowDownward style={{ fontSize: `calc(${cellSize} * 0.3)` }} />
++                                        <div style={{ fontSize: `calc(${cellSize} * 0.08)`, fontWeight: 700 }}>Floor {curFloor}</div>
++                                    </motion.div>
++                                );
++                            }
++                            return null;
++                        })()}
+                     </div>
+                 );
+             }
