@@ -77,6 +77,10 @@ class Actor {
     voiceId: string;
     participations: number = 0; // Number of skits they've participated in
     heldRoles: { [key: string]: number } = {}; // Roles ever held by this actor and the number of days spent in each
+    // Hidden, per-role proficiency (never shown to the player). Grows or shrinks based on skit outcomes,
+    // letting the player effectively train an unskilled resident to be better at their role over time.
+    // Keyed by role name; a value around 5 is average, 1 is inept, 10 is masterful.
+    roleProficiency: { [key: string]: number } = {};
     decorImageUrls: {[key: string]: string} = {}; // ModuleType to decor image URL mapping
     stats: Record<Stat, number>;
 
@@ -115,6 +119,9 @@ class Actor {
 
         if (actor.decorImageUrls === undefined) {
             actor.decorImageUrls = {};
+        }
+        if (actor.roleProficiency === undefined) {
+            actor.roleProficiency = {};
         }
         return actor;
     }
@@ -166,6 +173,21 @@ class Actor {
 
     getDescription(outfitId: string = ''): string {
         return this.getOutfitById(outfitId).description;
+    }
+
+    /** Hidden role proficiency (1-10, ~5 average). Defaults to 5 for a role not yet tracked. */
+    getRoleProficiency(role: string): number {
+        if (!role) return 5;
+        if (!this.roleProficiency) this.roleProficiency = {};
+        return this.roleProficiency[role] ?? 5;
+    }
+
+    /** Nudge hidden proficiency for a role, clamped to 1-10. */
+    adjustRoleProficiency(role: string, delta: number): void {
+        if (!role || !delta) return;
+        if (!this.roleProficiency) this.roleProficiency = {};
+        const current = this.roleProficiency[role] ?? 5;
+        this.roleProficiency[role] = Math.max(1, Math.min(10, current + delta));
     }
 
     setDescription(description: string, outfitId: string = '') {

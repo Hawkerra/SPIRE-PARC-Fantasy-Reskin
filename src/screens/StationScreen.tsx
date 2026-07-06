@@ -53,6 +53,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
     const [showContentManagement, setShowContentManagement] = React.useState(false);
     const [day, setDay] = React.useState<number>(stage().getSave().day);
     const [turn, setTurn] = React.useState<number>(stage().getSave().turn);
+    const [isPassingTime, setIsPassingTime] = React.useState<boolean>(false);
 
     const [layout, setLayout] = React.useState<Layout>(stage()?.getLayout());
     const [, setFloorRefresh] = React.useState<number>(0);
@@ -1368,6 +1369,32 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     />
                                 )})}
                             </div>
+                            <motion.button
+                                onClick={async () => {
+                                    if (isPassingTime) return;
+                                    setIsPassingTime(true);
+                                    try { await stage().passTime(setScreenType); } finally {
+                                        setDay(stage().getSave().day);
+                                        setTurn(stage().getSave().turn);
+                                        setIsPassingTime(false);
+                                    }
+                                }}
+                                whileHover={!isPassingTime ? { scale: 1.05 } : undefined}
+                                whileTap={!isPassingTime ? { scale: 0.95 } : undefined}
+                                title="Let time pass without a scene"
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                    background: 'rgba(176, 102, 255, 0.12)',
+                                    border: '1px solid rgba(176, 102, 255, 0.5)',
+                                    borderRadius: '6px', padding: '2px 10px',
+                                    color: '#b066ff', fontSize: '0.75rem', fontWeight: 700,
+                                    letterSpacing: '0.03em', textTransform: 'uppercase',
+                                    cursor: isPassingTime ? 'wait' : 'pointer',
+                                    opacity: isPassingTime ? 0.5 : 1,
+                                }}
+                            >
+                                {isPassingTime ? 'Passing...' : 'Pass Time'}
+                            </motion.button>
                         </div>
                         
                         {/* Material UI Tabs */}
@@ -1400,6 +1427,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                             <Tab label="RESIDENTS" value="patients" />
                             <Tab label="ROOMS" value="modules" />
                             <Tab label="FACTIONS" value="factions" />
+                            <Tab label="ACTIVITY" value="activity" />
                         </Tabs>
                         {/* Tab content */}
                         <div style={{ 
@@ -1540,11 +1568,30 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     )}
                                 </div>
                             )}
+                            {expandedMenu === 'activity' && (
+                                <div style={{ padding: '0.5vh' }}>
+                                    {(() => {
+                                        const log = [...(stage().getSave().activityLog || [])].reverse();
+                                        if (log.length === 0) {
+                                            return <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>The tower has been quiet so far. Activity will appear here as time passes.</p>;
+                                        }
+                                        return log.map((entry, i) => (
+                                            <div key={`${entry.day}-${entry.turn}-${i}`} style={{
+                                                padding: '8px 10px', marginBottom: '6px', borderRadius: '6px',
+                                                background: 'rgba(176, 102, 255, 0.08)', border: '1px solid rgba(176, 102, 255, 0.25)',
+                                            }}>
+                                                <div style={{ color: '#b066ff', fontSize: '0.7rem', fontWeight: 700, opacity: 0.7, marginBottom: '2px' }}>Day {entry.day} · {entry.actorName}</div>
+                                                <div style={{ color: '#e3ccff', fontSize: '0.82rem', lineHeight: 1.35 }}>{entry.line}</div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            )}
                         </div>
                     </>
                 ) : (
                     // Horizontal layout: Original expandable sections
-                    ['Patients', 'Modules', 'Factions'].map(item => {
+                    ['Patients', 'Modules', 'Factions', 'Activity'].map(item => {
                         const itemKey = item.toLowerCase();
                         const isExpanded = expandedMenu === itemKey;
                         const isContracting = previousExpandedMenu === itemKey && !isExpanded;
@@ -1630,7 +1677,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 {itemKey === 'patients' && (
                                     <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
                                         {stationActors.length === 0 ? (
-                                            <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>Visit the Echo Chamber to bring on new patients!</p>
+                                            <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>Visit the Summoning Sanctum to summon new residents!</p>
                                         ) : (
                                             stationActors.map((actor: any) => {
                                                 const { visitingFaction, visitingFromFaction } = getActorVisitingStatus(actor);
@@ -1731,6 +1778,25 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                 />
                                             ))
                                         )}
+                                    </div>
+                                )}
+                                {itemKey === 'activity' && (
+                                    <div style={{ padding: '15px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+                                        {(() => {
+                                            const log = [...(stage().getSave().activityLog || [])].reverse();
+                                            if (log.length === 0) {
+                                                return <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>The tower has been quiet so far. Activity will appear here as time passes.</p>;
+                                            }
+                                            return log.map((entry, i) => (
+                                                <div key={`${entry.day}-${entry.turn}-${i}`} style={{
+                                                    padding: '10px 12px', marginBottom: '8px', borderRadius: '6px',
+                                                    background: 'rgba(176, 102, 255, 0.08)', border: '1px solid rgba(176, 102, 255, 0.25)',
+                                                }}>
+                                                    <div style={{ color: '#b066ff', fontSize: '0.72rem', fontWeight: 700, opacity: 0.7, marginBottom: '3px' }}>Day {entry.day} · {entry.actorName}</div>
+                                                    <div style={{ color: '#e3ccff', fontSize: '0.85rem', lineHeight: 1.35 }}>{entry.line}</div>
+                                                </div>
+                                            ));
+                                        })()}
                                     </div>
                                 )}
                             </motion.div>

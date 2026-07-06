@@ -164,7 +164,8 @@ const OutcomePortraitBox: FC<OutcomePortraitBoxProps> = ({
 const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layout, isOutcomeTransient }) => {
     // Calculate bottom position based on message box top
 
-    const currentOutcomes: Outcome[] = outcomes || [];
+    // Tower Activity outcomes are surfaced only in the Activity Log tab, never in the in-skit stat display.
+    const currentOutcomes: Outcome[] = (outcomes || []).filter(o => o.type !== 'towerActivity');
     const save = stage.getSave();
     const mappedOutcomeOrders = new Set<number>();
 

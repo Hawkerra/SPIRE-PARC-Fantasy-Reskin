@@ -1,7 +1,7 @@
 import {ReactElement} from "react";
 import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@chub-ai/stages-ts";
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
-import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage } from "./actors/Actor";
+import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage, getRole } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
@@ -57,6 +57,16 @@ export type SaveType = {
     tone?: string;
     disableImpersonation?: boolean;
     commsVisitors?: string[]; // List of actor IDs currently visiting the comms module (for faction representatives)
+    activityLog?: ActivityEntry[]; // Tower Activity Log: what residents got up to while the player wasn't directly involved.
+}
+
+// A single Tower Activity Log entry - one line about what a resident did off-screen.
+export type ActivityEntry = {
+    day: number;
+    turn: number;
+    actorId: string;
+    actorName: string;
+    line: string; // The single-sentence activity description shown in the log.
 }
 
 export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateType, ConfigType> {
@@ -394,6 +404,51 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 parent_id: null,
                 message: message
             });
+        }
+    }
+
+    /**
+     * Advances a single turn without running a full skit, and generates one Tower Activity Log
+     * entry describing what a random resident got up to. Fire-and-forget for the LLM call so the
+     * UI stays responsive; the turn advances immediately.
+     */
+    async passTime(setScreenType: (type: ScreenType) => void): Promise<void> {
+        // Advance time first so day/turn are current for the activity entry.
+        this.incTurn(1, setScreenType);
+        const save = this.getSave();
+
+        // Pick a resident who is actually at the Spire (not away with a faction, not in stasis/dead, not the aide).
+        const candidates = Object.values(save.actors).filter(a =>
+            a.id !== save.aide.actorId &&
+            !a.factionId &&
+            !['cryo', 'dead'].includes(a.locationId || '')
+        );
+        if (candidates.length === 0) { this.saveGame(); return; }
+        const actor = candidates[Math.floor(Math.random() * candidates.length)];
+        const role = getRole(actor, save) || 'resident';
+        const proficiency = actor.getRoleProficiency(role);
+
+        const prompt = `The following is a fantasy tower-management game set in the Spire, an isolated wizard's tower. ` +
+            `Time has quietly passed. Describe, in ONE short sentence (no more than 20 words, never a paragraph), something that ${actor.name} got up to around the tower during this quiet stretch. ` +
+            `Let their personality and role shape it. ${actor.name} is the tower's ${role}` +
+            (proficiency >= 7 ? ` and is notably skilled at it` : proficiency <= 3 ? ` but struggles with the work` : ``) + `. ` +
+            `Personality/profile: ${actor.profile}\n\n` +
+            `Respond with ONLY the single sentence - no name prefix, no quotation marks, no extra commentary.`;
+
+        try {
+            let line = await this.makeText({ prompt, max_tokens: 80, min_tokens: 5, include_history: false });
+            if (line) {
+                line = line.replace(/\s*[\r\n]+\s*/g, ' ').replace(/^["']|["']$/g, '').trim();
+                const words = line.split(/\s+/);
+                if (words.length > 30) line = words.slice(0, 30).join(' ') + '...';
+                if (!save.activityLog) save.activityLog = [];
+                save.activityLog.push({ day: save.day, turn: save.turn, actorId: actor.id, actorName: actor.name, line });
+                if (save.activityLog.length > 100) save.activityLog = save.activityLog.slice(-100);
+                this.saveGame();
+            }
+        } catch (err) {
+            console.error('passTime activity generation failed', err);
+            this.saveGame();
         }
     }
 
@@ -1275,6 +1330,11 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         const actor = save.actors[outcome.actorId];
                         actor.stats[outcome.stat as Stat] += outcome.amount;
                         this.showPriorityMessage(`${actor.name}'s ${outcome.stat} ${outcome.amount >= 0 ? 'increased' : 'decreased'} by ${Math.abs(outcome.amount)}.`);
+                        // A change to Skill in a skit trains (or dulls) the resident's hidden proficiency in their current role.
+                        if ((outcome.stat as Stat) === Stat.Skill) {
+                            const role = getRole(actor, save);
+                            if (role) actor.adjustRoleProficiency(role, outcome.amount > 0 ? 1 : -1);
+                        }
                     }
                 } else if (outcome.type === 'stationStat' && outcome.stat && Object.values(StationStat).includes(outcome.stat as StationStat) && outcome.amount) {
                     console.log('Processing station stat outcome for stat:', outcome.stat, 'amount:', outcome.amount);
@@ -1410,6 +1470,33 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 } else if (outcome.type === 'newActor' && outcome.actor) {
                     // Kick off actor generation in the background.
                     void this.generateActorFromOutcome(outcome);
+                } else if (outcome.type === 'towerActivity' && outcome.actorId && outcome.activityLine) {
+                    const actor = save.actors[outcome.actorId];
+                    if (actor) {
+                        // Append to the Tower Activity Log (kept separate from the player-facing stat list).
+                        if (!save.activityLog) save.activityLog = [];
+                        save.activityLog.push({
+                            day: save.day,
+                            turn: save.turn,
+                            actorId: actor.id,
+                            actorName: actor.name,
+                            line: outcome.activityLine,
+                        });
+                        // Cap the log so it doesn't grow without bound.
+                        if (save.activityLog.length > 100) {
+                            save.activityLog = save.activityLog.slice(-100);
+                        }
+                        // Apply the optional clamped tower-stat nudge silently (no player-facing toast).
+                        if (outcome.activityStat && outcome.activityAmount && save.stationStats && outcome.activityStat in save.stationStats) {
+                            const delta = outcome.activityAmount > 0 ? 1 : -1;
+                            save.stationStats[outcome.activityStat] = Math.max(1, Math.min(10, save.stationStats[outcome.activityStat] + delta));
+                        }
+                        // Nudge the resident's hidden proficiency in their current role toward the activity's direction.
+                        const role = getRole(actor, save);
+                        if (role && outcome.activityAmount) {
+                            actor.adjustRoleProficiency(role, outcome.activityAmount > 0 ? 1 : -1);
+                        }
+                    }
                 }
             }
 

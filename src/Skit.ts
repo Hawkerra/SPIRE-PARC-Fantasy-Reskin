@@ -19,8 +19,8 @@ export enum SkitType {
 }
 
 export interface Outcome {
-    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit' | 'movement' | 'newActor';
-    actorId?: string; // Required for actorStat, roleChange, factionChange, newOutfit, and movement
+    type: 'actorStat' | 'stationStat' | 'roleChange' | 'factionChange' | 'factionReputation' | 'newModule' | 'newOutfit' | 'movement' | 'newActor' | 'towerActivity';
+    actorId?: string; // Required for actorStat, roleChange, factionChange, newOutfit, movement, and towerActivity
     stat?: Stat | StationStat; // Required for actorStat
     amount?: number; // Required for actorStat
     role?: string; // Required for roleChange (role name or '' for None)
@@ -29,6 +29,9 @@ export interface Outcome {
     module?: { id: string; moduleName: string; roleName: string; description: string }; // Required for new module
     outfit?: { id: string; actorId: string; outfitName: string; description: string }; // Required for new outfit
     actor?: { name: string; personality: string, locationId: string, factionId?: string }; // Required for newActor
+    activityLine?: string; // Required for towerActivity: the single-sentence activity description
+    activityStat?: StationStat; // Optional for towerActivity: a tower stat nudged by the activity
+    activityAmount?: number; // Optional for towerActivity: +1 or -1 (clamped in code)
 }
 
 export interface ScriptEntry {
@@ -735,6 +738,18 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `[STATION: Arcanum +2, Comfort +1]\n` +
                             `[STATION: Security -1]\n` +
 
+                            `\n#Tower Activity:#\n` +
+                            `Separately, report on ONE resident of the Spire who did NOT appear in this scene, describing something they got up to elsewhere in the tower this turn. ` +
+                            `Choose a resident from the roster who was absent from the scene; favor someone with an assigned role, and let their personality and role shape what they did. ` +
+                            `Output EXACTLY ONE line in this format:\n` +
+                            `[ACTIVITY: <characterName> | <a single short sentence, no more than about 20 words> | <optional: STATIONSTAT +1 or STATIONSTAT -1>]\n` +
+                            `The final field is optional and, when present, must be a single tower stat (Arcanum, Comfort, Provision, Security, Harmony, or Wealth) nudged by exactly +1 or -1, reflecting how their activity helped or hurt the tower. Omit it for purely flavorful activities. ` +
+                            `Keep the sentence to a single line - never a paragraph. Only ONE [ACTIVITY] tag total.\n` +
+                            `Full Examples:\n` +
+                            `[ACTIVITY: Mara | Spent the afternoon reorganizing the apothecary shelves, muttering about everyone's poor labeling. | Comfort +1]\n` +
+                            `[ACTIVITY: Silas | Was found asleep in the Great Hall again, having missed his own watch shift. | Security -1]\n` +
+                            `[ACTIVITY: Wren | Practiced summoning-circle calligraphy for hours, purely for the joy of it.]\n` +
+
                             `\n#Faction Reputation Changes:#\n` +
                             `Identify any changes to the Spire's reputation with factions implied by each entry. For each change, output a line in the following format:\n` +
                             `[FACTION: <factionName> +<value>]\n` +
@@ -825,6 +840,36 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
     const availableActors: Actor[] = Object.values(stage.getSave().actors);
 
     if (!text) return null;
+
+    // Tower Activity: [ACTIVITY: Name | single sentence | optional STAT +1/-1]
+    const activityRegex = /ACTIVITY:\s*([^|]+)\|\s*([^|]+?)\s*(?:\|\s*([A-Za-z]+)\s*([+\-]\s*\d+))?\s*$/i;
+    const activityMatch = activityRegex.exec(text);
+    if (activityMatch) {
+        const characterNameRaw = activityMatch[1].trim();
+        let line = (activityMatch[2] || '').trim();
+        const matchedActor = findBestNameMatch(characterNameRaw, allActors);
+        if (matchedActor && line) {
+            // Enforce a single line, collapse whitespace, and cap length as a hard backstop against paragraphs.
+            line = line.replace(/\s*[\r\n]+\s*/g, ' ').trim();
+            const words = line.split(/\s+/);
+            if (words.length > 30) line = words.slice(0, 30).join(' ') + '...';
+
+            const outcome: Outcome = { type: 'towerActivity', actorId: matchedActor.id, activityLine: line };
+
+            // Optional single tower-stat nudge, clamped to exactly +1 or -1.
+            if (activityMatch[3] && activityMatch[4]) {
+                const statRaw = activityMatch[3].trim();
+                const rawAmount = parseInt(activityMatch[4].replace(/\s+/g, ''), 10) || 0;
+                const matchedStat = Object.values(StationStat).find(s => String(s).toLowerCase() === statRaw.toLowerCase());
+                if (matchedStat && rawAmount !== 0) {
+                    outcome.activityStat = matchedStat as StationStat;
+                    outcome.activityAmount = rawAmount > 0 ? 1 : -1; // hard clamp
+                }
+            }
+            return [outcome];
+        }
+        return null;
+    }
 
     const factionTagRegex = /FACTION:\s*([^+\-]+)\s*([+\-]\s*\d+)/i;
     const factionMatch = factionTagRegex.exec(text);
