@@ -296,6 +296,19 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
         setSelectedOutfitId(newOutfit.id);
     };
 
+    // Immediately make the selected outfit the one the character is wearing, and persist it
+    // so it isn't reverted when the detail screen closes. Lets the player dress characters between skits.
+    const handleWearOutfit = () => {
+        if (!selectedOutfit) return;
+        actor.outfitId = selectedOutfit.id;
+        // Update the ref so handleCloseDetail's revert keeps this choice.
+        initialOutfitIdRef.current = selectedOutfit.id;
+        stage().saveGame();
+        // Force a re-render so the "worn" state (and disabled states) update immediately.
+        setSelectedOutfitId(selectedOutfit.id);
+        setEditedOutfits((prev) => [...prev]);
+    };
+
     const handleDeleteOutfit = () => {
         if (!selectedOutfit || editedOutfits.length <= 1) {
             return;
@@ -1166,6 +1179,12 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                     <div style={{ display: 'flex', gap: '10px' }}>
                                         <Button onClick={handleCreateOutfit}>
                                             New Outfit
+                                        </Button>
+                                        <Button
+                                            onClick={handleWearOutfit}
+                                            disabled={selectedOutfit?.id === actor.outfitId}
+                                        >
+                                            {selectedOutfit?.id === actor.outfitId ? 'Currently Worn' : 'Wear This Outfit'}
                                         </Button>
                                         <Button
                                             onClick={handleDeleteOutfit}
