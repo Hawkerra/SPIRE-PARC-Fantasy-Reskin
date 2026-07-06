@@ -86,8 +86,12 @@ export function smartRehydrate(obj: any): any {
         return obj.map(smartRehydrate);
     }
 
-    // Try to detect Layout by structure
-    if (obj.grid && ((obj.gridSize && typeof obj.gridSize === 'number') || (obj.gridWidth && obj.gridHeight && typeof obj.gridWidth === 'number' && typeof obj.gridHeight === 'number'))) {
+    // Try to detect Layout by structure. Supports both the legacy single-grid shape (obj.grid)
+    // and the multi-floor shape (obj.floors), which serializes without a top-level `grid` key
+    // because `grid` is a getter over the current floor.
+    const looksDimensioned = (obj.gridSize && typeof obj.gridSize === 'number') ||
+        (obj.gridWidth && obj.gridHeight && typeof obj.gridWidth === 'number' && typeof obj.gridHeight === 'number');
+    if ((Array.isArray(obj.floors) || obj.grid) && looksDimensioned) {
         return Layout.fromSave(obj);
     }
 

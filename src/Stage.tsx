@@ -3,7 +3,7 @@ import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@ch
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
 import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
-import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule } from './Module';
+import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
 import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
 import { smartRehydrate } from "./SaveRehydration";
@@ -511,10 +511,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             this.saveSlot = Math.min(this.SAVE_SLOTS - 1, this.saves.length - 1);
         }
         this.currentSave = this.getFreshSave();
+        this.newGameNeedsRoomArt = true; // Defer starting-room art until the game is actually running (see startGame).
         this.saveGame();
-        // Kick off fresh, theme-appropriate art for the starting rooms in the background.
-        // They ship with placeholder images so play can begin immediately; these replace them as they finish.
-        void this.refreshStartingModuleImages();
     }
 
     // Regenerates images for all currently-placed modules using their imagePrompt, one at a time
@@ -523,6 +521,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     async refreshStartingModuleImages(): Promise<void> {
         try {
             const modules = this.getSave().layout.getModulesWhere(() => true);
+            let anyUpdated = false;
+            let savedSinceLast = 0;
             for (const module of modules) {
                 try {
                     // generateModuleImage expects a ModuleIntrinsic; build one from the live module,
@@ -536,12 +536,16 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                             baseImageUrl: intrinsic.baseImageUrl,
                             defaultImageUrl: intrinsic.defaultImageUrl,
                         };
-                        this.saveGame();
+                        anyUpdated = true;
+                        savedSinceLast++;
+                        // Save every few images so progress persists without a network write per image.
+                        if (savedSinceLast >= 3) { this.saveGame(); savedSinceLast = 0; }
                     }
                 } catch (err) {
                     console.error(`Failed to auto-generate image for module ${module.type}`, err);
                 }
             }
+            if (anyUpdated) this.saveGame();
         } catch (err) {
             console.error('Error during starting module image refresh', err);
         }
@@ -600,6 +604,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.saveSlot = slotIndex;
         this.saveGame();
     }
+
+    newGameNeedsRoomArt = false;
 
     startGame() {
         if (this.initialized) return;
@@ -810,6 +816,13 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             }
         }
 
+        // Now that the game is fully initialized and running, kick off starting-room art in the
+        // background (only for a brand-new game). Fire-and-forget so it never blocks startup.
+        if (this.newGameNeedsRoomArt) {
+            this.newGameNeedsRoomArt = false;
+            void this.refreshStartingModuleImages();
+        }
+
         this.summaryCheck();
     }
 
@@ -973,6 +986,66 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
     getLayout(): Layout {
         return this.getSave().layout;
+    }
+
+    // ===== Multi-floor management =====
+
+    /** The cost to build the next floor, or null if already at max floors. */
+    getNextFloorCost(): Partial<Record<StationStat, number>> | null {
+        const layout = this.getLayout();
+        const nextFloorNumber = layout.floorCount + 1; // 1-indexed floor being built
+        if (nextFloorNumber > MAX_FLOORS) return null;
+        return FLOOR_BUILD_COSTS[nextFloorNumber] || null;
+    }
+
+    /** True if the current top floor is fully built out (all footprint cells filled). */
+    isTopFloorFull(): boolean {
+        const layout = this.getLayout();
+        return layout.isFloorFull(layout.floorCount - 1);
+    }
+
+    /** True if the player can currently build the next floor: not at max, top floor full, and affordable. */
+    canBuildNextFloor(): boolean {
+        const layout = this.getLayout();
+        if (layout.floorCount >= MAX_FLOORS) return false;
+        if (!this.isTopFloorFull()) return false;
+        const cost = this.getNextFloorCost();
+        if (!cost) return false;
+        const stats = this.getSave().stationStats;
+        if (!stats) return false;
+        for (const [stat, amount] of Object.entries(cost)) {
+            if ((stats[stat as StationStat] ?? 1) - (amount as number) < 1) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Charges the cost and adds a new floor, switching the view to it.
+     * Returns the new floor index, or -1 if it could not be built.
+     */
+    buildNextFloor(): number {
+        if (!this.canBuildNextFloor()) return -1;
+        const save = this.getSave();
+        const cost = this.getNextFloorCost();
+        if (!cost || !save.stationStats) return -1;
+        for (const [stat, amount] of Object.entries(cost)) {
+            save.stationStats[stat as StationStat] = Math.max(1, (save.stationStats[stat as StationStat] ?? 1) - (amount as number));
+        }
+        const newIndex = save.layout.addFloor();
+        save.layout.setCurrentFloor(newIndex);
+        this.pushToTimeline(save, `The Magus raised a new floor of the Spire (floor ${newIndex + 1}).`);
+        this.saveGame();
+        return newIndex;
+    }
+
+    /** Switch the displayed floor. */
+    setCurrentFloor(index: number): void {
+        this.getLayout().setCurrentFloor(index);
+        this.saveGame();
+    }
+
+    getCurrentFloor(): number {
+        return this.getLayout().currentFloor;
     }
 
     async setState(state: MessageStateType): Promise<void> {

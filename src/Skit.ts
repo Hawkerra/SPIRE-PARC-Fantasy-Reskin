@@ -403,7 +403,7 @@ function processSceneMovementTag(rawTag: string, stage: Stage): string | null {
     if (!sceneMovementMatch) return null;
 
     const destinationName = sceneMovementMatch[1].trim();
-    const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
+    const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
     const modulesWithName = modules.map(m => ({
         name: `${m.getAttribute('name') || ''} ${m.type}`.trim(),
         module: m
@@ -486,7 +486,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
         const quartersOwner = findBestNameMatch(quartersOwnerName, allActors);
         if (quartersOwner) {
             // Find the quarters module owned by this actor
-            const quartersModule = stage.getLayout().getModulesWhere(m => 
+            const quartersModule = stage.getLayout().getAllModulesWhere(m => 
                 m.type === 'quarters' && m.ownerId === quartersOwner.id
             )[0];
             if (quartersModule) {
@@ -499,7 +499,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
         }
     } else if (destinationName.toLowerCase().endsWith('quarters') || destinationName.toLowerCase().endsWith('chambers') || ['home', 'their room', 'another module', 'another room', 'elsewhere'].includes(destinationName.toLowerCase())) {
         // Character's own quarters (if they have any)
-        const ownQuarters = stage.getLayout().getModulesWhere(m => 
+        const ownQuarters = stage.getLayout().getAllModulesWhere(m => 
             m.type === 'quarters' && m.ownerId === matched.id
         )[0];
         if (ownQuarters) {
@@ -509,14 +509,14 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
         }
     } else if (['parc', 'spire', 'tower'].includes(destinationName.toLowerCase())) {
         // Move to the translocation circle by default for vague "tower" references
-        destinationModuleId = stage.getSave().layout.getModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
+        destinationModuleId = stage.getSave().layout.getAllModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
     } else if (skit && ['here', 'this module', 'this room', 'this location', 'this area', 'current module', 'current room'].includes(destinationName.toLowerCase())) {
         // Move to current skit module
         destinationModuleId = currentSceneModuleId || getCurrentSceneModuleId(skit, -1) || skit.moduleId || '';
     } else {
         // Try to find a module by type name
         // Use findBestNameMatch:
-        const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
+        const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
         const modulesWithName = modules.map(m => ({ name: m.getAttribute('name') || '', module: m }));
         const targetModuleMatch = findBestNameMatch(destinationName, modulesWithName);
         if (targetModuleMatch) {
@@ -631,7 +631,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
         ) : '') +
         (
             // If module is a quarters, present it as "Owner's quarters" or "vacant quarters": module type otherwise.
-            buildPromptSegment('Rooms and Roles', save.layout.getModulesWhere(module => true).map(module => module.type == 'quarters' ? 
+            buildPromptSegment('Rooms and Roles', save.layout.getAllModulesWhere(module => true).map(module => module.type == 'quarters' ? 
                 (module.ownerId ? `  ${save.actors[module.ownerId]?.name || 'Unknown'}'s Chambers` : '  Vacant Chambers') : 
                 `  ${module.getAttribute('name')} ${module.getAttribute('role') ? `(${module.getAttribute('role')} : ${module.ownerId ? `${save.actors[module.ownerId]?.name || 'Unknown'}` : 'None'})` : ''}`).join('\n'))
         ) +
@@ -640,7 +640,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
         // List non-present characters for reference; just need description and profile:
         buildPromptSegment('Absent Characters (Available to Add)', absentPatients.map(actor => {
             // Roll name and current location
-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
+            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
             )[0];
             const module = save.layout.getModuleById(actor.locationId);
@@ -655,7 +655,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
         // List away characters for reference; just need description and profile:
         buildPromptSegment('Away Characters (On Assignment Away from the Spire)', awayPatients.map(actor => {
             // Just role name and faction on loan to
-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
+            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
             )[0];
             const atFaction = save.factions[actor.locationId];
@@ -699,7 +699,7 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
             `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}`) : '') +
         // List characters who are here, along with full stat details:
         buildPromptSegment('Present Characters (Currently in the Scene)', `${presentPatients.map(actor => {
-            const roleModule = stage.getLayout().getModulesWhere((m: any) => 
+            const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 
                 m && m.type !== 'quarters' && m.ownerId === actor.id
             )[0];
             const birthDay = save.timeline?.find(event => event.skit?.actorId === actor.id && event.skit?.type === SkitType.INTRO_CHARACTER)?.day || save.day;
@@ -873,7 +873,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         const roleNameRaw = roleMatch[2].trim();
         const matchedActor = findBestNameMatch(characterNameRaw, allActors);
         const currentRole = matchedActor ? getRole(matchedActor, stage.getSave()) : null;
-        const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
+        const matchedRole = findBestNameMatch(roleNameRaw, stage.getSave().layout.getAllModulesWhere(m => true).map(m => ({ name: m.getAttribute('role') || '' })));
         const newRole = ['NONE', 'PATIENT', 'RESIDENT', 'OCCUPANT'].includes(roleNameRaw.toUpperCase()) ? '' : matchedRole?.name || '';
         if (matchedActor && currentRole !== newRole) {
             return [{
@@ -961,7 +961,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
 
             let moduleId = '';
 
-            const modules = stage.getLayout().getModulesWhere(m => !!m.getAttribute('name'));
+            const modules = stage.getLayout().getAllModulesWhere(m => !!m.getAttribute('name'));
             const modulesWithAliases = modules.flatMap(module => [
                 { name: module.getAttribute('name') || '', module },
                 { name: module.type || '', module },

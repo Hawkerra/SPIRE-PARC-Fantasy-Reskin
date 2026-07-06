@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Card, CardContent, Tabs, Tab } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ScreenType } from './BaseScreen';
-import { Layout, Module, createModule, ModuleType, MODULE_TEMPLATES, StationStat, STATION_STAT_DESCRIPTIONS, STATION_STAT_ICONS, DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT } from '../Module';
+import { Layout, Module, createModule, ModuleType, MODULE_TEMPLATES, StationStat, STATION_STAT_DESCRIPTIONS, STATION_STAT_ICONS, DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, isFootprintCell, BUILD_UP_CELL, GO_DOWN_CELL, MAX_FLOORS } from '../Module';
 import { Stage } from '../Stage';
 import ActorCard from '../components/ActorCard';
 import ModuleCard from '../components/ModuleCard';
@@ -11,7 +11,7 @@ import FactionCard from '../components/FactionCard';
 import { TurnIndicator as SharedTurnIndicator } from '../components/UIComponents';
 import { useTooltip } from '../contexts/TooltipContext';
 import { ContentManagementScreen } from './ContentManagementScreen';
-import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete } from '@mui/icons-material';
+import { SwapHoriz, Home, Work, Menu, HourglassBottom, HourglassTop, NotInterested, Delete, ArrowUpward, ArrowDownward, Add as AddIcon } from '@mui/icons-material';
 import { EditNote } from '@mui/icons-material';
 import { SkitType } from '../Skit';
 import Actor from '../actors/Actor';
@@ -55,6 +55,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
     const [turn, setTurn] = React.useState<number>(stage().getSave().turn);
 
     const [layout, setLayout] = React.useState<Layout>(stage()?.getLayout());
+    const [, setFloorRefresh] = React.useState<number>(0);
+    const forceUpdate = () => { setLayout(stage().getLayout()); setFloorRefresh(n => n + 1); };
     const hasCheckedBeginingSkit = React.useRef<boolean>(false);
     
     // Module selection state
@@ -744,8 +746,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                     const dropX = Math.floor(relX / cellSizeNum);
                                     const dropY = Math.floor(relY / cellSizeNum);
                                     
-                                    // Validate drop position
-                                    if (dropX >= 0 && dropX < gridWidth && dropY >= 0 && dropY < gridHeight) {
+                                    // Validate drop position - must be in bounds and within the tower's circular footprint
+                                    if (dropX >= 0 && dropX < gridWidth && dropY >= 0 && dropY < gridHeight && isFootprintCell(dropX, dropY)) {
                                         handleModuleDrop(dropX, dropY);
                                     } else {
                                         setDraggedModule(null);
@@ -876,14 +878,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                             </motion.div>
                         ) : null}
 
-                        {/* Render + placeholders for adjacent empty spaces as a full darkened dotted box. Test that there is a neighboring module */}
-                        {layout.getLayout().flat().some(m => {
-                            const {x: mx, y: my} = layout.getModuleCoordinates(m);
-                            // Check if adjacent and not the dragged module's original position
-                            const isAdjacent = Math.abs(mx - x) + Math.abs(my - y) === 1;
-                            const isDraggedOrigin = draggedModule && draggedModule.fromX === x && draggedModule.fromY === y;
-                            return isAdjacent && !isDraggedOrigin;
-                        }) && !module && (
+                        {/* Add-room + placeholder: only within the tower's circular footprint, and only on empty footprint cells. */}
+                        {!module && isFootprintCell(x, y) && (
                             <motion.div
                                 className="add-module-placeholder"
                                 onClick={() => openModuleSelector(x, y)}
@@ -907,6 +903,83 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                 <div style={{ fontSize: isVerticalLayout ? '2.5vh' : '3vh', lineHeight: 1, fontWeight: 800, userSelect: 'none' }}>+</div>
                             </motion.div>
                         )}
+
+                        {/* Floor navigation & build controls (not modules; characters cannot route here). */}
+                        {(() => {
+                            const st = stage();
+                            const curFloor = layout.currentFloor;
+                            const topFloor = layout.floorCount - 1;
+                            const atBuildCell = x === BUILD_UP_CELL.x && y === BUILD_UP_CELL.y;
+                            const atDownCell = x === GO_DOWN_CELL.x && y === GO_DOWN_CELL.y;
+
+                            // Build-next-floor control: shown on the top floor's build cell when that floor is full and more floors remain.
+                            if (atBuildCell && !module && curFloor === topFloor && layout.floorCount < MAX_FLOORS && st.isTopFloorFull()) {
+                                const canBuild = st.canBuildNextFloor();
+                                const cost = st.getNextFloorCost() || {};
+                                const costLabel = Object.entries(cost).map(([s, v]) => `${v} ${s}`).join(', ');
+                                return (
+                                    <motion.div
+                                        onClick={() => { if (canBuild) { st.buildNextFloor(); forceUpdate(); } }}
+                                        whileHover={canBuild ? { scale: 1.04 } : undefined}
+                                        whileTap={canBuild ? { scale: 0.96 } : undefined}
+                                        title={canBuild ? `Build the next floor (${costLabel})` : `Not enough resources (needs ${costLabel})`}
+                                        style={{
+                                            width: '100%', height: '100%', borderRadius: 10,
+                                            background: canBuild ? 'rgba(176, 102, 255, 0.18)' : 'rgba(0,0,0,0.5)',
+                                            border: '3px dashed rgba(176, 102, 255, 0.9)',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            color: canBuild ? '#d9b8ff' : 'rgba(255,255,255,0.4)',
+                                            cursor: canBuild ? 'pointer' : 'not-allowed', gap: 2, textAlign: 'center', padding: 4,
+                                        }}
+                                    >
+                                        <ArrowUpward style={{ fontSize: `calc(${cellSize} * 0.22)` }} />
+                                        <div style={{ fontSize: `calc(${cellSize} * 0.085)`, fontWeight: 700, lineHeight: 1.1 }}>Build Floor</div>
+                                        <div style={{ fontSize: `calc(${cellSize} * 0.07)`, opacity: 0.85, lineHeight: 1.1 }}>{costLabel}</div>
+                                    </motion.div>
+                                );
+                            }
+
+                            // Go-up control: on any floor below one that already exists, at the build cell.
+                            if (atBuildCell && !module && curFloor < topFloor) {
+                                return (
+                                    <motion.div
+                                        onClick={() => { st.setCurrentFloor(curFloor + 1); forceUpdate(); }}
+                                        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                                        title={`Go up to floor ${curFloor + 2}`}
+                                        style={{
+                                            width: '100%', height: '100%', borderRadius: 10,
+                                            background: 'rgba(176, 102, 255, 0.12)', border: '3px solid rgba(176, 102, 255, 0.7)',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            color: '#d9b8ff', cursor: 'pointer',
+                                        }}
+                                    >
+                                        <ArrowUpward style={{ fontSize: `calc(${cellSize} * 0.3)` }} />
+                                        <div style={{ fontSize: `calc(${cellSize} * 0.08)`, fontWeight: 700 }}>Floor {curFloor + 2}</div>
+                                    </motion.div>
+                                );
+                            }
+
+                            // Go-down control: on any floor above the ground, at the down cell.
+                            if (atDownCell && !module && curFloor > 0) {
+                                return (
+                                    <motion.div
+                                        onClick={() => { st.setCurrentFloor(curFloor - 1); forceUpdate(); }}
+                                        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                                        title={`Go down to floor ${curFloor}`}
+                                        style={{
+                                            width: '100%', height: '100%', borderRadius: 10,
+                                            background: 'rgba(176, 102, 255, 0.12)', border: '3px solid rgba(176, 102, 255, 0.7)',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            color: '#d9b8ff', cursor: 'pointer',
+                                        }}
+                                    >
+                                        <ArrowDownward style={{ fontSize: `calc(${cellSize} * 0.3)` }} />
+                                        <div style={{ fontSize: `calc(${cellSize} * 0.08)`, fontWeight: 700 }}>Floor {curFloor}</div>
+                                    </motion.div>
+                                );
+                            }
+                            return null;
+                        })()}
                     </div>
                 );
             }
