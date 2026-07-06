@@ -424,6 +424,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         let line = raw.replace(/\s*[\r\n]+\s*/g, ' ').replace(/^["']|["']$/g, '').trim();
         // Must contain actual letters (reject pure punctuation/symbol/number strings).
         if (!/[A-Za-z]/.test(line)) return null;
+        // Reject lines that begin with a digit (the LLM's number-anchoring habit).
+        if (/^\s*\d/.test(line)) return null;
         const words = line.split(/\s+/).filter(w => /[A-Za-z]/.test(w));
         // Reject too-short (likely a fragment/error) or pathologically long output.
         if (words.length < 3) return null;
@@ -441,41 +443,48 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.incTurn(1, setScreenType);
         const save = this.getSave();
 
-        // Pick a resident who is actually at the Spire (not away with a faction, not in stasis/dead, not the aide).
+        // Pick a resident of the tower (or the bound tower spirit) - not away with a faction, not in stasis/dead.
         const candidates = Object.values(save.actors).filter(a =>
-            a.id !== save.aide.actorId &&
             !a.factionId &&
             !['cryo', 'dead'].includes(a.locationId || '')
         );
         if (candidates.length === 0) { this.saveGame(); return; }
         const actor = candidates[Math.floor(Math.random() * candidates.length)];
+        const isSpirit = actor.id === save.aide.actorId;
         const role = getRole(actor, save) || 'resident';
         const proficiency = actor.getRoleProficiency(role);
         const statNames = Object.values(StationStat).join(', ');
 
+        const subjectContext = isSpirit
+            ? `${actor.name} is the tower's bound spirit and steward - a capricious, theatrical presence who has haunted these stones for two centuries. Describe something they got up to as the spirit of the tower (drifting through walls, tormenting the furniture, tending the wards, observing the residents), fitting their personality.`
+            : `${actor.name} is the tower's ${role}` +
+              (proficiency >= 7 ? ` and is notably skilled at it` : proficiency <= 3 ? ` but struggles with the work` : ``) + `.`;
+
         const prompt = `The following is a fantasy tower-management game set in the Spire, an isolated wizard's tower. ` +
             `Time has quietly passed. Describe, in ONE short sentence (no more than 20 words, never a paragraph), something that ${actor.name} got up to around the tower during this quiet stretch. ` +
-            `Let their personality and role shape it. ${actor.name} is the tower's ${role}` +
-            (proficiency >= 7 ? ` and is notably skilled at it` : proficiency <= 3 ? ` but struggles with the work` : ``) + `. ` +
+            `Let their personality shape it. ${subjectContext} ` +
             `Personality/profile: ${actor.profile}\n\n` +
-            `MOST of the time this should be a purely flavorful moment with no mechanical effect. Only OCCASIONALLY - when the activity clearly and notably helped or harmed the tower - append a single tower-stat change of exactly +1 or -1. ` +
+            `MOST of the time this should be a purely flavorful moment with no mechanical effect. Only OCCASIONALLY - when the activity clearly and notably helped or harmed the tower - include a single tower-stat change of exactly +1 or -1. ` +
             `Do not force one; a change should feel like an occasional pleasant surprise or minor setback, not a routine occurrence.\n` +
-            `Format your reply as ONE line:\n` +
+            `Format your reply as ONE line, and ALWAYS end with a required tag:\n` +
             `<the single sentence> ||STAT <one of: ${statNames}> <+1 or -1>\n` +
-            `The "||STAT ..." part is OPTIONAL - include it only when genuinely warranted, and omit it entirely (just the sentence) otherwise. ` +
-            `No name prefix, no quotation marks, no extra commentary.`;
+            `OR, for the common flavor-only case:\n` +
+            `<the single sentence> ||NONE\n` +
+            `The tag (either "||STAT ..." or "||NONE") is REQUIRED. Do not begin the sentence with a number. No name prefix, no quotation marks, no extra commentary.`;
 
         try {
             const rawResponse = await this.makeText({ prompt, max_tokens: 90, min_tokens: 5, include_history: false });
             if (!rawResponse) { this.saveGame(); return; }
 
-            // Split off an optional trailing stat directive.
-            let statPart: string | null = null;
-            let linePart = rawResponse;
+            // A tag is required: either ||STAT ... or ||NONE. If neither is present, discard.
+            const hasNone = /\|\|\s*NONE\b/i.test(rawResponse);
             const statSplit = rawResponse.split(/\|\|\s*STAT\s+/i);
-            if (statSplit.length > 1) {
-                linePart = statSplit[0];
-                statPart = statSplit[1];
+            let statPart: string | null = statSplit.length > 1 ? statSplit[1] : null;
+            let linePart = statSplit.length > 1 ? statSplit[0] : rawResponse.replace(/\|\|\s*NONE\b.*$/i, '');
+            if (!statPart && !hasNone) {
+                console.warn('passTime: activity discarded (missing required tag):', rawResponse);
+                this.saveGame();
+                return;
             }
 
             const line = this.validateActivityLine(linePart);
@@ -494,7 +503,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                         save.stationStats[matchedStat as StationStat] = Math.max(1, Math.min(10, save.stationStats[matchedStat as StationStat] + delta));
                         entry.stat = String(matchedStat);
                         entry.amount = delta;
-                        actor.adjustRoleProficiency(role, delta);
+                        if (!isSpirit) actor.adjustRoleProficiency(role, delta);
                     }
                 }
             }
@@ -1567,8 +1576,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                             entry.stat = String(outcome.activityStat);
                             entry.amount = delta;
                             // Nudge the resident's hidden proficiency in their current role toward the activity's direction.
+                            // (The tower spirit has no room-role, so skip proficiency for it.)
                             const role = getRole(actor, save);
-                            if (role) actor.adjustRoleProficiency(role, delta);
+                            if (role && actor.id !== save.aide.actorId) actor.adjustRoleProficiency(role, delta);
                         }
                         save.activityLog.push(entry);
                         // Cap the log so it doesn't grow without bound.
