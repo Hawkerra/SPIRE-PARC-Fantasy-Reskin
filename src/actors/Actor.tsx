@@ -325,6 +325,18 @@ export async function loadReserveActorFromFullPath(fullPath: string, stage: Stag
         // If the voice ID is not in the VOICE_MAP, it is a custom voice and should be preserved
         voiceId: !VOICE_MAP[item.node.definition.voice_id] ? item.node.definition.voice_id : ''
     };
+
+    // Quality floor: reject candidate cards that are too small to be worth distilling (e.g. sub-200-token
+    // protest/placeholder cards). This gates SELECTION only - it is not applied to the distillation itself,
+    // nor to specially-loaded actors like the tower spirit or emergent NPCs (which use loadReserveActor directly).
+    // Rough token estimate ~= words / 0.75 (about 1.33 tokens per word).
+    const rawText = `${data.name || ''} ${data.personality || ''}`.trim();
+    const estimatedTokens = Math.round(rawText.split(/\s+/).filter(Boolean).length / 0.75);
+    if (estimatedTokens < 200) {
+        console.log(`Discarding candidate for being too small (~${estimatedTokens} tokens): ${data.name}`);
+        return null;
+    }
+
     return loadReserveActor(data, stage, true);
 }
 
@@ -353,15 +365,6 @@ export const VOICE_MAP: {[key: string]: string} = {
 export async function loadReserveActor(data: any, stage: Stage, includeHistory: boolean): Promise<Actor|null> {
     console.log('Loading reserve actor:', data.name);
     console.log(data);
-
-    // Quality floor: discard cards that are too small to be worth summoning (e.g. sub-200-token
-    // protest/placeholder cards). Rough token estimate ~= words / 0.75 (about 1.33 tokens per word).
-    const rawText = `${data.name || ''} ${data.personality || ''}`.trim();
-    const estimatedTokens = Math.round(rawText.split(/\s+/).filter(Boolean).length / 0.75);
-    if (estimatedTokens < 200) {
-        console.log(`Discarding actor for being too small (~${estimatedTokens} tokens): ${data.name}`);
-        return null;
-    }
 
     // A minimal safeguard: a few terms with no legitimate innocent use are aged up or neutralized.
     // Most of the old find-replace list was removed because it produced more false positives than
