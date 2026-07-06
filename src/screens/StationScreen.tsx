@@ -58,6 +58,51 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
     const [layout, setLayout] = React.useState<Layout>(stage()?.getLayout());
     const [, setFloorRefresh] = React.useState<number>(0);
     const forceUpdate = () => { setLayout(stage().getLayout()); setFloorRefresh(n => n + 1); };
+
+    // Renders a single Tower Activity Log entry, with an optional colored stat tag and a hover-revealed revert button.
+    const ActivityEntryRow: FC<{ entry: any; compact?: boolean }> = ({ entry, compact }) => {
+        const [hovered, setHovered] = React.useState(false);
+        return (
+            <div
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                style={{
+                    position: 'relative',
+                    padding: compact ? '8px 10px' : '10px 12px',
+                    marginBottom: compact ? '6px' : '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(176, 102, 255, 0.08)',
+                    border: '1px solid rgba(176, 102, 255, 0.25)',
+                }}
+            >
+                <div style={{ color: '#b066ff', fontSize: compact ? '0.7rem' : '0.72rem', fontWeight: 700, opacity: 0.7, marginBottom: compact ? '2px' : '3px' }}>Day {entry.day} · {entry.actorName}</div>
+                <div style={{ color: '#e3ccff', fontSize: compact ? '0.82rem' : '0.85rem', lineHeight: 1.35, paddingRight: '18px' }}>{entry.line}</div>
+                {entry.stat && entry.amount ? (
+                    <div style={{
+                        display: 'inline-block', marginTop: compact ? '5px' : '6px',
+                        padding: '2px 8px', borderRadius: '4px',
+                        fontSize: compact ? '0.72rem' : '0.74rem', fontWeight: 800, letterSpacing: '0.02em',
+                        color: entry.amount > 0 ? '#4ade80' : '#f87171',
+                        background: entry.amount > 0 ? 'rgba(74, 222, 128, 0.12)' : 'rgba(248, 113, 113, 0.12)',
+                        border: `1px solid ${entry.amount > 0 ? 'rgba(74, 222, 128, 0.5)' : 'rgba(248, 113, 113, 0.5)'}`,
+                    }}>{entry.stat} {entry.amount > 0 ? '+' : ''}{entry.amount}</div>
+                ) : null}
+                {(hovered || 'ontouchstart' in window) && entry.id ? (
+                    <button
+                        onClick={() => { stage().revertActivity(entry.id); forceUpdate(); }}
+                        title="Revert this activity"
+                        style={{
+                            position: 'absolute', top: '4px', right: '4px',
+                            width: '18px', height: '18px', lineHeight: '16px', textAlign: 'center',
+                            padding: 0, borderRadius: '4px', cursor: 'pointer',
+                            background: 'rgba(248, 113, 113, 0.15)', border: '1px solid rgba(248, 113, 113, 0.6)',
+                            color: '#f87171', fontSize: '0.72rem', fontWeight: 900,
+                        }}
+                    >✕</button>
+                ) : null}
+            </div>
+        );
+    };
     const hasCheckedBeginingSkit = React.useRef<boolean>(false);
     
     // Module selection state
@@ -1576,13 +1621,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                             return <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>The tower has been quiet so far. Activity will appear here as time passes.</p>;
                                         }
                                         return log.map((entry, i) => (
-                                            <div key={`${entry.day}-${entry.turn}-${i}`} style={{
-                                                padding: '8px 10px', marginBottom: '6px', borderRadius: '6px',
-                                                background: 'rgba(176, 102, 255, 0.08)', border: '1px solid rgba(176, 102, 255, 0.25)',
-                                            }}>
-                                                <div style={{ color: '#b066ff', fontSize: '0.7rem', fontWeight: 700, opacity: 0.7, marginBottom: '2px' }}>Day {entry.day} · {entry.actorName}</div>
-                                                <div style={{ color: '#e3ccff', fontSize: '0.82rem', lineHeight: 1.35 }}>{entry.line}</div>
-                                            </div>
+                                            <ActivityEntryRow key={entry.id || `${entry.day}-${entry.turn}-${i}`} entry={entry} compact />
                                         ));
                                     })()}
                                 </div>
@@ -1791,13 +1830,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                                 return <p style={{ color: '#b066ff', opacity: 0.5, fontStyle: 'italic', fontSize: '0.85rem', fontWeight: 700 }}>The tower has been quiet so far. Activity will appear here as time passes.</p>;
                                             }
                                             return log.map((entry, i) => (
-                                                <div key={`${entry.day}-${entry.turn}-${i}`} style={{
-                                                    padding: '10px 12px', marginBottom: '8px', borderRadius: '6px',
-                                                    background: 'rgba(176, 102, 255, 0.08)', border: '1px solid rgba(176, 102, 255, 0.25)',
-                                                }}>
-                                                    <div style={{ color: '#b066ff', fontSize: '0.72rem', fontWeight: 700, opacity: 0.7, marginBottom: '3px' }}>Day {entry.day} · {entry.actorName}</div>
-                                                    <div style={{ color: '#e3ccff', fontSize: '0.85rem', lineHeight: 1.35 }}>{entry.line}</div>
-                                                </div>
+                                                <ActivityEntryRow key={entry.id || `${entry.day}-${entry.turn}-${i}`} entry={entry} />
                                             ));
                                         })()}
                                     </div>

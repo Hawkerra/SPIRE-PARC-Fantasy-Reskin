@@ -743,7 +743,8 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `Choose a resident from the roster who was absent from the scene; favor someone with an assigned role, and let their personality and role shape what they did. ` +
                             `Output EXACTLY ONE line in this format:\n` +
                             `[ACTIVITY: <characterName> | <a single short sentence, no more than about 20 words> | <optional: STATIONSTAT +1 or STATIONSTAT -1>]\n` +
-                            `The final field is optional and, when present, must be a single tower stat (Arcanum, Comfort, Provision, Security, Harmony, or Wealth) nudged by exactly +1 or -1, reflecting how their activity helped or hurt the tower. Omit it for purely flavorful activities. ` +
+                            `The final field is optional and, when present, must be a single tower stat (Arcanum, Comfort, Provision, Security, Harmony, or Wealth) nudged by exactly +1 or -1, reflecting how their activity helped or hurt the tower. ` +
+                            `MOST activities should be purely flavorful with NO stat change - omit the final field entirely in those cases. Only OCCASIONALLY, when the activity clearly and notably helped or harmed the tower, include a stat change. It should feel like an occasional surprise, not a routine occurrence. ` +
                             `Keep the sentence to a single line - never a paragraph. Only ONE [ACTIVITY] tag total.\n` +
                             `Full Examples:\n` +
                             `[ACTIVITY: Mara | Spent the afternoon reorganizing the apothecary shelves, muttering about everyone's poor labeling. | Comfort +1]\n` +

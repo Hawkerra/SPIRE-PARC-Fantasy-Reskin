@@ -62,11 +62,14 @@ export type SaveType = {
 
 // A single Tower Activity Log entry - one line about what a resident did off-screen.
 export type ActivityEntry = {
+    id: string; // Unique id so a specific entry can be reverted.
     day: number;
     turn: number;
     actorId: string;
     actorName: string;
     line: string; // The single-sentence activity description shown in the log.
+    stat?: string; // Optional tower stat affected by this activity.
+    amount?: number; // Optional +1 / -1 nudge to that stat.
 }
 
 export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateType, ConfigType> {
@@ -412,6 +415,27 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
      * entry describing what a random resident got up to. Fire-and-forget for the LLM call so the
      * UI stays responsive; the turn advances immediately.
      */
+    /**
+     * Validates a generated activity line. Returns a cleaned line, or null if the activity should be
+     * discarded (gibberish, empty, too short, pathologically long, or pure punctuation).
+     */
+    validateActivityLine(raw: string): string | null {
+        if (!raw) return null;
+        let line = raw.replace(/\s*[\r\n]+\s*/g, ' ').replace(/^["']|["']$/g, '').trim();
+        // Must contain actual letters (reject pure punctuation/symbol/number strings).
+        if (!/[A-Za-z]/.test(line)) return null;
+        const words = line.split(/\s+/).filter(w => /[A-Za-z]/.test(w));
+        // Reject too-short (likely a fragment/error) or pathologically long output.
+        if (words.length < 3) return null;
+        if (words.length > 40) return null;
+        // Reject lines that are mostly non-letter noise (gibberish guard).
+        const letters = (line.match(/[A-Za-z]/g) || []).length;
+        if (letters < line.length * 0.4) return null;
+        // Soft cap for tidiness.
+        if (words.length > 30) line = words.slice(0, 30).join(' ') + '...';
+        return line;
+    }
+
     async passTime(setScreenType: (type: ScreenType) => void): Promise<void> {
         // Advance time first so day/turn are current for the activity entry.
         this.incTurn(1, setScreenType);
@@ -427,29 +451,80 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         const actor = candidates[Math.floor(Math.random() * candidates.length)];
         const role = getRole(actor, save) || 'resident';
         const proficiency = actor.getRoleProficiency(role);
+        const statNames = Object.values(StationStat).join(', ');
 
         const prompt = `The following is a fantasy tower-management game set in the Spire, an isolated wizard's tower. ` +
             `Time has quietly passed. Describe, in ONE short sentence (no more than 20 words, never a paragraph), something that ${actor.name} got up to around the tower during this quiet stretch. ` +
             `Let their personality and role shape it. ${actor.name} is the tower's ${role}` +
             (proficiency >= 7 ? ` and is notably skilled at it` : proficiency <= 3 ? ` but struggles with the work` : ``) + `. ` +
             `Personality/profile: ${actor.profile}\n\n` +
-            `Respond with ONLY the single sentence - no name prefix, no quotation marks, no extra commentary.`;
+            `MOST of the time this should be a purely flavorful moment with no mechanical effect. Only OCCASIONALLY - when the activity clearly and notably helped or harmed the tower - append a single tower-stat change of exactly +1 or -1. ` +
+            `Do not force one; a change should feel like an occasional pleasant surprise or minor setback, not a routine occurrence.\n` +
+            `Format your reply as ONE line:\n` +
+            `<the single sentence> ||STAT <one of: ${statNames}> <+1 or -1>\n` +
+            `The "||STAT ..." part is OPTIONAL - include it only when genuinely warranted, and omit it entirely (just the sentence) otherwise. ` +
+            `No name prefix, no quotation marks, no extra commentary.`;
 
         try {
-            let line = await this.makeText({ prompt, max_tokens: 80, min_tokens: 5, include_history: false });
-            if (line) {
-                line = line.replace(/\s*[\r\n]+\s*/g, ' ').replace(/^["']|["']$/g, '').trim();
-                const words = line.split(/\s+/);
-                if (words.length > 30) line = words.slice(0, 30).join(' ') + '...';
-                if (!save.activityLog) save.activityLog = [];
-                save.activityLog.push({ day: save.day, turn: save.turn, actorId: actor.id, actorName: actor.name, line });
-                if (save.activityLog.length > 100) save.activityLog = save.activityLog.slice(-100);
-                this.saveGame();
+            const rawResponse = await this.makeText({ prompt, max_tokens: 90, min_tokens: 5, include_history: false });
+            if (!rawResponse) { this.saveGame(); return; }
+
+            // Split off an optional trailing stat directive.
+            let statPart: string | null = null;
+            let linePart = rawResponse;
+            const statSplit = rawResponse.split(/\|\|\s*STAT\s+/i);
+            if (statSplit.length > 1) {
+                linePart = statSplit[0];
+                statPart = statSplit[1];
             }
+
+            const line = this.validateActivityLine(linePart);
+            if (!line) { console.warn('passTime: activity discarded by validation:', rawResponse); this.saveGame(); return; }
+
+            const entry: ActivityEntry = { id: generateUuid(), day: save.day, turn: save.turn, actorId: actor.id, actorName: actor.name, line };
+
+            // Parse and validate the optional stat directive.
+            if (statPart) {
+                const m = /([A-Za-z]+)\s*([+\-]\s*\d+)/.exec(statPart);
+                if (m) {
+                    const matchedStat = Object.values(StationStat).find(s => String(s).toLowerCase() === m[1].trim().toLowerCase());
+                    const rawAmount = parseInt(m[2].replace(/\s+/g, ''), 10) || 0;
+                    if (matchedStat && rawAmount !== 0 && save.stationStats && matchedStat in save.stationStats) {
+                        const delta = rawAmount > 0 ? 1 : -1;
+                        save.stationStats[matchedStat as StationStat] = Math.max(1, Math.min(10, save.stationStats[matchedStat as StationStat] + delta));
+                        entry.stat = String(matchedStat);
+                        entry.amount = delta;
+                        actor.adjustRoleProficiency(role, delta);
+                    }
+                }
+            }
+
+            if (!save.activityLog) save.activityLog = [];
+            save.activityLog.push(entry);
+            if (save.activityLog.length > 100) save.activityLog = save.activityLog.slice(-100);
+            this.saveGame();
         } catch (err) {
             console.error('passTime activity generation failed', err);
             this.saveGame();
         }
+    }
+
+    /**
+     * Reverts a logged activity by id: removes it from the log and reverses its tower-stat change
+     * (clamped). Hidden proficiency is intentionally left as-is.
+     */
+    revertActivity(entryId: string): void {
+        const save = this.getSave();
+        if (!save.activityLog) return;
+        const idx = save.activityLog.findIndex(e => e.id === entryId);
+        if (idx === -1) return;
+        const entry = save.activityLog[idx];
+        if (entry.stat && entry.amount && save.stationStats && entry.stat in save.stationStats) {
+            // Reverse the applied change, clamped to 1-10.
+            save.stationStats[entry.stat as StationStat] = Math.max(1, Math.min(10, save.stationStats[entry.stat as StationStat] - entry.amount));
+        }
+        save.activityLog.splice(idx, 1);
+        this.saveGame();
     }
 
     incTurn(numberOfTurns: number = 1, setScreenType: (type: ScreenType) => void) {
@@ -1472,30 +1547,36 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     void this.generateActorFromOutcome(outcome);
                 } else if (outcome.type === 'towerActivity' && outcome.actorId && outcome.activityLine) {
                     const actor = save.actors[outcome.actorId];
-                    if (actor) {
+                    // Validate the line; discard silently if it's gibberish/malformed.
+                    const validatedLine = actor ? this.validateActivityLine(outcome.activityLine) : null;
+                    if (actor && validatedLine) {
                         // Append to the Tower Activity Log (kept separate from the player-facing stat list).
                         if (!save.activityLog) save.activityLog = [];
-                        save.activityLog.push({
+                        const entry: ActivityEntry = {
+                            id: generateUuid(),
                             day: save.day,
                             turn: save.turn,
                             actorId: actor.id,
                             actorName: actor.name,
-                            line: outcome.activityLine,
-                        });
-                        // Cap the log so it doesn't grow without bound.
-                        if (save.activityLog.length > 100) {
-                            save.activityLog = save.activityLog.slice(-100);
-                        }
+                            line: validatedLine,
+                        };
                         // Apply the optional clamped tower-stat nudge silently (no player-facing toast).
                         if (outcome.activityStat && outcome.activityAmount && save.stationStats && outcome.activityStat in save.stationStats) {
                             const delta = outcome.activityAmount > 0 ? 1 : -1;
                             save.stationStats[outcome.activityStat] = Math.max(1, Math.min(10, save.stationStats[outcome.activityStat] + delta));
+                            entry.stat = String(outcome.activityStat);
+                            entry.amount = delta;
+                            // Nudge the resident's hidden proficiency in their current role toward the activity's direction.
+                            const role = getRole(actor, save);
+                            if (role) actor.adjustRoleProficiency(role, delta);
                         }
-                        // Nudge the resident's hidden proficiency in their current role toward the activity's direction.
-                        const role = getRole(actor, save);
-                        if (role && outcome.activityAmount) {
-                            actor.adjustRoleProficiency(role, outcome.activityAmount > 0 ? 1 : -1);
+                        save.activityLog.push(entry);
+                        // Cap the log so it doesn't grow without bound.
+                        if (save.activityLog.length > 100) {
+                            save.activityLog = save.activityLog.slice(-100);
                         }
+                    } else if (outcome.activityLine) {
+                        console.warn('Skit activity discarded by validation:', outcome.activityLine);
                     }
                 }
             }
