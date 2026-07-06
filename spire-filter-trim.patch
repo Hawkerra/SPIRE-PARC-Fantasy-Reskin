@@ -1,0 +1,76 @@
+diff --git a/src/actors/Actor.tsx b/src/actors/Actor.tsx
+index b1632f3..00d199f 100644
+--- a/src/actors/Actor.tsx
++++ b/src/actors/Actor.tsx
+@@ -354,27 +354,23 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory:
+     console.log('Loading reserve actor:', data.name);
+     console.log(data);
+ 
+-    // Attempt to substitute words to avert bad content into something more agreeable (if the distillation still has these, then drop the card).
++    // Quality floor: discard cards that are too small to be worth summoning (e.g. sub-200-token
++    // protest/placeholder cards). Rough token estimate ~= words / 0.75 (about 1.33 tokens per word).
++    const rawText = `${data.name || ''} ${data.personality || ''}`.trim();
++    const estimatedTokens = Math.round(rawText.split(/\s+/).filter(Boolean).length / 0.75);
++    if (estimatedTokens < 200) {
++        console.log(`Discarding actor for being too small (~${estimatedTokens} tokens): ${data.name}`);
++        return null;
++    }
++
++    // A minimal safeguard: a few terms with no legitimate innocent use are aged up or neutralized.
++    // Most of the old find-replace list was removed because it produced more false positives than
++    // genuine catches (e.g. "childhood friend", "high school uniform"); the size floor below is the
++    // primary quality/appropriateness filter now.
+     const bannedWordSubstitutes: {[key: string]: string} = {
+-        // Try to age up some terms in the hopes that the character can be salvaged.
+         'underage': 'young adult',
+-        'adolescent': 'young adult',
+-        'youngster': 'young adult',
+-        'teen': 'young adult',
+-        'highschooler': 'young adult',
+-        'childhood': 'formative years',
+         'childish': 'bratty',
+-        'child': 'young adult',
+-        // Don't bother with these; just set it to the same word so it gets discarded.
+-        'toddler': 'toddler',
+-        'infant': 'infant',
+-        // Assume that these words are being used in an innocuous way, unless they come back in the distillation.
+-        'kid': 'joke',
+-        'baby': 'honey',
+-        'minor': 'trivial',
+-        'old-school': 'retro',
+-        'high school': 'college',
+-        'school': 'college'};
++        'minor': 'trivial'};
+ 
+ 
+     // Preserve content while removing JSON-like structures.
+diff --git a/src/factions/Faction.tsx b/src/factions/Faction.tsx
+index 84ff54d..99a073c 100644
+--- a/src/factions/Faction.tsx
++++ b/src/factions/Faction.tsx
+@@ -84,22 +84,11 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
+     const item = await response.json();
+     const dataName = item.node.definition.name.replaceAll('{{char}}', item.node.definition.name).replaceAll('{{user}}', 'Individual X');
+     
+-    // Similar banned word substitutes as Actor
++    // Minimal safeguard, mirroring Actor: only terms with no legitimate innocent use remain.
+     const bannedWordSubstitutes: {[key: string]: string} = {
+         'underage': 'young adult',
+-        'adolescent': 'young adult',
+-        'youngster': 'young adult',
+-        'teen': 'young adult',
+-        'highschooler': 'young adult',
+-        'child': 'child',
+-        'toddler': 'toddler',
+-        'infant': 'infant',
+-        'kid': 'joke',
+-        'baby': 'honey',
+-        'minor': 'trivial',
+-        'old-school': 'retro',
+-        'high school': 'college',
+-        'school': 'college'
++        'childish': 'bratty',
++        'minor': 'trivial'
+     };
+     
+     const data = {

@@ -354,27 +354,23 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory: 
     console.log('Loading reserve actor:', data.name);
     console.log(data);
 
-    // Attempt to substitute words to avert bad content into something more agreeable (if the distillation still has these, then drop the card).
+    // Quality floor: discard cards that are too small to be worth summoning (e.g. sub-200-token
+    // protest/placeholder cards). Rough token estimate ~= words / 0.75 (about 1.33 tokens per word).
+    const rawText = `${data.name || ''} ${data.personality || ''}`.trim();
+    const estimatedTokens = Math.round(rawText.split(/\s+/).filter(Boolean).length / 0.75);
+    if (estimatedTokens < 200) {
+        console.log(`Discarding actor for being too small (~${estimatedTokens} tokens): ${data.name}`);
+        return null;
+    }
+
+    // A minimal safeguard: a few terms with no legitimate innocent use are aged up or neutralized.
+    // Most of the old find-replace list was removed because it produced more false positives than
+    // genuine catches (e.g. "childhood friend", "high school uniform"); the size floor below is the
+    // primary quality/appropriateness filter now.
     const bannedWordSubstitutes: {[key: string]: string} = {
-        // Try to age up some terms in the hopes that the character can be salvaged.
         'underage': 'young adult',
-        'adolescent': 'young adult',
-        'youngster': 'young adult',
-        'teen': 'young adult',
-        'highschooler': 'young adult',
-        'childhood': 'formative years',
         'childish': 'bratty',
-        'child': 'young adult',
-        // Don't bother with these; just set it to the same word so it gets discarded.
-        'toddler': 'toddler',
-        'infant': 'infant',
-        // Assume that these words are being used in an innocuous way, unless they come back in the distillation.
-        'kid': 'joke',
-        'baby': 'honey',
-        'minor': 'trivial',
-        'old-school': 'retro',
-        'high school': 'college',
-        'school': 'college'};
+        'minor': 'trivial'};
 
 
     // Preserve content while removing JSON-like structures.

@@ -84,22 +84,11 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
     const item = await response.json();
     const dataName = item.node.definition.name.replaceAll('{{char}}', item.node.definition.name).replaceAll('{{user}}', 'Individual X');
     
-    // Similar banned word substitutes as Actor
+    // Minimal safeguard, mirroring Actor: only terms with no legitimate innocent use remain.
     const bannedWordSubstitutes: {[key: string]: string} = {
         'underage': 'young adult',
-        'adolescent': 'young adult',
-        'youngster': 'young adult',
-        'teen': 'young adult',
-        'highschooler': 'young adult',
-        'child': 'child',
-        'toddler': 'toddler',
-        'infant': 'infant',
-        'kid': 'joke',
-        'baby': 'honey',
-        'minor': 'trivial',
-        'old-school': 'retro',
-        'high school': 'college',
-        'school': 'college'
+        'childish': 'bratty',
+        'minor': 'trivial'
     };
     
     const data = {
