@@ -8,7 +8,7 @@ project_name: "The Spire"
 tagline: "Sanctum for Planar Intake, Restoration, and Enrichment"
 
 # 'PUBLIC', 'PRIVATE', or 'UNLISTED'.
-visibility: 'PRIVATE'
+visibility: 'PUBLIC'
 
 # 'ADJACENT' | 'NONE' | 'COVER' | 'FULLSCREEN'
 position: 'FULLSCREEN'

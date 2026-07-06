@@ -1591,8 +1591,11 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                     </>
                 ) : (
                     // Horizontal layout: Original expandable sections
+                    // Note: array values double as internal keys (via toLowerCase); 'Patients' stays as the key
+                    // for logic compatibility, but is displayed as 'Residents' to match the reskin.
                     ['Patients', 'Modules', 'Factions', 'Activity'].map(item => {
                         const itemKey = item.toLowerCase();
+                        const itemLabel = item === 'Patients' ? 'Residents' : item;
                         const isExpanded = expandedMenu === itemKey;
                         const isContracting = previousExpandedMenu === itemKey && !isExpanded;
                         const [isHeaderHovered, setIsHeaderHovered] = React.useState(false);
@@ -1637,7 +1640,7 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
                                         fontSize: '1rem',
                                     }}
                                 >
-                                    <span style={{ fontWeight: 700, letterSpacing: '0.08em' }}>{item}</span>
+                                    <span style={{ fontWeight: 700, letterSpacing: '0.08em' }}>{itemLabel}</span>
                                     <span style={{ 
                                         transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                                         transition: 'transform 0.2s ease'
