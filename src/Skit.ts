@@ -1659,6 +1659,7 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     const acceptedModules: { outcome: Outcome; order: number }[] = [];
     const acceptedModuleNames: { name: string; index: number }[] = [];
     const acceptedOutfitsByActor = new Map<string, { outcome: Outcome; order: number }[]>();
+    const acceptedActivities: { outcome: Outcome; order: number }[] = [];
     
     let orderCounter = 0;
 
@@ -1788,6 +1789,13 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
                     acceptedOutfitsByActor.set(actorId, actorOutfits);
                     break;
                 }
+                case 'towerActivity': {
+                    // Only keep the first valid activity per analysis (there should be just one).
+                    if (outcome.actorId && outcome.activityLine && acceptedActivities.length === 0) {
+                        acceptedActivities.push({ outcome: { ...outcome }, order: nextOrder() });
+                    }
+                    break;
+                }
             }
         }
     }
@@ -1847,6 +1855,8 @@ export function accumulateOutcomes(scriptEntries: ScriptEntry[], stage: Stage): 
     });
 
     acceptedActors.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));
+
+    acceptedActivities.forEach(entry => accumulated.push({ outcome: entry.outcome, order: entry.order }));
 
     return accumulated
         .sort((left, right) => left.order - right.order)
