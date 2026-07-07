@@ -362,7 +362,7 @@ export const VOICE_MAP: {[key: string]: string} = {
     'animated_male_20s': 'masculine - hip and lively',
 };
 
-export async function loadReserveActor(data: any, stage: Stage, includeHistory: boolean): Promise<Actor|null> {
+export async function loadReserveActor(data: any, stage: Stage, includeHistory: boolean, suppressAttenuation: boolean = false): Promise<Actor|null> {
     console.log('Loading reserve actor:', data.name);
     console.log(data);
 
@@ -472,7 +472,7 @@ export async function loadReserveActor(data: any, stage: Stage, includeHistory: 
                 `JOY: 3\n` +
                 `TRUST: 2\n` +
                 `#END#`) +
-            (stage.getSave().attenuation ? 
+            (stage.getSave().attenuation && !suppressAttenuation ? 
                 buildPromptSegment(`Attenuation`, 
                     `The tower's arcane focus is currently attuned to modify the resulting summoning; take the following additional context into account while forming this distillation:\n${stage.getSave().attenuation}`) : 
                 '')),

@@ -251,7 +251,9 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
     }
     // retry a few times if it fails (or returns null):
     for (let attempt = 0; attempt < 3; attempt++) {
-        const repActor = await loadReserveActor(actorData, stage, false);
+        // Faction representatives are existing people from the wider world, not tower summons -
+        // the arcane focus (attenuation) should not shape them, so suppress it here.
+        const repActor = await loadReserveActor(actorData, stage, false, true);
         if (repActor) {
             repActor.factionId = faction.id;
             repActor.origin = 'faction';

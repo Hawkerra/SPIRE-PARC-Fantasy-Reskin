@@ -984,8 +984,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     personality: `The Spire's bound tower spirit and steward: ${save.aide.description}`
                 }
                 // Retry a few times if it fails (or returns null):
+                // The tower spirit is a pre-existing bound entity, not a summon - the arcane focus shouldn't shape it.
                 for (let attempt = 0; attempt < 3; attempt++) {
-                    const aideActor = await loadReserveActor(actorData, this, false);
+                    const aideActor = await loadReserveActor(actorData, this, false, true);
                     if (aideActor) {
                         save = this.getSave();
                         save.actors[aideActor.id] = aideActor;
