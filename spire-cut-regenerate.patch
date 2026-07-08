@@ -1,0 +1,110 @@
+diff --git a/src/Skit.ts b/src/Skit.ts
+index 249d05c..28d665b 100644
+--- a/src/Skit.ts
++++ b/src/Skit.ts
+@@ -1172,7 +1172,7 @@ function parseOutcomeTagsFromText(text: string, stage: Stage, skit: SkitData): O
+     return outcomes;
+ }
+ 
+-async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: ScriptEntry[], stage: Stage): Promise<Outcome[]> {
++export async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: ScriptEntry[], stage: Stage): Promise<Outcome[]> {
+     const analysisSkit: SkitData = {
+         ...skit,
+         script: [...skit.script, ...newEntries]
+diff --git a/src/Stage.tsx b/src/Stage.tsx
+index fec100a..0dc2684 100644
+--- a/src/Stage.tsx
++++ b/src/Stage.tsx
+@@ -5,7 +5,7 @@ import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalAct
+ import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
+ import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
+ import { BaseScreen, ScreenType } from "./screens/BaseScreen";
+-import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
++import { accumulateOutcomes, generateSkitScript, generateSkitSummary, generateImpliedOutcomesForCurrentEnd, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
+ import { smartRehydrate } from "./SaveRehydration";
+ import { Emotion, EmotionPromptMap, getDefaultEmotionPromptMap } from "./actors/Emotion";
+ import { assignActorToRole } from "./utils";
+@@ -1395,6 +1395,39 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
+         }
+     }
+ 
++    /**
++     * Cuts the current skit at the displayed entry and regenerates its outcomes for review, WITHOUT ending.
++     * Discards every entry after currentIndex, then re-runs the implied-outcome analysis against the
++     * surviving script so a fresh set of changes (stats, new modules, outfits, emergent characters) is
++     * produced for exactly what remains. The player stays in the skit to review the new outcomes and
++     * only leaves when they press the normal end button. Returns when regeneration is complete.
++     */
++    async recutSkitAtCurrent(): Promise<void> {
++        const save = this.getSave();
++        const skit = save.currentSkit;
++        if (!skit || skit.script.length === 0) return;
++
++        const lastIndex = skit.script.length - 1;
++        const currentIdx = Math.min(Math.max(skit.currentIndex ?? lastIndex, 0), lastIndex);
++
++        // Truncate to the displayed entry.
++        skit.script = skit.script.slice(0, currentIdx + 1);
++        skit.currentIndex = skit.script.length - 1;
++
++        // Clear stale outcomes: both the trailing implied set and any per-entry outcomes on the final
++        // surviving entry (those may reflect a mid-scene moment); we want a clean re-analysis of the whole cut.
++        skit.outcomes = [];
++
++        // Regenerate outcomes against the truncated script (newEntries empty = analyze current script as-is).
++        const freshOutcomes = await generateImpliedOutcomesForCurrentEnd(skit, [], this);
++        // Re-fetch in case the save reference changed during the async call.
++        const liveSkit = this.getSave().currentSkit;
++        if (liveSkit) {
++            liveSkit.outcomes = freshOutcomes;
++        }
++        this.saveGame();
++    }
++
+     endSkit(setScreenType: (type: ScreenType) => void) {
+         const save = this.getSave();
+         if (save.currentSkit) {
+diff --git a/src/screens/SkitScreen.tsx b/src/screens/SkitScreen.tsx
+index f6b7399..d7b8382 100644
+--- a/src/screens/SkitScreen.tsx
++++ b/src/screens/SkitScreen.tsx
+@@ -214,6 +214,21 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
+         stage().endSkit(setScreenType);
+     }, [stage, setScreenType]);
+ 
++    // Cut the scene at the currently-displayed entry and regenerate outcomes for review, staying in the skit.
++    const handleCut = useCallback(async () => {
++        setIsLoading(true);
++        try {
++            await stage().recutSkitAtCurrent();
++            const updated = stage().getSave().currentSkit;
++            if (updated) {
++                // Reflect the truncated script + fresh outcomes in the UI, positioned at the new final entry.
++                setSkit({ ...updated });
++            }
++        } finally {
++            setIsLoading(false);
++        }
++    }, [stage]);
++
+ 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
+ 		index = Math.max(0, index);
+         setIsLoading(true);
+@@ -344,10 +359,14 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
+                     {/* Dedicated "cut the scene here" button - only shown when viewing a non-final entry,
+                         so the player can end the scene at the displayed point and discard everything after
+                         (e.g. impersonated content that overran the natural ending). */}
+-                    {!isLoading && skit.script.length >= 1 && currentScriptIndex < skit.script.length - 1 && (
++                    {/* Cut/regenerate button: truncates the scene at the displayed entry (if not already the last)
++                        and re-runs outcome analysis on what remains, staying in the skit so the fresh outcomes
++                        can be reviewed before ending. On the final entry it simply regenerates outcomes - useful
++                        when the scene should have produced changes (stats, rooms, outfits, emergents) but didn't. */}
++                    {!isLoading && skit.script.length >= 1 && (
+                         <IconButton
+-                            onClick={handleClose}
+-                            onMouseEnter={() => setTooltip('End Scene Here - discard everything after this point', ContentCut)}
++                            onClick={handleCut}
++                            onMouseEnter={() => setTooltip(currentScriptIndex < skit.script.length - 1 ? 'Cut scene here - discard what follows and regenerate outcomes to review' : 'Regenerate outcomes for this scene to review', ContentCut)}
+                             onMouseLeave={() => clearTooltip()}
+                             sx={{
+                                 ...cornerButtonSx,

@@ -5,7 +5,7 @@ import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalAct
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
-import { accumulateOutcomes, generateSkitScript, generateSkitSummary, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
+import { accumulateOutcomes, generateSkitScript, generateSkitSummary, generateImpliedOutcomesForCurrentEnd, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
 import { smartRehydrate } from "./SaveRehydration";
 import { Emotion, EmotionPromptMap, getDefaultEmotionPromptMap } from "./actors/Emotion";
 import { assignActorToRole } from "./utils";
@@ -1393,6 +1393,39 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             case 2: return 'Evening';
             default: return 'Night';
         }
+    }
+
+    /**
+     * Cuts the current skit at the displayed entry and regenerates its outcomes for review, WITHOUT ending.
+     * Discards every entry after currentIndex, then re-runs the implied-outcome analysis against the
+     * surviving script so a fresh set of changes (stats, new modules, outfits, emergent characters) is
+     * produced for exactly what remains. The player stays in the skit to review the new outcomes and
+     * only leaves when they press the normal end button. Returns when regeneration is complete.
+     */
+    async recutSkitAtCurrent(): Promise<void> {
+        const save = this.getSave();
+        const skit = save.currentSkit;
+        if (!skit || skit.script.length === 0) return;
+
+        const lastIndex = skit.script.length - 1;
+        const currentIdx = Math.min(Math.max(skit.currentIndex ?? lastIndex, 0), lastIndex);
+
+        // Truncate to the displayed entry.
+        skit.script = skit.script.slice(0, currentIdx + 1);
+        skit.currentIndex = skit.script.length - 1;
+
+        // Clear stale outcomes: both the trailing implied set and any per-entry outcomes on the final
+        // surviving entry (those may reflect a mid-scene moment); we want a clean re-analysis of the whole cut.
+        skit.outcomes = [];
+
+        // Regenerate outcomes against the truncated script (newEntries empty = analyze current script as-is).
+        const freshOutcomes = await generateImpliedOutcomesForCurrentEnd(skit, [], this);
+        // Re-fetch in case the save reference changed during the async call.
+        const liveSkit = this.getSave().currentSkit;
+        if (liveSkit) {
+            liveSkit.outcomes = freshOutcomes;
+        }
+        this.saveGame();
     }
 
     endSkit(setScreenType: (type: ScreenType) => void) {

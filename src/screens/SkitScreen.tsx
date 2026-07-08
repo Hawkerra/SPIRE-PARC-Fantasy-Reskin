@@ -214,6 +214,21 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
         stage().endSkit(setScreenType);
     }, [stage, setScreenType]);
 
+    // Cut the scene at the currently-displayed entry and regenerate outcomes for review, staying in the skit.
+    const handleCut = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            await stage().recutSkitAtCurrent();
+            const updated = stage().getSave().currentSkit;
+            if (updated) {
+                // Reflect the truncated script + fresh outcomes in the UI, positioned at the new final entry.
+                setSkit({ ...updated });
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    }, [stage]);
+
 	const handleSkitSubmit = useCallback(async (input: string, skitArg: any, index: number) => {
 		index = Math.max(0, index);
         setIsLoading(true);
@@ -344,10 +359,14 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                     {/* Dedicated "cut the scene here" button - only shown when viewing a non-final entry,
                         so the player can end the scene at the displayed point and discard everything after
                         (e.g. impersonated content that overran the natural ending). */}
-                    {!isLoading && skit.script.length >= 1 && currentScriptIndex < skit.script.length - 1 && (
+                    {/* Cut/regenerate button: truncates the scene at the displayed entry (if not already the last)
+                        and re-runs outcome analysis on what remains, staying in the skit so the fresh outcomes
+                        can be reviewed before ending. On the final entry it simply regenerates outcomes - useful
+                        when the scene should have produced changes (stats, rooms, outfits, emergents) but didn't. */}
+                    {!isLoading && skit.script.length >= 1 && (
                         <IconButton
-                            onClick={handleClose}
-                            onMouseEnter={() => setTooltip('End Scene Here - discard everything after this point', ContentCut)}
+                            onClick={handleCut}
+                            onMouseEnter={() => setTooltip(currentScriptIndex < skit.script.length - 1 ? 'Cut scene here - discard what follows and regenerate outcomes to review' : 'Regenerate outcomes for this scene to review', ContentCut)}
                             onMouseLeave={() => clearTooltip()}
                             sx={{
                                 ...cornerButtonSx,

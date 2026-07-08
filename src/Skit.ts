@@ -1172,7 +1172,7 @@ function parseOutcomeTagsFromText(text: string, stage: Stage, skit: SkitData): O
     return outcomes;
 }
 
-async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: ScriptEntry[], stage: Stage): Promise<Outcome[]> {
+export async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEntries: ScriptEntry[], stage: Stage): Promise<Outcome[]> {
     const analysisSkit: SkitData = {
         ...skit,
         script: [...skit.script, ...newEntries]
