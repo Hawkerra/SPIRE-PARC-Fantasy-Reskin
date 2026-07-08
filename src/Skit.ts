@@ -310,8 +310,10 @@ function getCurrentSceneModuleId(skit: SkitData, upToIndex: number = -1): string
  * @param upToIndex - Process script entries up to (but not including) this index. -1 means process all.
  * @returns Set of actor IDs currently present in the module
  */
-function getCurrentActorsInScene(skit: SkitData, moduleId?: string, upToIndex: number = -1): Set<string> {
+function getCurrentActorsInScene(skit: SkitData, moduleId?: string, upToIndex: number = -1, linkedModuleIds?: string[]): Set<string> {
     const targetModuleId = moduleId || getCurrentSceneModuleId(skit, upToIndex);
+    // Modules whose occupants count as present: the scene's module plus any narratively-linked rooms.
+    const presentModuleIds = new Set<string>([targetModuleId, ...(linkedModuleIds || [])]);
     // Start with initial actor locations
     const currentLocations = {...(skit.initialActorLocations || {})};
     const endIndex = Math.min(skit.script.length, upToIndex === -1 ? skit.script.length : upToIndex);
@@ -326,10 +328,10 @@ function getCurrentActorsInScene(skit: SkitData, moduleId?: string, upToIndex: n
         }
     }
     
-    // Return actors at the target module
+    // Return actors at the target module (or any linked module sharing its space).
     const presentActors = new Set<string>();
     Object.entries(currentLocations).forEach(([actorId, locationId]) => {
-        if (locationId === targetModuleId) {
+        if (presentModuleIds.has(locationId)) {
             presentActors.add(actorId);
         }
     });
@@ -600,7 +602,10 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
 
     // Determine present and absent actors for this moment in the skit (as of the last entry in skit.script):
     const currentSceneModuleId = getCurrentSceneModuleId(skit, -1);
-    const presentActorIds = getCurrentActorsInScene(skit, currentSceneModuleId, -1);
+    // Rooms linked to the current scene share narrative space; their occupants count as present too.
+    const currentSceneModule = stage.getSave().layout.getModuleById(currentSceneModuleId || '');
+    const linkedModuleIds = currentSceneModule?.linkedModuleIds || [];
+    const presentActorIds = getCurrentActorsInScene(skit, currentSceneModuleId, -1, linkedModuleIds);
     const presentPatients = Object.values(save.actors).filter(a => presentActorIds.has(a.id));
     const absentPatients = Object.values(save.actors).filter(a => !presentActorIds.has(a.id) && save.aide.actorId != a.id && !['cryo', 'dead'].includes(a.locationId) && !a.isOffSite(save));
     const cryoPatients = Object.values(save.actors).filter(a => a.locationId === 'cryo');
@@ -699,7 +704,11 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
                 buildPromptSegment('Recent Events and Skits', historyPrompt) : '') +
         (module ? buildPromptSegment('Current Room', `The following scene is set in ` +
             `${module.type === 'quarters' ? `${moduleOwner ? `${moduleOwner.name}'s` : 'a vacant'} chambers` : 
-            `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}`) : '') +
+            `the ${module.getAttribute('name') || 'Unknown'}`}. ${module.getAttribute('skitPrompt') || 'No description available.'}` +
+            ((module.linkedModuleIds && module.linkedModuleIds.length > 0) ? ` This room shares one connected space with ${module.linkedModuleIds.map(id => {
+                const linked = stage.getSave().layout.getModuleById(id);
+                return linked ? `the ${linked.getAttribute('name') || 'adjacent room'}` : null;
+            }).filter(Boolean).join(' and ')}; the characters who belong to those spaces are all naturally present together here, as if it were a single venue.` : '')) : '') +
         // List characters who are here, along with full stat details:
         buildPromptSegment('Present Characters (Currently in the Scene)', `${presentPatients.map(actor => {
             const roleModule = stage.getLayout().getAllModulesWhere((m: any) => 

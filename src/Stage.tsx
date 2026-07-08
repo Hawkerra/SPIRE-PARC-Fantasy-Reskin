@@ -1381,6 +1381,20 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
     }
 
+    /**
+     * Time of day derived from how many hourglasses remain in the day.
+     * turn 0 = 4 left (Morning), 1 = 3 (Afternoon), 2 = 2 (Evening), 3 = 1 (Night).
+     */
+    getTimeOfDay(): string {
+        const turn = this.getSave().turn ?? 0;
+        switch (turn) {
+            case 0: return 'Morning';
+            case 1: return 'Afternoon';
+            case 2: return 'Evening';
+            default: return 'Night';
+        }
+    }
+
     endSkit(setScreenType: (type: ScreenType) => void) {
         const save = this.getSave();
         if (save.currentSkit) {

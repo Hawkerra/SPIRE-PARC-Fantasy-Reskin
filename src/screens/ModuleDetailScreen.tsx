@@ -49,6 +49,38 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
         }));
     };
 
+    // Live module instance (has grid position and linkedModuleIds), distinct from the intrinsic template.
+    const liveModule = stage().getSave().layout.getModuleById(moduleId);
+    const adjacentModules = liveModule ? stage().getSave().layout.getAdjacentModules(liveModule) : [];
+
+    const isLinkedTo = (otherId: string): boolean => {
+        return !!liveModule?.linkedModuleIds?.includes(otherId);
+    };
+
+    // Toggle a bidirectional link between this module and an adjacent one.
+    const toggleLink = (otherId: string) => {
+        const layout = stage().getSave().layout;
+        const a = layout.getModuleById(moduleId);
+        const b = layout.getModuleById(otherId);
+        if (!a || !b) return;
+        if (!a.linkedModuleIds) a.linkedModuleIds = [];
+        if (!b.linkedModuleIds) b.linkedModuleIds = [];
+        if (a.linkedModuleIds.includes(otherId)) {
+            // Unlink both directions.
+            a.linkedModuleIds = a.linkedModuleIds.filter(id => id !== otherId);
+            b.linkedModuleIds = b.linkedModuleIds.filter(id => id !== moduleId);
+        } else {
+            a.linkedModuleIds.push(otherId);
+            b.linkedModuleIds.push(moduleId);
+        }
+        stage().saveGame();
+        forceUpdate({});
+    };
+
+    const moduleDisplayName = (m: typeof adjacentModules[number]): string => {
+        return m.getAttribute('name') || m.type;
+    };
+
     const handleSave = () => {
         const save = stage().getSave();
         const existing = save.customModules?.[moduleId];
@@ -373,6 +405,50 @@ export const ModuleDetailScreen: FC<ModuleDetailScreenProps> = ({ moduleId, modu
                                                     resize: 'vertical',
                                                 }}
                                             />
+                                        </div>
+
+                                        {/* Linked Rooms: share narrative space with adjacent rooms so their owners appear together in scenes. */}
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '6px', color: 'rgba(176, 102, 255, 0.9)', fontSize: '13px', fontWeight: 700 }}>
+                                                Linked Rooms
+                                            </label>
+                                            <div style={{ fontSize: '12px', color: 'rgba(224, 240, 255, 0.55)', marginBottom: '10px', lineHeight: 1.4 }}>
+                                                Link this room to an adjacent one so they share the same space. The owners of linked rooms appear together in each other's scenes - useful for a bar with both a bartender and an entertainer.
+                                            </div>
+                                            {adjacentModules.length === 0 ? (
+                                                <div style={{ fontSize: '12px', color: 'rgba(224, 240, 255, 0.4)', fontStyle: 'italic' }}>
+                                                    No adjacent rooms to link. Build a room directly beside this one to link them.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    {adjacentModules.map((adj) => {
+                                                        const linked = isLinkedTo(adj.id);
+                                                        return (
+                                                            <div key={adj.id} style={{
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                padding: '8px 12px', borderRadius: '6px',
+                                                                background: linked ? 'rgba(176, 102, 255, 0.14)' : 'rgba(18, 8, 32, 0.5)',
+                                                                border: `1px solid ${linked ? 'rgba(176, 102, 255, 0.6)' : 'rgba(176, 102, 255, 0.2)'}`,
+                                                            }}>
+                                                                <span style={{ color: '#e0f0ff', fontSize: '13px', textTransform: 'capitalize' }}>{moduleDisplayName(adj)}</span>
+                                                                <motion.button
+                                                                    onClick={() => toggleLink(adj.id)}
+                                                                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                                                                    style={{
+                                                                        padding: '4px 12px', borderRadius: '5px', cursor: 'pointer',
+                                                                        fontSize: '12px', fontWeight: 700,
+                                                                        background: linked ? 'rgba(248, 113, 113, 0.15)' : 'rgba(176, 102, 255, 0.2)',
+                                                                        border: `1px solid ${linked ? 'rgba(248, 113, 113, 0.6)' : 'rgba(176, 102, 255, 0.5)'}`,
+                                                                        color: linked ? '#f87171' : '#d9b8ff',
+                                                                    }}
+                                                                >
+                                                                    {linked ? 'Unlink' : 'Link'}
+                                                                </motion.button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div>

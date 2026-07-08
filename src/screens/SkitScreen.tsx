@@ -24,7 +24,8 @@ import {
     Close,
     Warning,
     VolumeUp,
-    VolumeOff
+    VolumeOff,
+    ContentCut
 } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { NovelVisualizer } from '@lord-raven/novel-visualizer';
@@ -283,6 +284,25 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                 display: 'flex',
                 flexDirection: 'column'
             }}>
+                {/* Time of day indicator (upper-left) */}
+                <div style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    left: '1rem',
+                    zIndex: 10,
+                    padding: '4px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(18, 8, 32, 0.6)',
+                    border: '1px solid rgba(176, 102, 255, 0.4)',
+                    color: '#d9b8ff',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    pointerEvents: 'none',
+                }}>
+                    {stage().getTimeOfDay()}
+                </div>
                 {/* Top right control buttons */}
                 <div style={{
                     width: '100%',
@@ -321,6 +341,23 @@ export const SkitScreen: FC<SkitScreenProps> = ({ stage, setScreenType, isVertic
                     >
                         <MenuIcon />
                     </IconButton>
+                    {/* Dedicated "cut the scene here" button - only shown when viewing a non-final entry,
+                        so the player can end the scene at the displayed point and discard everything after
+                        (e.g. impersonated content that overran the natural ending). */}
+                    {!isLoading && skit.script.length >= 1 && currentScriptIndex < skit.script.length - 1 && (
+                        <IconButton
+                            onClick={handleClose}
+                            onMouseEnter={() => setTooltip('End Scene Here - discard everything after this point', ContentCut)}
+                            onMouseLeave={() => clearTooltip()}
+                            sx={{
+                                ...cornerButtonSx,
+                                color: colors.accent.warning,
+                                backgroundColor: 'rgba(255, 170, 0, 0.12)',
+                            }}
+                        >
+                            <ContentCut />
+                        </IconButton>
+                    )}
                     <IconButton
                         onClick={handleClose}
                         onMouseEnter={() => setTooltip(isLoading ? 'Cannot close while content is generating' : ((accumulatedOutcomes.length > 0 ? 'Accept Outcomes and ' : '') + (shouldHighlightCloseButton ? 'End Scene Here' : 'End Scene Here (Discard Remaining Entries)')), shouldHighlightCloseButton ? Close : Warning)}

@@ -426,6 +426,7 @@ export class Module<T extends ModuleType = ModuleType> {
     public type: T;
     public ownerId?: string; // For quarters, this is the occupant, for other modules, it is the character assigned to the associated role
     public attributes?: Partial<ModuleIntrinsic> & { [key: string]: any };
+    public linkedModuleIds?: string[]; // Adjacent modules this room shares narrative space with (owners appear in each other's scenes).
 
     /**
      * Rehydrate a Module from saved data
@@ -433,11 +434,15 @@ export class Module<T extends ModuleType = ModuleType> {
     static fromSave(savedModule: any): Module {
         let type = savedModule.type === 'medbay' ? 'infirmary' : savedModule.type; // Backwards compatibility
         type = type === 'communications' ? 'comms' : type; // Backwards compatibility
-        return createModule(type as ModuleType, {
+        const module = createModule(type as ModuleType, {
             id: savedModule.id,
             attributes: savedModule.attributes,
             ownerId: savedModule.ownerId
         });
+        if (Array.isArray(savedModule.linkedModuleIds)) {
+            module.linkedModuleIds = [...savedModule.linkedModuleIds];
+        }
+        return module;
     }
 
     constructor(type: T, opts?: { id?: string; attributes?: Partial<ModuleIntrinsic> & { [key: string]: any }; ownerId?: string }) {
@@ -708,6 +713,30 @@ export class Layout {
 
     getModuleAt(x: number, y: number): Module | null {
         return this.grid[y]?.[x] ?? null;
+    }
+
+    /** Returns modules orthogonally adjacent to the given module on its own floor (excludes quarters). */
+    getAdjacentModules(module: Module | null): Module[] {
+        if (!module) return [];
+        // Find which floor the module is on and its coordinates there.
+        for (let f = 0; f < this.floors.length; f++) {
+            const grid = this.floors[f];
+            for (let y = 0; y < this.gridHeight; y++) {
+                for (let x = 0; x < this.gridWidth; x++) {
+                    if (grid[y]?.[x]?.id === module.id) {
+                        const neighbors: Module[] = [];
+                        const deltas = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+                        for (const [dx, dy] of deltas) {
+                            const nx = x + dx, ny = y + dy;
+                            const n = grid[ny]?.[nx];
+                            if (n && n.type !== 'quarters') neighbors.push(n);
+                        }
+                        return neighbors;
+                    }
+                }
+            }
+        }
+        return [];
     }
 
     /** Coordinates on the CURRENT floor. */
