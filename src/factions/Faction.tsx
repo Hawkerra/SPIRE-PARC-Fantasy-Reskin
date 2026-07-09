@@ -247,7 +247,9 @@ export async function generateFactionRepresentative(faction: Faction, stage: Sta
         personality: `This original character is a representative for the ${faction.name}. ${faction.description}. ${faction.visualStyle}.\n` +
             `The character should embody the values and style of the faction they represent, while still feeling like a distinct individual with their own traits and personality. ` +
             `They will be the primary contact for the Spire when dealing with this faction. ` +
-            `Give them a suitable yet memorable name and background, avoiding any similarity to the following established character names: ${Object.values(stage.getSave().actors).map(a => a.name).join(', ')}.`
+            `Give them a background and a name that genuinely fits THIS faction's culture, era, and origin - a name someone from that specific world would actually bear, drawing on varied real and fictional naming traditions rather than a generic fantasy default. ` +
+            `Avoid the overused, cliche AI-generated fantasy names and their close variants (for example: Elara, Seraphina, Lyra, Aria, Caspian, Kael, Thorne, Vaelin, Alaric, Cassius, and surnames like Voss, Blackwood, Ashford, Nightshade, Thornheart); if a name in that register comes to mind first, choose something less expected instead. ` +
+            `Avoid any similarity to the following established character names: ${Object.values(stage.getSave().actors).map(a => a.name).join(', ')}.`
     }
     // retry a few times if it fails (or returns null):
     for (let attempt = 0; attempt < 3; attempt++) {
