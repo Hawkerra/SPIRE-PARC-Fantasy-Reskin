@@ -17,6 +17,26 @@ interface AttenuationScreenProps {
 	isVerticalLayout: boolean;
 }
 
+/**
+ * Accepts either a bare character path (e.g. "author/character-name-abc123") or a full Chub URL
+ * (e.g. "https://chub.ai/characters/author/character-name-abc123") and returns just the path the
+ * loader needs. Strips the site prefix, protocol/host variations, any leading slash, and trailing
+ * slashes or query/hash fragments. A value that isn't a Chub URL is returned trimmed and unchanged.
+ */
+export function normalizeCharacterPath(input: string): string {
+	let path = (input || '').trim();
+	if (!path) return '';
+	// Remove protocol and host if a chub.ai URL was pasted (handles http/https and optional www).
+	// Match up through ".../characters/" so only the unique author/character portion remains.
+	const charactersMarker = /^(?:https?:\/\/)?(?:www\.)?chub\.ai\/characters\//i;
+	if (charactersMarker.test(path)) {
+		path = path.replace(charactersMarker, '');
+	}
+	// Drop any leftover leading slash, and cut off a trailing slash or a query/hash fragment.
+	path = path.replace(/^\/+/, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+	return path.trim();
+}
+
 export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenType, isVerticalLayout}) => {
 
 	const [expandedCandidateId, setExpandedCandidateId] = React.useState<string | null>(null);
@@ -75,7 +95,7 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 	const handleAttenuate = () => {
 
         if (actorUrl.trim() !== '') {
-            stage().loadReserveActorFromFullPath(actorUrl.trim());
+            stage().loadReserveActorFromFullPath(normalizeCharacterPath(actorUrl));
         } else {
             // Kick off actor loading; this will populate remaining reserve slots. The generation process will pull attenuation modifiers from stage().
             stage().loadReserveActors();
@@ -165,6 +185,17 @@ export const AttenuationScreen: FC<AttenuationScreenProps> = ({stage, setScreenT
 								}}
 							>
 								Character Path
+							</Typography>
+							<Typography
+								variant="caption"
+								sx={{
+									display: 'block',
+									color: 'rgba(244,236,255,0.55)',
+									marginBottom: 1,
+									lineHeight: 1.4,
+								}}
+							>
+								Paste a character path or the full Chub card URL - the site prefix is trimmed automatically.
 							</Typography>
 							<TextField
 								fullWidth
