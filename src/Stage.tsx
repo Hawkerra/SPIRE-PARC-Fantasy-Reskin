@@ -230,6 +230,44 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         }
     }
 
+    /**
+     * Generates a new custom module from a free-form player prompt and registers it so it becomes
+     * available to build. Mirrors the mid-skit module generation flow, but player-initiated from the
+     * content management screen. Returns the generated module (with its assigned id) or null on failure.
+     */
+    async generateCustomModuleFromPrompt(prompt: string): Promise<{ id: string; module: ModuleIntrinsic } | null> {
+        const trimmed = (prompt || '').trim();
+        if (!trimmed) return null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                // The prompt drives generation via the name and the additional-information channel; the AI
+                // fills in purpose, description, role, and cost. We pass the whole prompt as details and let
+                // the model derive a fitting name.
+                const module = await generateModule(trimmed, this, trimmed);
+                if (module) {
+                    // Guard against generating a duplicate of an existing module by name.
+                    const duplicate = [...Object.values(this.getSave().customModules || {}), ...Object.values(MODULE_TEMPLATES)]
+                        .some(existing => !!existing.name && !!module.name && namesMatch(module.name, existing.name));
+                    const generatedModuleId = generateUuid();
+                    const currentSave = this.getSave();
+                    currentSave.customModules = { ...(currentSave.customModules || {}), [generatedModuleId]: module };
+                    registerModule(generatedModuleId, module);
+                    this.saveGame();
+                    if (duplicate) {
+                        this.showPriorityMessage(`Generated "${module.name}" (note: similar to an existing module).`);
+                    } else {
+                        this.showPriorityMessage(`New module "${module.name}" now available!`);
+                    }
+                    return { id: generatedModuleId, module };
+                }
+            } catch (err) {
+                console.error(`Error generating custom module from prompt (attempt ${attempt + 1}/3):`, err);
+            }
+        }
+        return null;
+    }
+
     private async generateActorFromOutcome(outcome: Outcome, queuedActorNames?: Set<string>) {
         console.log('generateActorFromOutcome');
         if (outcome.type !== 'newActor' || !outcome.actor) {

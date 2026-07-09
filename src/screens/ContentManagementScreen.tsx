@@ -22,6 +22,11 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
     const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
     const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
     const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+    // Prompt-driven module generation state.
+    const [modulePrompt, setModulePrompt] = useState('');
+    const [isGeneratingModule, setIsGeneratingModule] = useState(false);
+    const [moduleGenError, setModuleGenError] = useState<string | null>(null);
+    const [, setModuleRefresh] = useState(0);
 
     // Get all actors from the save
     const actors = Object.values(stage().getSave().actors);
@@ -42,6 +47,26 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
 
     const handleModuleClick = (moduleId: string) => {
         setSelectedModuleId(moduleId);
+    };
+
+    const handleGenerateModule = async () => {
+        const prompt = modulePrompt.trim();
+        if (!prompt || isGeneratingModule) return;
+        setIsGeneratingModule(true);
+        setModuleGenError(null);
+        try {
+            const result = await stage().generateCustomModuleFromPrompt(prompt);
+            if (result) {
+                setModulePrompt('');
+                setModuleRefresh(n => n + 1); // refresh the grid to show the new module
+            } else {
+                setModuleGenError('Generation failed. Try rephrasing your prompt, or try again.');
+            }
+        } catch (err) {
+            setModuleGenError('Something went wrong while generating. Please try again.');
+        } finally {
+            setIsGeneratingModule(false);
+        }
     };
 
     const handleCloseDetail = () => {
@@ -395,12 +420,59 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
 
                                 {/* Modules Tab */}
                                 {activeTab === 'modules' && (
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                                        gap: '15px',
-                                        padding: '10px',
-                                    }}>
+                                    <div>
+                                        {/* Prompt-driven module generation */}
+                                        <div style={{
+                                            margin: '10px',
+                                            padding: '16px',
+                                            borderRadius: '8px',
+                                            background: 'rgba(176, 102, 255, 0.08)',
+                                            border: '1px solid rgba(176, 102, 255, 0.3)',
+                                        }}>
+                                            <div style={{ color: '#b066ff', fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                                                Generate a New Module
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: 'rgba(224, 240, 255, 0.6)', marginBottom: '10px', lineHeight: 1.4 }}>
+                                                Describe the room you want and the Spire will conjure it - its purpose, appearance, an assignable role, and a build cost. For example: "a moonlit observatory for reading the stars and divining the future."
+                                            </div>
+                                            <textarea
+                                                value={modulePrompt}
+                                                onChange={(e) => setModulePrompt(e.target.value)}
+                                                placeholder="Describe your module..."
+                                                disabled={isGeneratingModule}
+                                                style={{
+                                                    width: '100%',
+                                                    minHeight: '64px',
+                                                    padding: '10px',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                                    border: '2px solid rgba(176, 102, 255, 0.3)',
+                                                    borderRadius: '5px',
+                                                    color: '#e0f0ff',
+                                                    fontFamily: 'inherit',
+                                                    resize: 'vertical',
+                                                    boxSizing: 'border-box',
+                                                }}
+                                            />
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+                                                <Button
+                                                    onClick={handleGenerateModule}
+                                                    disabled={isGeneratingModule || modulePrompt.trim().length === 0}
+                                                >
+                                                    {isGeneratingModule ? 'Conjuring...' : 'Generate Module'}
+                                                </Button>
+                                                {moduleGenError && (
+                                                    <span style={{ color: '#f87171', fontSize: '12px' }}>{moduleGenError}</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                                            gap: '15px',
+                                            padding: '10px',
+                                        }}>
                                         {customModules.length === 0 ? (
                                             <div style={{
                                                 gridColumn: '1 / -1',
@@ -493,6 +565,7 @@ export const ContentManagementScreen: FC<ContentManagementScreenProps> = ({ stag
                                                 );
                                             })
                                         )}
+                                    </div>
                                     </div>
                                 )}
                             </div>
