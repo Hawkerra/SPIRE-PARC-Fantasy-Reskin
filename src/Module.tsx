@@ -147,7 +147,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Apprentice',
         roleDescription: `Manage tower operations, monitoring the residents and supplementing their needs as the Magus's right hand.`,
         baseImageUrl: 'https://media.charhub.io/b2bdaa4d-1d35-4640-aceb-811adecd6390/d2721c48-ae91-4c6b-840e-5fd744b05ffb.png',
-        defaultImageUrl: 'https://media.charhub.io/026ae01a-7dc8-472d-bfea-61548b87e6ef/84990780-8260-4833-ac0b-79c1a15ddb9e.png',
+        defaultImageUrl: 'https://media.charhub.io/b2bdaa4d-1d35-4640-aceb-811adecd6390/d2721c48-ae91-4c6b-840e-5fd744b05ffb.png',
         cost: {}, // Free; starter module
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the station management screen
@@ -169,7 +169,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Herald',
         roleDescription: `Oversee the scrying mirror and its comings and goings, receiving envoys and managing the tower's dealings with the outside world.`,
         baseImageUrl: 'https://media.charhub.io/dab03719-bf9b-42ad-b66a-3427c478000d/416b208c-14de-4e17-900c-221b8f9ee271.png',
-        defaultImageUrl: 'https://media.charhub.io/9293912a-ebf4-4a0f-bac6-b9bfc82115f1/2ce9899c-a8cb-4186-9abb-fb8192ced8bd.png',
+        defaultImageUrl: 'https://media.charhub.io/dab03719-bf9b-42ad-b66a-3427c478000d/416b208c-14de-4e17-900c-221b8f9ee271.png',
         cost: {}, // Free; starter module
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // If there is a rep from a faction here, open a faction interaction skit
@@ -227,7 +227,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Artificer',
         roleDescription: `Tend the tower's enchantments and leyline flows, ensuring every chamber receives adequate magic and maintenance to function properly.`,
         baseImageUrl: 'https://media.charhub.io/b978c4d3-d24a-44f4-a75b-e4f5d3bcd0b2/d01a6221-b46e-4d47-9e32-d99406582acc.png',
-        defaultImageUrl: 'https://media.charhub.io/36c3c8b5-1abd-4766-8042-fa7a2af0ce42/6106d6ec-7746-4130-8e13-860c89a325c7.png',
+        defaultImageUrl: 'https://media.charhub.io/b978c4d3-d24a-44f4-a75b-e4f5d3bcd0b2/d01a6221-b46e-4d47-9e32-d99406582acc.png',
         cost: {}, // Free; starter module
         action: randomAction,
         available: (stage: Stage) => {
@@ -240,7 +240,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         skitPrompt: 'Private chambers are personal living spaces for the tower\'s residents. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
         imagePrompt: 'A cozy tower bedchamber with a bed, personal storage, and warm lantern light, reflecting the occupant\'s personality.',
         baseImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png', 
-        defaultImageUrl: 'https://media.charhub.io/99ffcdf5-a01b-43cf-81e5-e7098d8058f5/d1ec2e67-9124-4b8b-82d9-9685cfb973d2.png',
+        defaultImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png',
         cost: {Provision: 1},
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the skit screen to speak to occupants
@@ -271,7 +271,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Steward',
         roleDescription: `Maintain the tower's communal spaces, ensuring they remain inviting and well-stocked for residents' meals and gatherings.`,
         baseImageUrl: 'https://media.charhub.io/c752b842-b465-451c-b870-3d2d612e51c0/f8ee79f3-d243-4a5e-be01-78a6412e132c.png', 
-        defaultImageUrl: 'https://media.charhub.io/041617bd-1cb3-424d-8e66-788e60edc80d/3a21ddd2-bd66-40b0-84ca-68b11d8218b2.png',
+        defaultImageUrl: 'https://media.charhub.io/c752b842-b465-451c-b870-3d2d612e51c0/f8ee79f3-d243-4a5e-be01-78a6412e132c.png',
         cost: {Provision: 1},
         action: randomAction,
         available: (stage: Stage) => {
@@ -286,7 +286,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Healer',
         roleDescription: `Provide healing and remedies for the residents, ensuring their health and well-being.`,
         baseImageUrl: 'https://media.charhub.io/cb482b96-fa2e-44cf-83ea-b90fb7d53467/c4c2851e-a111-4ffa-9cab-ba039738c88d.png',
-        defaultImageUrl: 'https://media.charhub.io/5e9c6119-51b4-4a2c-a06c-bb8f1c20aea1/c471f9ba-ea5f-495b-8e44-e02723a04938.png',
+        defaultImageUrl: 'https://media.charhub.io/cb482b96-fa2e-44cf-83ea-b90fb7d53467/c4c2851e-a111-4ffa-9cab-ba039738c88d.png',
         cost: {Provision: 1, Comfort: 1},
         action: randomAction,
         available: (stage: Stage) => {
@@ -301,7 +301,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Drillmaster',
         roleDescription: `Oversee the physical training of the residents, ensuring they remain in fighting form for whatever their duties demand.`,
         baseImageUrl: 'https://media.charhub.io/9af4597d-a1bd-4f6e-9680-33de1b230333/00b3e479-5ad4-4225-b35d-ed1b15c2d2ff.png',
-        defaultImageUrl: 'https://media.charhub.io/7f6bd636-804e-493c-8442-e691856a6703/589a3768-f0da-43c0-ab70-8b7d403f5a62.png',
+        defaultImageUrl: 'https://media.charhub.io/9af4597d-a1bd-4f6e-9680-33de1b230333/00b3e479-5ad4-4225-b35d-ed1b15c2d2ff.png',
         cost: {Comfort: 1, Wealth: 1},
         action: randomAction,
         available: (stage: Stage) => {
@@ -316,7 +316,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Host',
         roleDescription: `Oversee the tower's leisure spaces, ensuring residents have a comfortable and enjoyable place to relax and socialize.`,
         baseImageUrl: 'https://media.charhub.io/9c7272aa-b468-4a04-8013-c643149cea29/5de9e404-a651-4b21-bc2a-7050c43dc995.png',
-        defaultImageUrl: 'https://media.charhub.io/2e8bf9fc-67a8-499d-85ec-8198efafeb14/1da73912-d19e-4f4e-aeda-19688e16e474.png',
+        defaultImageUrl: 'https://media.charhub.io/9c7272aa-b468-4a04-8013-c643149cea29/5de9e404-a651-4b21-bc2a-7050c43dc995.png',
         cost: {Comfort: 2, Wealth: 1},
         action: randomAction,
         available: (stage: Stage) => {
@@ -333,7 +333,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Warden',
         roleDescription: `Manage the tower's defenses and ensure the safety of the residents against external and internal threats.`,
         baseImageUrl: 'https://media.charhub.io/a4a6c1ed-866d-439b-a9c0-1a00897187b9/ba47369e-b666-4a31-9745-54f9ccf294fb.png',
-        defaultImageUrl: 'https://media.charhub.io/090e6a42-62f9-46da-9a29-09de8b469f05/eedf310f-af7a-40b4-ac56-686f4daa5c07.png',
+        defaultImageUrl: 'https://media.charhub.io/a4a6c1ed-866d-439b-a9c0-1a00897187b9/ba47369e-b666-4a31-9745-54f9ccf294fb.png',
         cost: {Stability: 1, Wealth: 1},
         action: randomAction,
         available: (stage: Stage) => {
@@ -350,7 +350,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Gatekeeper',
         roleDescription: `Tend the homeward gate and its recall bonds, overseeing departures home and returns to the Spire.`,
         baseImageUrl: 'https://media.charhub.io/d081e188-8bd0-4027-9e21-489840924a95/968a7272-75f1-4b3d-b516-64588d9b0f03.png',
-        defaultImageUrl: 'https://media.charhub.io/6dbe1503-e10a-48e4-875d-cc7a5038bc43/be0aa5dc-70b6-4573-ae48-c37d8e90022f.png',
+        defaultImageUrl: 'https://media.charhub.io/d081e188-8bd0-4027-9e21-489840924a95/968a7272-75f1-4b3d-b516-64588d9b0f03.png',
         cost: {Harmony: 2, Stability: 2},
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the cryo management screen
@@ -370,7 +370,7 @@ export const MODULE_TEMPLATES: Record<ModuleType, ModuleIntrinsic> = {
         role: 'Attuner',
         roleDescription: `Conduct research on the leyline and its currents, managing the tower's experimental summoning projects.`,
         baseImageUrl: 'https://media.charhub.io/a543e339-136b-4c51-8c64-02f467d8316b/ce0ebe1d-8b03-4734-8a71-5d1873b181a4.png',
-        defaultImageUrl: 'https://media.charhub.io/551ea94a-c64c-4328-a54a-08a8a356f261/ec7e47be-b157-4f71-a14d-4e45110e84f7.png',
+        defaultImageUrl: 'https://media.charhub.io/a543e339-136b-4c51-8c64-02f467d8316b/ce0ebe1d-8b03-4734-8a71-5d1873b181a4.png',
         cost: {Stability: 2, Wealth: 2},
         action: (module: Module, stage: Stage, setScreenType: (type: ScreenType) => void) => {
             // Open the attenuation screen

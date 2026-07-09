@@ -675,6 +675,24 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         // Use smart rehydration to automatically detect and restore all nested objects
         const hydrated = smartRehydrate(save) as SaveType;
 
+        // Migration: older saves (and the now-removed auto image-gen stop-gap) baked sci-fi module
+        // images into each placed module's stored attributes, which override the template art. Clear
+        // those stored image URLs on built-in module types so they fall back to the current template
+        // images (the new fantasy art). Custom modules keep their own stored art.
+        try {
+            if (hydrated.layout && typeof hydrated.layout.getModulesWhere === 'function') {
+                const builtInTypes = new Set(Object.keys(MODULE_TEMPLATES));
+                for (const module of hydrated.layout.getModulesWhere(() => true)) {
+                    if (module.attributes && builtInTypes.has(module.type)) {
+                        if ('baseImageUrl' in module.attributes) delete module.attributes.baseImageUrl;
+                        if ('defaultImageUrl' in module.attributes) delete module.attributes.defaultImageUrl;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Module image migration failed (non-fatal):', err);
+        }
+
         return hydrated;
     }
 
