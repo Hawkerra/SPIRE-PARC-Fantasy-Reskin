@@ -325,7 +325,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         return save.factions[factionId]?.name || factionId;
     };
 
-    const PARC_BACKGROUND_IMAGE = 'https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png';
+    const PARC_BACKGROUND_IMAGE = 'https://media.charhub.io/f245fce6-778c-453c-9594-ec1ccad5aa34/a2c796c9-d379-4d63-b001-0af5fe4054f6.png';
 
     const getAccent = (outcome: Outcome) => {
         switch (outcome.type) {

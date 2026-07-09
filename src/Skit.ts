@@ -177,7 +177,7 @@ export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing:
             return (!continuing ?
                 `This scene introduces a new faction that would like to do business with the Magus and the Spire: ${faction?.name || 'a secret organization'}. ` +
                 notHereText +
-                `Describe this new faction's appearance, motivations, and initial interactions with the player Magus and other characters present at the Translocation Circle (if any). ` :
+                `Describe this new faction's appearance, motivations, and initial interactions with the player Magus and other characters present at the Scrying Mirror (if any). ` :
                 `This is an introductory scene for ${faction?.name || 'a secret organization'}. ` +
                 notHereText);
         case SkitType.FACTION_INTERACTION:
@@ -513,7 +513,7 @@ function processMovementTag(rawTag: string, stage: Stage, skit: SkitData | undef
             console.warn(`${matched.name} has no quarters assigned`);
         }
     } else if (['parc', 'spire', 'tower'].includes(destinationName.toLowerCase())) {
-        // Move to the translocation circle by default for vague "tower" references
+        // Move to the scrying mirror by default for vague "tower" references
         destinationModuleId = stage.getSave().layout.getAllModulesWhere(module => module.type === 'comms')[0]?.id || skit?.moduleId || '';
     } else if (skit && ['here', 'this module', 'this room', 'this location', 'this area', 'current module', 'current room'].includes(destinationName.toLowerCase())) {
         // Move to current skit module
@@ -799,7 +799,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `[CHARACTER NAME moves to <room name|faction name>]\n` +
                             `Full Example:\n` +
                             `[${exampleActor} moves to Stellar Concord]\n` +
-                            `[${exampleActor} moves to Translocation Circle]\n` +
+                            `[${exampleActor} moves to Scrying Mirror]\n` +
                             `These tags ensure that the gamestate location data reflects the scene's events; it is especially important to include movement tags for any characters leaving on or returning from missions; ` +
                             `remember that moving "to" a faction is an abstract location representing a task on that faction's behalf, whether that task is at the faction location or elsewhere entirely.` +
 
@@ -1275,7 +1275,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                     (stage.getSave().disableImpersonation ? '' : `[${stage.getSave().player.name.toUpperCase()} turn] "Hey, Some Character," I greet them warmly. I'm the player, and my entries use first-person narrative voice, while all other skit entries use second-person to refer to me.\n`) +
                     `[NARRATOR turn][SOME CHARACTER moves to OTHER ROOM NAME] Some Character ducks out with a smile. You hear their boots fade away down the stairs beyond.\n` +
                     `[ANOTHER CHARACTER turn][SCENE moves to OTHER ROOM NAME][SOME CHARACTER wears FORMAL WEAR] You and Another Character follow Some Character to the other room, where they have changed into more formal attire. "[shout]We'll miss you, Some Character![]" cries Another Character, utilizing a text style tag.\n` +
-                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step into the translocation circle, leaving the Spire to join Faction Name. The runes flare bright, and then they are gone.` +
+                    `[SOME CHARACTER turn][SOME CHARACTER moves to FACTION NAME] Some Character waves good-bye as they step before the scrying mirror, leaving the Spire to join Faction Name. Its surface flares bright, and then they are gone.` +
                     `A courier charm chimes as Faction Name's payment settles into the tower's coffers.[STATION: Wealth +1]\n`
                  ) +
                 buildPromptSegment(`Ongoing Scene Log`, buildScriptLog(skit, [], stage)) +
@@ -1329,7 +1329,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                         `An end tag should be used if the new chunk of script hits a conclusory moment, where continuing makes little sense.\n` +
                         `[END]` +
                     `\n\n#Cue Notes:#\n` +
-                    `For all Character movement tags, LOCATION should be the name of an existing room (e.g., 'Translocation Circle', 'Apothecary', 'Parlor'), a character's chambers (e.g., 'Susan's chambers' or just 'chambers' for their own), or simply "Here" to move to the scene's location or "Another room" to leave this area. ` +
+                    `For all Character movement tags, LOCATION should be the name of an existing room (e.g., 'Scrying Mirror', 'Apothecary', 'Parlor'), a character's chambers (e.g., 'Susan's chambers' or just 'chambers' for their own), or simply "Here" to move to the scene's location or "Another room" to leave this area. ` +
                     `If a faction name is used for the LOCATION, it indicates that the character is departing from the Spire itself, typically to visit a faction or engage in a mission or job on that faction's behalf (use the faction name as the location, even when the job is not "at" the faction). ` +
                     `The game engine relies upon movement tags to update character locations and visually display character presence in scenes, so it is essential to use these tags when Absent Characters enter the scene, Present Characters leave, or the scene itself relocates. ` +
                     `These tags are not presented to users, so the narrative content of the script should also organically mention characters entering, exiting, or relocating. `

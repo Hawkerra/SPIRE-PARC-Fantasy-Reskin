@@ -694,44 +694,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             this.saveSlot = Math.min(this.SAVE_SLOTS - 1, this.saves.length - 1);
         }
         this.currentSave = this.getFreshSave();
-        this.newGameNeedsRoomArt = true; // Defer starting-room art until the game is actually running (see startGame).
         this.saveGame();
-    }
-
-    // Regenerates images for all currently-placed modules using their imagePrompt, one at a time
-    // to avoid overloading the image service. Runs in the background; failures are non-fatal and
-    // simply leave the placeholder image in place.
-    async refreshStartingModuleImages(): Promise<void> {
-        try {
-            const modules = this.getSave().layout.getModulesWhere(() => true);
-            let anyUpdated = false;
-            let savedSinceLast = 0;
-            for (const module of modules) {
-                try {
-                    // generateModuleImage expects a ModuleIntrinsic; build one from the live module,
-                    // then write the freshly generated URLs back into the module's instance attributes
-                    // so the display layer (which reads getAttribute('defaultImageUrl')) picks them up.
-                    const intrinsic = { ...module.getAttributes(), cost: module.getAttribute('cost') || {} };
-                    await generateModuleImage(intrinsic, this);
-                    if (intrinsic.baseImageUrl && intrinsic.defaultImageUrl) {
-                        module.attributes = {
-                            ...(module.attributes || {}),
-                            baseImageUrl: intrinsic.baseImageUrl,
-                            defaultImageUrl: intrinsic.defaultImageUrl,
-                        };
-                        anyUpdated = true;
-                        savedSinceLast++;
-                        // Save every few images so progress persists without a network write per image.
-                        if (savedSinceLast >= 3) { this.saveGame(); savedSinceLast = 0; }
-                    }
-                } catch (err) {
-                    console.error(`Failed to auto-generate image for module ${module.type}`, err);
-                }
-            }
-            if (anyUpdated) this.saveGame();
-        } catch (err) {
-            console.error('Error during starting module image refresh', err);
-        }
     }
 
     saveGame() {
@@ -788,8 +751,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.saveGame();
     }
 
-    newGameNeedsRoomArt = false;
-
     startGame() {
         if (this.initialized) return;
         this.initialized = true;
@@ -815,8 +776,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             name: this.getSave().directorModule.name,
             skitPrompt: 'Private chambers are personal living spaces for the tower\'s residents. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
             imagePrompt: 'A cozy tower bedchamber with a bed, personal storage, and warm lantern light, reflecting the occupant\'s personality.',
-            baseImageUrl: 'https://media.charhub.io/5e39db53-9d66-459d-8926-281b3b089b36/8ff20bdb-b719-4cf7-bf53-3326d6f9fcaa.png', 
-            defaultImageUrl: 'https://media.charhub.io/99ffcdf5-a01b-43cf-81e5-e7098d8058f5/d1ec2e67-9124-4b8b-82d9-9685cfb973d2.png',
+            baseImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png', 
+            defaultImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png',
             role: this.getSave().directorModule.roleName,
             roleDescription: '',
             cost: {
@@ -997,13 +958,6 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                 });
                 break; // only do one at a time
             }
-        }
-
-        // Now that the game is fully initialized and running, kick off starting-room art in the
-        // background (only for a brand-new game). Fire-and-forget so it never blocks startup.
-        if (this.newGameNeedsRoomArt) {
-            this.newGameNeedsRoomArt = false;
-            void this.refreshStartingModuleImages();
         }
 
         this.summaryCheck();
