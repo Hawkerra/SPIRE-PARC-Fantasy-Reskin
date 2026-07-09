@@ -549,3 +549,16 @@ html, body, #root {
     transform: scale(0.95);
   }
 }
+
+/*
+ * Recolor the Chub loading spinner (a green flower image from @chub-ai/stages-ts) to match the
+ * Spire's purple theme. The package renders <img class="loading-spinner" src=".../flower.png">
+ * inside a .spinner ring; we can't edit the package, but our styles load after it, so we filter
+ * the image from green to purple. hue-rotate does the color shift; the surrounding filters tune it.
+ */
+.spinner img.loading-spinner,
+img.loading-spinner {
+  /* sepia normalizes the image toward a single base hue, then hue-rotate + saturate push it to
+     purple; this is more reliable than hue-rotate alone, which depends on the flower's exact green. */
+  filter: sepia(1) saturate(4) hue-rotate(230deg) brightness(0.9);
+}
