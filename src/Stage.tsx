@@ -628,6 +628,12 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         if (save && save['turn'] === undefined) {
             save['turn'] = save['phase'] || 0;
         }
+        // Migration: the 'Arcanum' tower stat was renamed to 'Stability'. Rename the key on older saves
+        // so the stat value carries over instead of being orphaned.
+        if (save && save['stationStats'] && save['stationStats']['Arcanum'] !== undefined && save['stationStats']['Stability'] === undefined) {
+            save['stationStats']['Stability'] = save['stationStats']['Arcanum'];
+            delete save['stationStats']['Arcanum'];
+        }
         // Use smart rehydration to automatically detect and restore all nested objects
         const hydrated = smartRehydrate(save) as SaveType;
 
@@ -838,7 +844,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         // Initialize stationStats if missing
         if (!save.stationStats || Object.keys(save.stationStats).length < 6) {
             save.stationStats = {
-                'Arcanum': 3,
+                'Stability': 3,
                 'Comfort': 3,
                 'Provision': 3,
                 'Security': 3,

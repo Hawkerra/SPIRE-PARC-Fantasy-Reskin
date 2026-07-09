@@ -744,7 +744,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `Where <stat> is the name of the tower stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
                             `Multiple stat changes can be included in a single tag, separated by commas.` +
                             `Full Examples:\n` +
-                            `[STATION: Arcanum +2, Comfort +1]\n` +
+                            `[STATION: Stability +2, Comfort +1]\n` +
                             `[STATION: Security -1]\n` +
 
                             `\n#Tower Activity:#\n` +
@@ -753,7 +753,7 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `Choose a resident from the roster who was absent from the scene; favor someone with an assigned role, and let their personality and role shape what they did. ` +
                             `Output EXACTLY ONE line in this exact format:\n` +
                             `[ACTIVITY: <characterName> | <a single short sentence, no more than about 20 words> | <TAG>]\n` +
-                            `The <TAG> field is REQUIRED and must be one of: a single tower stat (Arcanum, Comfort, Provision, Security, Harmony, or Wealth) nudged by exactly +1 or -1, OR the literal text "No stat change". ` +
+                            `The <TAG> field is REQUIRED and must be one of: a single tower stat (Stability, Comfort, Provision, Security, Harmony, or Wealth) nudged by exactly +1 or -1, OR the literal text "No stat change". ` +
                             `MOST activities should use "No stat change" - only OCCASIONALLY, when the activity clearly and notably helped or harmed the tower, use a stat change instead. It should feel like an occasional surprise, not routine. ` +
                             `Do NOT begin the sentence with a number or digit. Keep the sentence to a single line - never a paragraph. Only ONE [ACTIVITY] tag total.\n` +
                             `Full Examples:\n` +
