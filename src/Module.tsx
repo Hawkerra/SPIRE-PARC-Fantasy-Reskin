@@ -779,10 +779,10 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
     // Generate a module from a module name, some arbitrary details, and a role title
     const generatedResponse = await stage.makeText({
         prompt: `{{messages}}This is preparatory request for structured and formatted game content. ` +
-            `The goal is to define a module/room for a wizard tower management game, based primarily upon the name, and potentially some other information, ` +
+            `The goal is to define a module/room for a wizard tower management game, based primarily upon the name and/or the additional information provided, ` +
             `while generally avoiding duplicating existing content below. ` +
             buildPromptSegment(`Existing Modules`, Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')) +
-            buildPromptSegment(`New Module Details`, `Name: ${name}\nNew Role: ${role || 'N/A'}\nAdditional Information: ${additionalInformation || 'N/A'}`) +
+            buildPromptSegment(`New Module Details`, `Name: ${name || 'N/A'}\nNew Role: ${role || 'N/A'}\nAdditional Information: ${additionalInformation || 'N/A'}`) +
             buildPromptSegment(`Background`, `This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
                 `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
                 `with the goal of placing these characters into a new role in this world. ` +

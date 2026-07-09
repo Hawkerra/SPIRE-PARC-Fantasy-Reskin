@@ -241,10 +241,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
 
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
-                // The prompt drives generation via the name and the additional-information channel; the AI
-                // fills in purpose, description, role, and cost. We pass the whole prompt as details and let
-                // the model derive a fitting name.
-                const module = await generateModule(trimmed, this, trimmed);
+                // Pass the prompt only as additional information (NOT as the name argument): the AI derives
+                // a fitting short name from it. Passing it as `name` both muddied generation and caused the
+                // whole prompt to be used as a fallback name, failing the length check.
+                const module = await generateModule('', this, trimmed);
                 if (module) {
                     // Guard against generating a duplicate of an existing module by name.
                     const duplicate = [...Object.values(this.getSave().customModules || {}), ...Object.values(MODULE_TEMPLATES)]

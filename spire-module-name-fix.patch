@@ -1,0 +1,36 @@
+diff --git a/src/Module.tsx b/src/Module.tsx
+index e916db7..eeb109f 100644
+--- a/src/Module.tsx
++++ b/src/Module.tsx
+@@ -779,10 +779,10 @@ export async function generateModule(name: string, stage: Stage, additionalInfor
+     // Generate a module from a module name, some arbitrary details, and a role title
+     const generatedResponse = await stage.makeText({
+         prompt: `{{messages}}This is preparatory request for structured and formatted game content. ` +
+-            `The goal is to define a module/room for a wizard tower management game, based primarily upon the name, and potentially some other information, ` +
++            `The goal is to define a module/room for a wizard tower management game, based primarily upon the name and/or the additional information provided, ` +
+             `while generally avoiding duplicating existing content below. ` +
+             buildPromptSegment(`Existing Modules`, Object.entries(MODULE_TEMPLATES).map(([type, mod]) => `- ${type}: Role - ${mod.role || 'N/A'}`).join('\n')) +
+-            buildPromptSegment(`New Module Details`, `Name: ${name}\nNew Role: ${role || 'N/A'}\nAdditional Information: ${additionalInformation || 'N/A'}`) +
++            buildPromptSegment(`New Module Details`, `Name: ${name || 'N/A'}\nNew Role: ${role || 'N/A'}\nAdditional Information: ${additionalInformation || 'N/A'}`) +
+             buildPromptSegment(`Background`, `This game is a fantasy multiverse setting that pulls characters from across eras, worlds, and settings. ` +
+                 `The player of this game, ${stage.getSave().player.name}, presides as Magus over an isolated wizard's tower called the Sanctum for Planar Intake, Restoration, and Enrichment, or the Spire, which summons people from other realities and helps them adapt to a new life, ` +
+                 `with the goal of placing these characters into a new role in this world. ` +
+diff --git a/src/Stage.tsx b/src/Stage.tsx
+index 5273415..2af4231 100644
+--- a/src/Stage.tsx
++++ b/src/Stage.tsx
+@@ -241,10 +241,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
+ 
+         for (let attempt = 0; attempt < 3; attempt++) {
+             try {
+-                // The prompt drives generation via the name and the additional-information channel; the AI
+-                // fills in purpose, description, role, and cost. We pass the whole prompt as details and let
+-                // the model derive a fitting name.
+-                const module = await generateModule(trimmed, this, trimmed);
++                // Pass the prompt only as additional information (NOT as the name argument): the AI derives
++                // a fitting short name from it. Passing it as `name` both muddied generation and caused the
++                // whole prompt to be used as a fallback name, failing the length check.
++                const module = await generateModule('', this, trimmed);
+                 if (module) {
+                     // Guard against generating a duplicate of an existing module by name.
+                     const duplicate = [...Object.values(this.getSave().customModules || {}), ...Object.values(MODULE_TEMPLATES)]
