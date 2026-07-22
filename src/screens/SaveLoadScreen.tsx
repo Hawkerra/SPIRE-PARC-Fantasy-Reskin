@@ -8,7 +8,7 @@ import { scoreToGrade } from '../utils';
 import { Save, FolderOpen, Close, Delete, Download, Upload } from '@mui/icons-material';
 import { ScreenType } from './BaseScreen';
 import { STATION_STAT_ICONS, StationStat } from '../Module';
-import { exportCurrentSaveToFile, importSaveFromFile } from '../SaveFilePortability';
+import { exportCurrentSaveToFile, importSaveFromFile, copyTextToClipboard } from '../SaveFilePortability';
 
 // Identifier stamped into exported save files (helps when players send saves for troubleshooting).
 const STAGE_ID = 'spire-parc-fantasy-reskin';
@@ -25,15 +25,33 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
     const [hoveredSlot, setHoveredSlot] = React.useState<number | null>(null);
     const [deleteConfirmSlot, setDeleteConfirmSlot] = React.useState<number | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+    // When a real file download is blocked (e.g. sandboxed iframe), we show the save text here so the
+    // player can copy it manually - guaranteeing they can always get their save out.
+    const [exportFallbackText, setExportFallbackText] = React.useState<string | null>(null);
 
-    // Export the current in-memory save to a downloadable file.
+    // Export the current in-memory save. Try a file download; if the environment blocks it, fall back
+    // to showing the text for manual copy.
     const handleExportToFile = () => {
         try {
-            exportCurrentSaveToFile({ getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) }, STAGE_ID);
-            setTooltip('Save exported to file', Download, undefined, 2500);
+            const { text, downloaded } = exportCurrentSaveToFile(
+                { getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) },
+                STAGE_ID
+            );
+            if (downloaded) {
+                setTooltip('Save exported to file', Download, undefined, 2500);
+            } else {
+                // Download was blocked - surface the text so the player can copy it out.
+                setExportFallbackText(text);
+            }
         } catch (err: any) {
             setTooltip(err?.message || 'Could not export save', Close, undefined, 3000);
         }
+    };
+
+    const handleCopyFallback = async () => {
+        if (!exportFallbackText) return;
+        const ok = await copyTextToClipboard(exportFallbackText);
+        setTooltip(ok ? 'Save copied to clipboard' : 'Select the text and copy it manually', ok ? Download : Close, undefined, 3000);
     };
 
     // Trigger the hidden file picker for import.
@@ -448,6 +466,51 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                     Export downloads your current game as a file you can back up or send. Import loads a save file into the game (this replaces your current game).
                 </div>
             </motion.div>
+
+            {/* Export fallback modal: shown when a real file download is blocked by the environment. */}
+            {exportFallbackText !== null && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.7)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', zIndex: 1002,
+                    }}
+                    onClick={(e) => { if (e.target === e.currentTarget) setExportFallbackText(null); }}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="glass-panel-bright"
+                        style={{ padding: '24px', maxWidth: '560px', width: '92%' }}
+                    >
+                        <div style={{ color: '#b066ff', fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
+                            Copy Your Save
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(224,240,255,0.7)', marginBottom: '12px', lineHeight: 1.5 }}>
+                            A direct file download isn't available here, so copy the text below and paste it into a
+                            plain text file (name it something like <em>my-save.json</em>) to save or share it. Use
+                            Import to load it back later.
+                        </div>
+                        <textarea
+                            readOnly
+                            value={exportFallbackText}
+                            onFocus={(e) => e.target.select()}
+                            style={{
+                                width: '100%', height: '200px', padding: '10px', fontSize: '11px',
+                                fontFamily: 'monospace', backgroundColor: 'rgba(18, 8, 32, 0.6)',
+                                border: '2px solid rgba(176, 102, 255, 0.3)', borderRadius: '5px',
+                                color: '#e0f0ff', resize: 'vertical', boxSizing: 'border-box',
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                            <Button onClick={handleCopyFallback}>Copy to Clipboard</Button>
+                            <Button variant="secondary" onClick={() => setExportFallbackText(null)}>Close</Button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
 
             {/* Delete confirmation modal */}
             {deleteConfirmSlot !== null && (

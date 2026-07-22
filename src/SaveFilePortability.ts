@@ -36,19 +36,51 @@ interface SaveFileEnvelope {
     save: any;           // the actual save payload
 }
 
+/**
+ * Copy text to the clipboard, trying the modern async Clipboard API first and falling back to the
+ * legacy execCommand path (which works in more restricted/iframe contexts). Returns true on success.
+ */
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+    // Modern API (needs a secure context and permission; may be unavailable in some iframes).
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch {
+        // fall through to legacy path
+    }
+    // Legacy fallback: a temporary textarea + execCommand('copy').
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch {
+        return false;
+    }
+}
+
 const SAVE_FILE_FORMAT = 'parc-family-save';
 const SAVE_FILE_VERSION = 1;
 
 /**
- * Serialize the host's current save into a downloadable .json file and trigger the browser download.
- * `stageId` is stamped into the file for traceability (e.g. 'spire-parc-fantasy-reskin').
+ * Serialize the host's current save into an envelope and return both the pretty JSON text and a
+ * suggested filename. The UI uses this for the download AND for the copy/manual fallback, so the
+ * same data is available regardless of whether the sandbox permits a real file download.
  */
-export function exportCurrentSaveToFile(host: SavePortabilityHost, stageId: string = 'unknown-stage'): void {
+export function buildSaveExport(host: SavePortabilityHost, stageId: string = 'unknown-stage'): { text: string; filename: string } {
     const save = host.getSave();
     if (!save) {
         throw new Error('No active save to export.');
     }
-
     const envelope: SaveFileEnvelope = {
         format: SAVE_FILE_FORMAT,
         formatVersion: SAVE_FILE_VERSION,
@@ -57,23 +89,49 @@ export function exportCurrentSaveToFile(host: SavePortabilityHost, stageId: stri
         // Deep-clone via JSON to strip any class instances/functions down to plain serializable data.
         save: JSON.parse(JSON.stringify(save)),
     };
-
-    const json = JSON.stringify(envelope, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    // Build a friendly, timestamped filename.
+    const text = JSON.stringify(envelope, null, 2);
     const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `${stageId}-save-${stamp}.json`;
+    return { text, filename };
+}
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    // Release the object URL after a tick so the download can start.
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+/**
+ * Attempt to trigger a browser download of the given text as a file. Returns true if the download
+ * was initiated, false if the environment appears to block it (e.g. a sandboxed iframe without the
+ * 'allow-downloads' permission). A false return is the signal for the caller to use the copy/manual
+ * fallback rather than leaving the user with nothing.
+ */
+export function tryDownloadTextAsFile(text: string, filename: string): boolean {
+    try {
+        const blob = new Blob([text], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        // If the anchor doesn't support the download attribute, we can't do a clean file download.
+        if (typeof a.download === 'undefined') {
+            URL.revokeObjectURL(url);
+            return false;
+        }
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Convenience: build the export and attempt the download in one call. Returns the export payload
+ * plus whether the download was initiated, so the UI can show the copy fallback when it wasn't.
+ */
+export function exportCurrentSaveToFile(host: SavePortabilityHost, stageId: string = 'unknown-stage'): { text: string; filename: string; downloaded: boolean } {
+    const { text, filename } = buildSaveExport(host, stageId);
+    const downloaded = tryDownloadTextAsFile(text, filename);
+    return { text, filename, downloaded };
 }
 
 /**
