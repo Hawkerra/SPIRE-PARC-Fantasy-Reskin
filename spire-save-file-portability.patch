@@ -1,0 +1,264 @@
+diff --git a/src/SaveFilePortability.ts b/src/SaveFilePortability.ts
+new file mode 100644
+index 0000000..e557b68
+--- /dev/null
++++ b/src/SaveFilePortability.ts
+@@ -0,0 +1,130 @@
++/*
++ * SaveFilePortability.ts
++ * -----------------------
++ * Standalone, portable save export/import for PARC-family stages (PARC, The Spire, and reskins).
++ *
++ * WHY STANDALONE: this module deliberately depends only on a tiny interface (SavePortabilityHost),
++ * not on the concrete Stage class, so it can be dropped into any stage in this family with minimal
++ * wiring. To reuse it elsewhere, implement the four host methods (getSave, getAllSaves,
++ * replaceCurrentSave, refreshAfterLoad) and call exportCurrentSaveToFile / importSaveFromFile.
++ *
++ * WHAT IT DOES:
++ *  - Export: serializes the current in-memory save to a downloadable .json file (with a small
++ *    metadata envelope so future versions can detect format).
++ *  - Import: reads a .json file the user selects, validates the envelope, rehydrates it through the
++ *    host, and loads it into the current slot - then refreshes the game.
++ *
++ * It intentionally does NOT touch the network/chat-state persistence; it only moves saves between
++ * the running game and local files.
++ */
++
++// The minimal surface this module needs from a stage. Any stage implementing these can reuse it.
++export interface SavePortabilityHost {
++    // Returns the current live save object (any serializable shape).
++    getSave(): any;
++    // Rehydrates a plain parsed save object into proper class instances and installs it as the
++    // current save, then re-initializes/refreshes the running game so the load takes effect.
++    loadSaveObject(rawSave: any): void;
++}
++
++// Envelope wrapping an exported save, so imports can be validated and versioned across stages.
++interface SaveFileEnvelope {
++    format: string;      // constant marker identifying this as a portable save file
++    formatVersion: number;
++    stageId: string;     // which stage produced it (informational; import is tolerant across reskins)
++    exportedAt: string;  // ISO timestamp
++    save: any;           // the actual save payload
++}
++
++const SAVE_FILE_FORMAT = 'parc-family-save';
++const SAVE_FILE_VERSION = 1;
++
++/**
++ * Serialize the host's current save into a downloadable .json file and trigger the browser download.
++ * `stageId` is stamped into the file for traceability (e.g. 'spire-parc-fantasy-reskin').
++ */
++export function exportCurrentSaveToFile(host: SavePortabilityHost, stageId: string = 'unknown-stage'): void {
++    const save = host.getSave();
++    if (!save) {
++        throw new Error('No active save to export.');
++    }
++
++    const envelope: SaveFileEnvelope = {
++        format: SAVE_FILE_FORMAT,
++        formatVersion: SAVE_FILE_VERSION,
++        stageId,
++        exportedAt: new Date().toISOString(),
++        // Deep-clone via JSON to strip any class instances/functions down to plain serializable data.
++        save: JSON.parse(JSON.stringify(save)),
++    };
++
++    const json = JSON.stringify(envelope, null, 2);
++    const blob = new Blob([json], { type: 'application/json' });
++    const url = URL.createObjectURL(blob);
++
++    // Build a friendly, timestamped filename.
++    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
++    const filename = `${stageId}-save-${stamp}.json`;
++
++    const a = document.createElement('a');
++    a.href = url;
++    a.download = filename;
++    document.body.appendChild(a);
++    a.click();
++    document.body.removeChild(a);
++    // Release the object URL after a tick so the download can start.
++    setTimeout(() => URL.revokeObjectURL(url), 1000);
++}
++
++/**
++ * Parse and validate a save file's text content, returning the inner save payload.
++ * Throws with a human-readable message if the file isn't a valid portable save.
++ * Exported separately so callers can validate without loading if they wish.
++ */
++export function parseSaveFile(fileText: string): { save: any; stageId: string } {
++    let parsed: any;
++    try {
++        parsed = JSON.parse(fileText);
++    } catch {
++        throw new Error('This file is not valid JSON - it may be corrupted or not a save file.');
++    }
++
++    // Accept the enveloped format primarily.
++    if (parsed && parsed.format === SAVE_FILE_FORMAT && parsed.save) {
++        return { save: parsed.save, stageId: parsed.stageId || 'unknown-stage' };
++    }
++
++    // Tolerant fallback: if someone hands us a raw save object (no envelope) that still looks like a
++    // save, accept it. We detect a save loosely by the presence of common top-level fields.
++    if (parsed && (parsed.stationStats || parsed.shipConditions || parsed.actors || parsed.layout || parsed.grid || parsed.floors)) {
++        return { save: parsed, stageId: 'unknown-stage' };
++    }
++
++    throw new Error("This doesn't look like a save file for this game.");
++}
++
++/**
++ * Read a File (from an <input type="file">), validate it, and load it into the running game via the host.
++ * Returns a promise that resolves when the load has been kicked off, or rejects with a readable error.
++ */
++export function importSaveFromFile(host: SavePortabilityHost, file: File): Promise<void> {
++    return new Promise((resolve, reject) => {
++        if (!file) {
++            reject(new Error('No file selected.'));
++            return;
++        }
++        const reader = new FileReader();
++        reader.onerror = () => reject(new Error('Could not read the file.'));
++        reader.onload = () => {
++            try {
++                const text = typeof reader.result === 'string' ? reader.result : '';
++                const { save } = parseSaveFile(text);
++                host.loadSaveObject(save);
++                resolve();
++            } catch (err: any) {
++                reject(err instanceof Error ? err : new Error(String(err)));
++            }
++        };
++        reader.readAsText(file);
++    });
++}
+diff --git a/src/Stage.tsx b/src/Stage.tsx
+index 2af4231..df37105 100644
+--- a/src/Stage.tsx
++++ b/src/Stage.tsx
+@@ -762,6 +762,20 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
+         this.startGame();
+     }
+ 
++    /**
++     * Loads a raw (plain-object) save into the current slot - used by the portable save-file import.
++     * Rehydrates the parsed data into proper class instances, installs it as the current save,
++     * persists it to the active slot, and restarts the game so the load takes effect.
++     */
++    loadSaveObject(rawSave: any) {
++        const hydrated = this.rehydrateSave(JSON.parse(JSON.stringify(rawSave)));
++        this.currentSave = hydrated;
++        this.saves[this.saveSlot] = hydrated;
++        this.initialized = false;
++        this.saveGame();
++        this.startGame();
++    }
++
+     saveToSlot(slotIndex: number) {
+         // Copy current save to target slot
+         this.saves[slotIndex] = JSON.parse(JSON.stringify(this.currentSave));
+diff --git a/src/screens/SaveLoadScreen.tsx b/src/screens/SaveLoadScreen.tsx
+index 3838c65..dd5ebc5 100644
+--- a/src/screens/SaveLoadScreen.tsx
++++ b/src/screens/SaveLoadScreen.tsx
+@@ -5,9 +5,13 @@ import { BlurredBackground } from '../components/BlurredBackground';
+ import { Title, Button } from '../components/UIComponents';
+ import { useTooltip } from '../contexts/TooltipContext';
+ import { scoreToGrade } from '../utils';
+-import { Save, FolderOpen, Close, Delete } from '@mui/icons-material';
++import { Save, FolderOpen, Close, Delete, Download, Upload } from '@mui/icons-material';
+ import { ScreenType } from './BaseScreen';
+ import { STATION_STAT_ICONS, StationStat } from '../Module';
++import { exportCurrentSaveToFile, importSaveFromFile } from '../SaveFilePortability';
++
++// Identifier stamped into exported save files (helps when players send saves for troubleshooting).
++const STAGE_ID = 'spire-parc-fantasy-reskin';
+ 
+ interface SaveLoadScreenProps {
+     stage: () => Stage;
+@@ -20,6 +24,40 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+     const { setTooltip, clearTooltip } = useTooltip();
+     const [hoveredSlot, setHoveredSlot] = React.useState<number | null>(null);
+     const [deleteConfirmSlot, setDeleteConfirmSlot] = React.useState<number | null>(null);
++    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
++
++    // Export the current in-memory save to a downloadable file.
++    const handleExportToFile = () => {
++        try {
++            exportCurrentSaveToFile({ getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) }, STAGE_ID);
++            setTooltip('Save exported to file', Download, undefined, 2500);
++        } catch (err: any) {
++            setTooltip(err?.message || 'Could not export save', Close, undefined, 3000);
++        }
++    };
++
++    // Trigger the hidden file picker for import.
++    const handleImportClick = () => {
++        fileInputRef.current?.click();
++    };
++
++    // Handle the chosen file: load it into the game, then go to the station.
++    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
++        const file = e.target.files?.[0];
++        // Reset the input so selecting the same file again still fires onChange.
++        e.target.value = '';
++        if (!file) return;
++        try {
++            await importSaveFromFile({ getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) }, file);
++            setTooltip('Save loaded from file', FolderOpen, undefined, 2500);
++            onClose();
++            if (setScreenType) {
++                setScreenType(ScreenType.STATION);
++            }
++        } catch (err: any) {
++            setTooltip(err?.message || 'Could not load that save file', Close, undefined, 3500);
++        }
++    };
+ 
+     const handleSlotClick = (slotIndex: number) => {
+         if (mode === 'save') {
+@@ -373,6 +411,42 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+                 }}>
+                     {Array.from({ length: 10 }, (_, i) => renderSaveSlot(i))}
+                 </div>
++
++                {/* File export/import: portable saves for backup, transfer, or sharing for troubleshooting. */}
++                <div style={{
++                    display: 'flex',
++                    gap: '10px',
++                    marginTop: '15px',
++                    paddingTop: '15px',
++                    borderTop: '1px solid rgba(176, 102, 255, 0.2)',
++                    flexWrap: 'wrap',
++                }}>
++                    <Button onClick={handleExportToFile}>
++                        <Download style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }} />
++                        Export Save to File
++                    </Button>
++                    <Button onClick={handleImportClick}>
++                        <Upload style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }} />
++                        Import Save from File
++                    </Button>
++                    <input
++                        ref={fileInputRef}
++                        type="file"
++                        accept="application/json,.json"
++                        style={{ display: 'none' }}
++                        onChange={handleImportFile}
++                    />
++                </div>
++                <div style={{
++                    fontSize: '11px',
++                    color: 'rgba(176, 102, 255, 0.5)',
++                    fontStyle: 'italic',
++                    marginTop: '8px',
++                    textAlign: 'left',
++                    lineHeight: 1.4,
++                }}>
++                    Export downloads your current game as a file you can back up or send. Import loads a save file into the game (this replaces your current game).
++                </div>
+             </motion.div>
+ 
+             {/* Delete confirmation modal */}

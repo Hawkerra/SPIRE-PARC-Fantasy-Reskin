@@ -762,6 +762,20 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.startGame();
     }
 
+    /**
+     * Loads a raw (plain-object) save into the current slot - used by the portable save-file import.
+     * Rehydrates the parsed data into proper class instances, installs it as the current save,
+     * persists it to the active slot, and restarts the game so the load takes effect.
+     */
+    loadSaveObject(rawSave: any) {
+        const hydrated = this.rehydrateSave(JSON.parse(JSON.stringify(rawSave)));
+        this.currentSave = hydrated;
+        this.saves[this.saveSlot] = hydrated;
+        this.initialized = false;
+        this.saveGame();
+        this.startGame();
+    }
+
     saveToSlot(slotIndex: number) {
         // Copy current save to target slot
         this.saves[slotIndex] = JSON.parse(JSON.stringify(this.currentSave));

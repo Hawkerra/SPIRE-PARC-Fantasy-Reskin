@@ -5,9 +5,13 @@ import { BlurredBackground } from '../components/BlurredBackground';
 import { Title, Button } from '../components/UIComponents';
 import { useTooltip } from '../contexts/TooltipContext';
 import { scoreToGrade } from '../utils';
-import { Save, FolderOpen, Close, Delete } from '@mui/icons-material';
+import { Save, FolderOpen, Close, Delete, Download, Upload } from '@mui/icons-material';
 import { ScreenType } from './BaseScreen';
 import { STATION_STAT_ICONS, StationStat } from '../Module';
+import { exportCurrentSaveToFile, importSaveFromFile } from '../SaveFilePortability';
+
+// Identifier stamped into exported save files (helps when players send saves for troubleshooting).
+const STAGE_ID = 'spire-parc-fantasy-reskin';
 
 interface SaveLoadScreenProps {
     stage: () => Stage;
@@ -20,6 +24,40 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
     const { setTooltip, clearTooltip } = useTooltip();
     const [hoveredSlot, setHoveredSlot] = React.useState<number | null>(null);
     const [deleteConfirmSlot, setDeleteConfirmSlot] = React.useState<number | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+    // Export the current in-memory save to a downloadable file.
+    const handleExportToFile = () => {
+        try {
+            exportCurrentSaveToFile({ getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) }, STAGE_ID);
+            setTooltip('Save exported to file', Download, undefined, 2500);
+        } catch (err: any) {
+            setTooltip(err?.message || 'Could not export save', Close, undefined, 3000);
+        }
+    };
+
+    // Trigger the hidden file picker for import.
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Handle the chosen file: load it into the game, then go to the station.
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        // Reset the input so selecting the same file again still fires onChange.
+        e.target.value = '';
+        if (!file) return;
+        try {
+            await importSaveFromFile({ getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) }, file);
+            setTooltip('Save loaded from file', FolderOpen, undefined, 2500);
+            onClose();
+            if (setScreenType) {
+                setScreenType(ScreenType.STATION);
+            }
+        } catch (err: any) {
+            setTooltip(err?.message || 'Could not load that save file', Close, undefined, 3500);
+        }
+    };
 
     const handleSlotClick = (slotIndex: number) => {
         if (mode === 'save') {
@@ -372,6 +410,42 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
                     paddingRight: '10px'
                 }}>
                     {Array.from({ length: 10 }, (_, i) => renderSaveSlot(i))}
+                </div>
+
+                {/* File export/import: portable saves for backup, transfer, or sharing for troubleshooting. */}
+                <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    marginTop: '15px',
+                    paddingTop: '15px',
+                    borderTop: '1px solid rgba(176, 102, 255, 0.2)',
+                    flexWrap: 'wrap',
+                }}>
+                    <Button onClick={handleExportToFile}>
+                        <Download style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }} />
+                        Export Save to File
+                    </Button>
+                    <Button onClick={handleImportClick}>
+                        <Upload style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }} />
+                        Import Save from File
+                    </Button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        style={{ display: 'none' }}
+                        onChange={handleImportFile}
+                    />
+                </div>
+                <div style={{
+                    fontSize: '11px',
+                    color: 'rgba(176, 102, 255, 0.5)',
+                    fontStyle: 'italic',
+                    marginTop: '8px',
+                    textAlign: 'left',
+                    lineHeight: 1.4,
+                }}>
+                    Export downloads your current game as a file you can back up or send. Import loads a save file into the game (this replaces your current game).
                 </div>
             </motion.div>
 
