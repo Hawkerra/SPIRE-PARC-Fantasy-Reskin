@@ -1,0 +1,88 @@
+diff --git a/src/screens/SaveLoadScreen.tsx b/src/screens/SaveLoadScreen.tsx
+index 8db91ec..85ed349 100644
+--- a/src/screens/SaveLoadScreen.tsx
++++ b/src/screens/SaveLoadScreen.tsx
+@@ -8,7 +8,7 @@ import { scoreToGrade } from '../utils';
+ import { Save, FolderOpen, Close, Delete, Download, Upload } from '@mui/icons-material';
+ import { ScreenType } from './BaseScreen';
+ import { STATION_STAT_ICONS, StationStat } from '../Module';
+-import { exportCurrentSaveToFile, importSaveFromFile, copyTextToClipboard } from '../SaveFilePortability';
++import { buildSaveExport, tryDownloadTextAsFile, importSaveFromFile, copyTextToClipboard } from '../SaveFilePortability';
+ 
+ // Identifier stamped into exported save files (helps when players send saves for troubleshooting).
+ const STAGE_ID = 'spire-parc-fantasy-reskin';
+@@ -29,25 +29,28 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+     // player can copy it manually - guaranteeing they can always get their save out.
+     const [exportFallbackText, setExportFallbackText] = React.useState<string | null>(null);
+ 
+-    // Export the current in-memory save. Try a file download; if the environment blocks it, fall back
+-    // to showing the text for manual copy.
++    // Export the current in-memory save. The stage runs in a sandboxed iframe that blocks direct file
++    // downloads (and the block is silent - it can't be detected in JS), so we go straight to the copy
++    // panel, which always works. The panel itself offers a download attempt for permissive environments.
+     const handleExportToFile = () => {
+         try {
+-            const { text, downloaded } = exportCurrentSaveToFile(
++            const { text } = buildSaveExport(
+                 { getSave: () => stage().getSave(), loadSaveObject: (s) => stage().loadSaveObject(s) },
+                 STAGE_ID
+             );
+-            if (downloaded) {
+-                setTooltip('Save exported to file', Download, undefined, 2500);
+-            } else {
+-                // Download was blocked - surface the text so the player can copy it out.
+-                setExportFallbackText(text);
+-            }
++            setExportFallbackText(text);
+         } catch (err: any) {
+             setTooltip(err?.message || 'Could not export save', Close, undefined, 3000);
+         }
+     };
+ 
++    const handleTryDownload = () => {
++        if (!exportFallbackText) return;
++        const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
++        tryDownloadTextAsFile(exportFallbackText, `${STAGE_ID}-save-${stamp}.json`);
++        // We can't tell if the sandbox blocked it, so we don't claim success - the copy option remains.
++    };
++
+     const handleCopyFallback = async () => {
+         if (!exportFallbackText) return;
+         const ok = await copyTextToClipboard(exportFallbackText);
+@@ -463,7 +466,7 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+                     textAlign: 'left',
+                     lineHeight: 1.4,
+                 }}>
+-                    Export downloads your current game as a file you can back up or send. Import loads a save file into the game (this replaces your current game).
++                    Export shows your current game as text you can copy into a file to back up or send. Import loads a save file into the game (this replaces your current game).
+                 </div>
+             </motion.div>
+ 
+@@ -486,12 +489,12 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+                         style={{ padding: '24px', maxWidth: '560px', width: '92%' }}
+                     >
+                         <div style={{ color: '#b066ff', fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
+-                            Copy Your Save
++                            Export Save
+                         </div>
+                         <div style={{ fontSize: '12px', color: 'rgba(224,240,255,0.7)', marginBottom: '12px', lineHeight: 1.5 }}>
+-                            A direct file download isn't available here, so copy the text below and paste it into a
+-                            plain text file (name it something like <em>my-save.json</em>) to save or share it. Use
+-                            Import to load it back later.
++                            Copy the text below and paste it into a plain text file (name it something like
++                            <em> my-save.json</em>) to back up or share your game. Load it later with the Import button.
++                            You can also try a direct download, though this game runs in a sandbox that may block it.
+                         </div>
+                         <textarea
+                             readOnly
+@@ -504,8 +507,9 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose,
+                                 color: '#e0f0ff', resize: 'vertical', boxSizing: 'border-box',
+                             }}
+                         />
+-                        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', justifyContent: 'flex-end' }}>
++                        <div style={{ display: 'flex', gap: '10px', marginTop: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                             <Button onClick={handleCopyFallback}>Copy to Clipboard</Button>
++                            <Button variant="secondary" onClick={handleTryDownload}>Try Download</Button>
+                             <Button variant="secondary" onClick={() => setExportFallbackText(null)}>Close</Button>
+                         </div>
+                     </motion.div>
