@@ -126,9 +126,11 @@ jobs:
         env:
           CHUB_AUTH_TOKEN: ${{ secrets.CHUB_AUTH_TOKEN }}
         run: |
-          # --fail-with-body makes a rejected upload fail this run instead of passing silently. (Chub blocks
-          # GitHub's servers by region, answering HTTP 403 "This service is not available in your country.")
-          if ! curl --fail-with-body -H "CH-API-KEY: ${{ secrets.CHUB_AUTH_TOKEN }}" -F "file=@build.zip" https://api.chub.ai/extension/${{ env.STAGE_ID }}/upload; then
+          # Chub blocks GitHub's servers by region (HTTP 403 "This service is not available in your country."), so the
+          # upload goes through JakeH's (PARC's author) Cloudflare relay, which forwards it to Chub. The relay sees the
+          # CHUB_AUTH_TOKEN key; if that's ever a concern, revoke the key on Chub and save a new one in the secret.
+          # --fail-with-body makes a rejected upload fail this run instead of passing silently.
+          if ! curl --fail-with-body -H "CH-API-KEY: ${{ secrets.CHUB_AUTH_TOKEN }}" -F "file=@build.zip" https://chub-relay.jake-h.workers.dev/${{ env.STAGE_ID }}/; then
             echo  # Chub's reply has no trailing newline, and ::error must start its own line.
             echo "::error title=Chub rejected the upload::The stage on Chub was NOT updated. Download the chub-stage-build artifact from this run's Summary page, unzip it, and upload build.zip to Chub from your own computer."
             exit 1
