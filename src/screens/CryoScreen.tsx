@@ -14,6 +14,7 @@ import { ActorCarousel } from '../components/ActorCarousel';
 import AuthorLink from '../components/AuthorLink';
 import { Button } from '../components/UIComponents';
 import { SkitType } from '../Skit';
+import { isCompanion } from '../Aide';
 
 interface CryoScreenProps {
 	stage: () => Stage;
@@ -31,7 +32,8 @@ export const CryoScreen: FC<CryoScreenProps> = ({stage, setScreenType, isVertica
 	// Get actors present on the station (locationId is '' or matches a module ID in the layout)
 	const stationActors = Object.values(stage().getSave().actors).filter(actor => {
 		if (['cryo', 'dead'].includes(actor.locationId)) return false;
-		if (actor.origin === 'aide') return false;
+		// The tower spirit is bound to the Spire, but a fellow summoned companion can go home like anyone but the Magus.
+		if (actor.origin === 'aide' && !isCompanion(actor, stage().getSave())) return false;
 		if (actor.factionId) return false;
 		if (actor.locationId === '') return true;
 		// Check if locationId matches a module ID

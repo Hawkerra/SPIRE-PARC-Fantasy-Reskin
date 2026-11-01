@@ -2,9 +2,10 @@ import React, { FC, useState, useEffect } from 'react';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { ScreenType } from './BaseScreen';
 import { Stage } from '../Stage';
+import { isCompanionMode } from '../Aide';
 
 /*
- * Loading screen that displays while the StationAide is being generated.
+ * Loading screen that displays while the StationAide (tower spirit or fellow summoned) is being generated.
  * Monitors the generateAidePromise and automatically transitions to the Station screen when complete.
  */
 
@@ -15,8 +16,8 @@ interface LoadingScreenProps {
 
 const LOADING_PHASES = [
     { message: "Generating content (this may take a while)", duration: 15000, progress: 20 },
-    { message: "Expanding Tower Spirit details.", duration: 15000, progress: 50 },
-    { message: "Visualizing Tower Spirit.", duration: 30000, progress: 75 },
+    { message: "Expanding Tower Spirit details.", companionMessage: (name: string) => `Expanding ${name}'s details.`, duration: 15000, progress: 50 },
+    { message: "Visualizing Tower Spirit.", companionMessage: (name: string) => `Visualizing ${name}.`, duration: 30000, progress: 75 },
     { message: "Wrapping up", duration: Infinity, progress: 90 },
 ];
 
@@ -68,6 +69,11 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
     }, [currentPhaseIndex]);
 
     const currentPhase = LOADING_PHASES[currentPhaseIndex];
+    const save = stage().getSave();
+    const companionMode = isCompanionMode(save);
+    const phaseMessage = (companionMode && currentPhase.companionMessage)
+        ? currentPhase.companionMessage(save.aide?.name || 'your fellow summoned')
+        : currentPhase.message;
 
     return (
         <Box
@@ -100,7 +106,7 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                         textAlign: 'center',
                     }}
                 >
-                    Awakening the Tower Spirit
+                    {companionMode ? 'Opening the Summoning Circle' : 'Awakening the Tower Spirit'}
                 </Typography>
 
                 <Box sx={{ width: '100%', marginBottom: 2 }}>
@@ -129,7 +135,7 @@ export const LoadingScreen: FC<LoadingScreenProps> = ({ stage, setScreenType }) 
                         minHeight: '24px',
                     }}
                 >
-                    {currentPhase.message}
+                    {phaseMessage}
                 </Typography>
             </Box>
         </Box>

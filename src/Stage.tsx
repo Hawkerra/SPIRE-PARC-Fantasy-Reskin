@@ -1,7 +1,7 @@
 import {ReactElement} from "react";
 import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@chub-ai/stages-ts";
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
-import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage, getRole } from "./actors/Actor";
+import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage, getRole, getRoomRole } from "./actors/Actor";
 import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
@@ -9,6 +9,7 @@ import { accumulateOutcomes, generateSkitScript, generateSkitSummary, generateIm
 import { smartRehydrate } from "./SaveRehydration";
 import { Emotion, EmotionPromptMap, getDefaultEmotionPromptMap } from "./actors/Emotion";
 import { assignActorToRole } from "./utils";
+import { AideType, isCompanion, isCompanionMode, isTowerSpirit } from "./Aide";
 import { v4 as generateUuid } from 'uuid';
 
 type MessageStateType = any;
@@ -30,8 +31,8 @@ type Timeline = TimelineEvent[];
 
 export type SaveType = {
     player: {name: string, description: string};
-    aide: {name: string, description: string, actorId?: string};
-    solidSpirit?: boolean; // When true, the tower spirit renders without the ghostly effect (manifesting physically)
+    aide: {name: string, description: string, actorId?: string, type?: AideType}; // type: tower spirit (default) or a fellow summoned companion; see Aide.ts
+    solidSpirit?: boolean; // When true, the tower spirit renders without the ghostly effect (manifesting physically). Companions are always solid.
     directorModule: {name: string, roleName: string, module?: ModuleIntrinsic};
     echoes: (Actor | null)[]; // actors currently in echo slots (can be null for empty slots)
     actors: {[key: string]: Actor};
@@ -481,21 +482,26 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
         this.incTurn(1, setScreenType);
         const save = this.getSave();
 
-        // Pick a resident of the tower (or the bound tower spirit) - not away with a faction, not in stasis/dead.
+        // Pick a resident of the tower (or the aide: tower spirit or fellow summoned) - not away with a faction, not in stasis/dead.
         const candidates = Object.values(save.actors).filter(a =>
             !a.factionId &&
             !['cryo', 'dead'].includes(a.locationId || '')
         );
         if (candidates.length === 0) { this.saveGame(); return; }
         const actor = candidates[Math.floor(Math.random() * candidates.length)];
-        const isSpirit = actor.id === save.aide.actorId;
-        const role = getRole(actor, save) || 'resident';
+        const isSpirit = isTowerSpirit(actor, save);
+        const isFellowSummoned = isCompanion(actor, save);
+        // Only an actual room role shapes the activity; the aide's title ("Tower Spirit"/"Fellow Summoned") is not one.
+        const roomRole = getRoomRole(actor, save);
+        const role = roomRole || 'resident';
         const proficiency = actor.getRoleProficiency(role);
         const statNames = Object.values(StationStat).join(', ');
 
         const subjectContext = isSpirit
             ? `${actor.name} is the tower's bound spirit and steward - a capricious, theatrical presence who has haunted these stones for two centuries. Describe something they got up to as the spirit of the tower (drifting through walls, tormenting the furniture, tending the wards, observing the residents), fitting their personality.`
-            : `${actor.name} is the tower's ${role}` +
+            : (isFellowSummoned && !roomRole)
+            ? `${actor.name} was summoned into the Spire alongside the Magus and, like them, is still puzzling out how the tower works. Describe something they got up to (exploring forgotten corners, tinkering with the late Magus's apparatus, deciphering cryptic notes, or simply settling into tower life), fitting their personality.`
+            : `${actor.name}${isFellowSummoned ? `, who arrived in the Spire alongside the Magus,` : ``} is the tower's ${role}` +
               (proficiency >= 7 ? ` and is notably skilled at it` : proficiency <= 3 ? ` but struggles with the work` : ``) + `.`;
 
         const prompt = `The following is a fantasy tower-management game set in the Spire, an isolated wizard's tower. ` +
@@ -601,8 +607,9 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     // Cryo or dead patients don't move.
                     continue;
                 }
-                if (actor.id == save.aide.actorId) {
-                    // Aide goes nowhere by default.
+                if (isTowerSpirit(actor, save)) {
+                    // The tower spirit goes nowhere by default (it can manifest anywhere). A fellow summoned
+                    // companion is a living person, so they fall through and move around like a resident.
                     actor.locationId = '';
                 } else if (!actor.locationId || save.layout.getModulesWhere(m => actor.locationId === m.id).length > 0) {
                     // If actor has no location or a location on the PARC (not away to a faction at the moment)
@@ -617,7 +624,7 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                     }
                 }
                 console.log(`Moved actor ${actor.name} to location ${actor.locationId}`);
-                // If no patients exist, put the aide in the echo chamber:
+                // If no patients exist, put the aide (spirit or companion) in the echo chamber:
                 if (actor.id === save.aide.actorId && Object.values(save.actors).filter(a => !a.factionId && a.id !== save.aide.actorId).length === 0) {
                     const echoModule = save.layout.getModulesWhere(m => m.type === 'echo chamber')[0];
                     if (echoModule) {
@@ -1007,14 +1014,17 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             // If aide already exists, do nothing
 
             this.generateAidePromise = (async () => {
-                // Generate a new aide
+                // Generate a new aide: either the tower spirit or the Magus's fellow summoned companion.
                 const actorData = {
                     name: save.aide.name,
                     fullPath: '',
-                    personality: `The Spire's bound tower spirit and steward: ${save.aide.description}`
+                    personality: isCompanionMode(save)
+                        ? `The Magus's fellow summoned: a living person pulled into the Spire from another reality by the same accidental summoning that brought the Magus, arriving at the very same moment, and every bit as new to this world and the tower's workings: ${save.aide.description}`
+                        : `The Spire's bound tower spirit and steward: ${save.aide.description}`
                 }
                 // Retry a few times if it fails (or returns null):
-                // The tower spirit is a pre-existing bound entity, not a summon - the arcane focus shouldn't shape it.
+                // The aide arrives before any attunement - the tower spirit is a pre-existing bound entity, and the companion
+                // was summoned alongside the Magus - so the arcane focus shouldn't shape either of them.
                 for (let attempt = 0; attempt < 3; attempt++) {
                     const aideActor = await loadReserveActor(actorData, this, false, true);
                     if (aideActor) {
@@ -1654,9 +1664,10 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
                             entry.stat = String(outcome.activityStat);
                             entry.amount = delta;
                             // Nudge the resident's hidden proficiency in their current role toward the activity's direction.
-                            // (The tower spirit has no room-role, so skip proficiency for it.)
-                            const role = getRole(actor, save);
-                            if (role && actor.id !== save.aide.actorId) actor.adjustRoleProficiency(role, delta);
+                            // (The tower spirit has no room-role, so skip proficiency for it. The aide's title isn't a room
+                            // role either, so a fellow summoned companion only trains a room role they actually hold.)
+                            const role = actor.id === save.aide.actorId ? getRoomRole(actor, save) : getRole(actor, save);
+                            if (role && !isTowerSpirit(actor, save)) actor.adjustRoleProficiency(role, delta);
                         }
                         save.activityLog.push(entry);
                         // Cap the log so it doesn't grow without bound.

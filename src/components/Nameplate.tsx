@@ -65,8 +65,11 @@ export const Nameplate: FC<NameplateProps> = ({
             // Get the chip's parent container width (accounting for maxWidth: 100%)
             const parentWidth = chipRef.current.parentElement?.offsetWidth || chipRef.current.offsetWidth;
             
-            // Account for padding (2 * 16px from px: 2)
-            const horizontalPadding = 16;
+            // Account for the chip's own horizontal padding (px: 2 = 16px per side) and border, read from the
+            // computed style so text that only just overflows gets scaled down instead of clipped.
+            const chipStyle = window.getComputedStyle(chipRef.current);
+            const horizontalPadding = (parseFloat(chipStyle.paddingLeft) || 0) + (parseFloat(chipStyle.paddingRight) || 0)
+                + (parseFloat(chipStyle.borderLeftWidth) || 0) + (parseFloat(chipStyle.borderRightWidth) || 0);
             const availableWidth = parentWidth - horizontalPadding;
             
             // Reset scale to measure at full size

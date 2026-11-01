@@ -8,6 +8,7 @@ import { Emotion } from '../actors/Emotion';
 import { GlassPanel, Title, Button, TextInput, Chip } from '../components/UIComponents';
 import { Close, Save, Image as ImageIcon, PlayArrow } from '@mui/icons-material';
 import { scoreToGrade } from '../utils';
+import { getAideLabel } from '../Aide';
 
 interface ActorDetailScreenProps {
     actor: Actor;
@@ -1522,7 +1523,7 @@ export const ActorDetailScreen: FC<ActorDetailScreenProps> = ({ actor, stage, on
                                             Origin
                                         </div>
                                         <div style={{ color: '#e0f0ff', fontSize: '14px', textTransform: 'capitalize' }}>
-                                            {actor.origin}
+                                            {actor.origin === 'aide' ? getAideLabel(stage().getSave()) : actor.origin}
                                         </div>
                                     </div>
                                     {actor.fullPath && (
