@@ -8,7 +8,10 @@ import { SettingsScreen } from './SettingsScreen';
 import { SaveLoadScreen } from './SaveLoadScreen';
 import { ContentManagementScreen } from './ContentManagementScreen';
 import { useTooltip } from '../contexts/TooltipContext';
-import { Save, SaveAlt, PlayArrow, FiberNew, Folder, Settings, EditNote } from '@mui/icons-material';
+import { Save, SaveAlt, PlayArrow, FiberNew, Folder, Settings, EditNote, Cable } from '@mui/icons-material';
+import { IS_LOCAL } from '../local/env';
+import { localAsset } from '../local/assets';
+import { openConnectionSettings } from '../local/events';
 
 /*
  * This screen represents both the start-up and in-game menu screen. It should present basic options: new game, load game, settings.
@@ -167,19 +170,28 @@ export const MenuScreen: FC<MenuScreenProps> = ({ stage, setScreenType }) => {
             tooltip: disableAllButtons ? 'Currently unavailable' : 'Load a previously saved game',
             icon: Folder
         },
-        { 
-            key: 'settings', 
-            label: 'Settings', 
+        {
+            key: 'settings',
+            label: 'Settings',
             onClick: handleSettings,
             enabled: !disableAllButtons,
             tooltip: disableAllButtons ? 'Currently unavailable' : 'Adjust game settings and preferences',
             icon: Settings
-        }
+        },
+        // SPIRE Local brings its own AI model connection (Chub provides one inside a chat).
+        ...(IS_LOCAL ? [{
+            key: 'connection',
+            label: 'AI Connection',
+            onClick: openConnectionSettings,
+            enabled: !disableAllButtons,
+            tooltip: disableAllButtons ? 'Currently unavailable' : 'Choose the AI model and API key the Spire uses',
+            icon: Cable
+        }] : [])
     ];
 
     return (
         <BlurredBackground
-            imageUrl="https://media.charhub.io/f245fce6-778c-453c-9594-ec1ccad5aa34/a2c796c9-d379-4d63-b001-0af5fe4054f6.png" //https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png"
+            imageUrl={localAsset("https://media.charhub.io/f245fce6-778c-453c-9594-ec1ccad5aa34/a2c796c9-d379-4d63-b001-0af5fe4054f6.png")} //https://media.charhub.io/41b7b65d-839b-4d31-8c11-64ee50e817df/0fc1e223-ad07-41c4-bdae-c9545d5c5e34.png"
             overlay="linear-gradient(45deg, rgba(0,17,34,0.3) 0%, rgba(0,34,68,0.3) 100%)"
         >
             <div 

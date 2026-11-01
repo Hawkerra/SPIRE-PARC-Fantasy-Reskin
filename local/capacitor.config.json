@@ -1,0 +1,11 @@
+{
+  "appId": "com.hawkerra.spirelocal",
+  "appName": "SPIRE Local",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": false }
+  }
+}

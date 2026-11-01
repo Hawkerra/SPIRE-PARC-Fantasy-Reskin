@@ -8,6 +8,7 @@ import { scoreToGrade } from '../utils';
 import { StationStat, STATION_STAT_ICONS } from '../Module';
 import { Outcome } from '../Skit';
 import { Stage } from '../Stage';
+import { localAsset } from '../local/assets';
 
 const outcomeCardSx = {
     background: 'var(--bg-darker-blue)',
@@ -325,7 +326,7 @@ const SkitOutcomeDisplay: FC<SkitOutcomeDisplayProps> = ({ outcomes, stage, layo
         return save.factions[factionId]?.name || factionId;
     };
 
-    const PARC_BACKGROUND_IMAGE = 'https://media.charhub.io/f245fce6-778c-453c-9594-ec1ccad5aa34/a2c796c9-d379-4d63-b001-0af5fe4054f6.png';
+    const PARC_BACKGROUND_IMAGE = localAsset('https://media.charhub.io/f245fce6-778c-453c-9594-ec1ccad5aa34/a2c796c9-d379-4d63-b001-0af5fe4054f6.png');
 
     const getAccent = (outcome: Outcome) => {
         switch (outcome.type) {

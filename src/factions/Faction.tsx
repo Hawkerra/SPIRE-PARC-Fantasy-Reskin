@@ -83,18 +83,23 @@ export async function loadReserveFaction(fullPath: string, stage: Stage): Promis
     const response = await fetch(stage.characterDetailQuery.replace('{fullPath}', fullPath));
     const item = await response.json();
     const dataName = item.node.definition.name.replaceAll('{{char}}', item.node.definition.name).replaceAll('{{user}}', 'Individual X');
-    
+    return distillFaction({
+        name: dataName,
+        fullPath: item.node.fullPath,
+        personality: item.node.definition.personality.replaceAll('{{char}}', dataName).replaceAll('{{user}}', 'Individual X'),
+    }, stage);
+}
+
+/**
+ * Builds a faction (and its representative) from source details: a Chub card in the Chub build, or an
+ * invented seed concept in SPIRE Local (see local/factions.ts).
+ */
+export async function distillFaction(data: {name: string, fullPath: string, personality: string}, stage: Stage): Promise<Faction|null> {
     // Minimal safeguard, mirroring Actor: only terms with no legitimate innocent use remain.
     const bannedWordSubstitutes: {[key: string]: string} = {
         'underage': 'young adult',
         'childish': 'bratty',
         'minor': 'trivial'
-    };
-    
-    const data = {
-        name: dataName,
-        fullPath: item.node.fullPath,
-        personality: item.node.definition.personality.replaceAll('{{char}}', dataName).replaceAll('{{user}}', 'Individual X'),
     };
 
     // Replace curly braces with parentheses
