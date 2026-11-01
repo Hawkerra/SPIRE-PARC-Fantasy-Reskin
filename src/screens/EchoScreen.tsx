@@ -14,6 +14,8 @@ import { ActorCarousel } from '../components/ActorCarousel';
 import AuthorLink from '../components/AuthorLink';
 import { RemoveButton } from '../components/RemoveButton';
 import { Button } from '../components/UIComponents';
+import { IS_LOCAL } from '../local/env';
+import { CardUploadBar } from '../local/CardUploadBar';
 
 interface EchoScreenProps {
 	stage: () => Stage;
@@ -239,6 +241,10 @@ export const EchoScreen: FC<EchoScreenProps> = ({stage, setScreenType, isVertica
 				selectedActorId={selectedReserveActorId}
 				onActorClick={handleReserveActorClick}
 			/>
+			{/* SPIRE Local summons from uploaded character cards instead of Chub's catalogue */}
+			{IS_LOCAL && (
+				<CardUploadBar stage={stage} reserveEmpty={reserveActors.length === 0} onAdded={() => setRefreshKey(prev => prev + 1)} />
+			)}
 			{/* Echo slots in center with buttons on sides or bottom */}
 			<div style={{ 
 				flex: '1 1 auto', 

@@ -1,0 +1,18 @@
+{
+  "name": "spire-local",
+  "version": "1.0.0",
+  "description": "SPIRE Local: the Android wrapper (Capacitor) for the standalone build of SPIRE. The web app itself is built from the repository root with `yarn build:local`, which writes to local/www.",
+  "private": true,
+  "scripts": {
+    "sync": "npx cap sync android",
+    "build:apk": "npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.2"
+  }
+}

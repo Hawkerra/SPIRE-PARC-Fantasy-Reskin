@@ -2,7 +2,7 @@ import {ReactElement} from "react";
 import {StageBase, StageResponse, InitialData, Message, UpdateBuilder} from "@chub-ai/stages-ts";
 import {LoadResponse} from "@chub-ai/stages-ts/dist/types/load";
 import Actor, { loadReserveActor, commitActorToEcho, Stat, generateAdditionalActorImages, loadReserveActorFromFullPath, ArtStyle, generateActorDecor, namesMatch, findBestNameMatch, generateBaseActorImage, getRole, getRoomRole } from "./actors/Actor";
-import Faction, { generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
+import Faction, { distillFaction, generateFactionModule, generateFactionRepresentative, loadReserveFaction } from "./factions/Faction";
 import { DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT, Layout, MODULE_TEMPLATES, StationStat, createModule, registerFactionModule, ModuleIntrinsic, generateModule, generateModuleImage, Module, registerModule, FLOOR_BUILD_COSTS, MAX_FLOORS } from './Module';
 import { BaseScreen, ScreenType } from "./screens/BaseScreen";
 import { accumulateOutcomes, generateSkitScript, generateSkitSummary, generateImpliedOutcomesForCurrentEnd, Outcome, ScriptEntry, SkitData, SkitType, updateCharacterArc } from "./Skit";
@@ -10,6 +10,10 @@ import { smartRehydrate } from "./SaveRehydration";
 import { Emotion, EmotionPromptMap, getDefaultEmotionPromptMap } from "./actors/Emotion";
 import { assignActorToRole } from "./utils";
 import { AideType, isCompanion, isCompanionMode, isTowerSpirit } from "./Aide";
+import { IS_LOCAL } from "./local/env";
+import { localAsset } from "./local/assets";
+import { isConnectionConfigured } from "./local/connection";
+import { pickFactionSeed } from "./local/factions";
 import { v4 as generateUuid } from 'uuid';
 
 type MessageStateType = any;
@@ -815,8 +819,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             name: this.getSave().directorModule.name,
             skitPrompt: 'Private chambers are personal living spaces for the tower\'s residents. Scenes here often involve personal interactions:  revelations, troubles, interests, or relaxation.',
             imagePrompt: 'A cozy tower bedchamber with a bed, personal storage, and warm lantern light, reflecting the occupant\'s personality.',
-            baseImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png', 
-            defaultImageUrl: 'https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png',
+            baseImageUrl: localAsset('https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png'),
+            defaultImageUrl: localAsset('https://media.charhub.io/66449ff3-1a40-4e41-a008-d541ae05bcec/112975ea-7924-4ddc-9a9f-63779c4bec7d.png'),
             role: this.getSave().directorModule.roleName,
             roleDescription: '',
             cost: {
@@ -1074,6 +1078,8 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
     }
 
     async loadReserveActors() {
+        // SPIRE Local has no Chub catalogue to draw random summons from; its reserve fills from uploaded cards.
+        if (IS_LOCAL) return;
         // If a load is already in-flight, return the existing promise to dedupe concurrent calls
         if (this.reserveActorsLoadPromise) return this.reserveActorsLoadPromise;
 
@@ -1128,6 +1134,18 @@ export class Stage extends StageBase<InitStateType, ChatStateType, MessageStateT
             try {
                 console.log('Loading additional factions...');
                 const eligibleFactions = Object.values(this.getSave().factions).filter(faction => faction.reputation > 0);
+                if (IS_LOCAL) {
+                    // No Chub catalogue here either: the AI builds each faction from a seed concept instead of a card.
+                    if (!isConnectionConfigured()) return;
+                    for (let attempt = 0; eligibleFactions.length < this.MAX_FACTIONS && attempt < this.MAX_FACTIONS + 2; attempt++) {
+                        const faction = await distillFaction(pickFactionSeed(Object.values(this.getSave().factions).map(f => f.name)), this);
+                        if (faction) {
+                            eligibleFactions.push(faction);
+                            this.getSave().factions[faction.id] = faction;
+                        }
+                    }
+                    return;
+                }
                 while (eligibleFactions.length < this.MAX_FACTIONS) {
                     const needed = this.MAX_FACTIONS - eligibleFactions.length;
                     // Populate reserveFactions; this is loaded with data from a service, calling the characterSearchQuery URL:

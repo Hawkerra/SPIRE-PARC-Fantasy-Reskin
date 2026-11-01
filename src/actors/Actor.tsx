@@ -9,6 +9,8 @@ import { FlashOn, Forum,
 } from '@mui/icons-material';
 import { buildEventHistory, buildPromptSegment } from "../Skit";
 import { getAideLabel, isTowerSpirit } from "../Aide";
+import { IS_LOCAL } from "../local/env";
+import { placeholderPortrait } from "../local/images";
 
 // Core character stats as an enum so other parts of the app can reference them safely
 // Using single-syllable words, each starting with a different letter
@@ -591,6 +593,14 @@ export async function generateBaseActorImage(
     sourceImageUrl: string = ''
 ): Promise<void> {
     const targetOutfitId = outfitId || actor.outfitId;
+    if (IS_LOCAL) {
+        // SPIRE Local has no image generation: the portrait is the uploaded card art, kept as-is (or, for characters
+        // with no art, such as the aide, envoys and new NPCs, a placeholder). A new outfit reuses the main portrait.
+        const portrait = sourceImageUrl || actor.getEmotionImageUrl('neutral', targetOutfitId) || actor.avatarImageUrl
+            || actor.getEmotionImageUrl('neutral') || placeholderPortrait(actor.name, actor.themeColor);
+        actor.setEmotionImageUrl('neutral', portrait, targetOutfitId);
+        return;
+    }
     console.log(`Populating images for actor ${actor.name} (ID: ${actor.id})`);
     console.log(`Force regeneration: ${force}, From avatar: ${fromAvatar}, Source image URL: ${sourceImageUrl}`);
     // If the actor has no neutral emotion image in their emotion pack, generate one based on their description or from the existing avatar image
@@ -737,8 +747,8 @@ export async function generateOutfitEmotionPrompt(actor: Actor, emotion: Emotion
 }
 
 export async function generateActorDecor(actor: Actor, module: Module, stage: Stage, force: boolean = false): Promise<string> {
-    if (module.type === 'director module') {
-        // Director modules don't get decor images
+    if (module.type === 'director module' || IS_LOCAL) {
+        // Director modules don't get decor images, and SPIRE Local can't generate them (rooms keep their default art).
         return '';
     }
     if (!force && (Object.keys(actor.decorImageUrls).includes(module.type) && actor.decorImageUrls[module.type] && actor.decorImageUrls[module.type] !== module.getAttribute('baseImageUrl'))) {
