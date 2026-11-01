@@ -8,6 +8,7 @@ import { FlashOn, Forum,
     Whatshot, SentimentVerySatisfied, Handshake 
 } from '@mui/icons-material';
 import { buildEventHistory, buildPromptSegment } from "../Skit";
+import { getAideLabel, isTowerSpirit } from "../Aide";
 
 // Core character stats as an enum so other parts of the app can reference them safely
 // Using single-syllable words, each starting with a different letter
@@ -64,7 +65,7 @@ class Actor {
     locationId: string = ''; // If this is a module ID, the actor is currently present in that module; if it is a faction ID, the actor is temporarily located offstation with that faction
     factionId: string = ''; // If this actor belongs to a faction, the ID of that faction; '' is the PARC or independent
     avatarImageUrl: string;
-    // 'patient' indicates an echo origin, 'faction' indicates a someone generated as a faction representative, 'aide' is the station aide, and 'emergent' is a character generated as a result of narrative activity.
+    // 'patient' indicates an echo origin, 'faction' indicates a someone generated as a faction representative, 'aide' is the station aide (the tower spirit or the fellow summoned companion; see Aide.ts), and 'emergent' is a character generated as a result of narrative activity.
     origin: 'patient' | 'emergent' | 'faction' | 'aide' = 'patient';
     profile: string;
     characterArc?: string;
@@ -284,7 +285,8 @@ class Actor {
 export function isHologram(actor: Actor, save: SaveType, currentLocationId: string): boolean {
         // Faction envoys always render as scrying projections; the tower spirit renders
         // as a ghost unless the player has toggled a solid manifestation in settings.
-        return !!(save.factions[currentLocationId]) || (save.aide.actorId === actor.id && !save.solidSpirit);
+        // A fellow summoned companion is a living person, so they are never ghostly.
+        return !!(save.factions[currentLocationId]) || (isTowerSpirit(actor, save) && !save.solidSpirit);
     }
 
 export function getStatDescription(stat: Stat | string): string {
@@ -924,12 +926,19 @@ export function findBestNameMatch<T extends { name: string }>(
     return bestMatch;
 }
 
+/** The role from the room this actor runs, or '' - never a title like the aide's or a faction name. */
+export function getRoomRole(actor: Actor, save: SaveType): string {
+    const roleModule = save.layout.getModulesWhere(m => m && m.type !== 'quarters' && m.ownerId === actor.id)[0];
+    return roleModule?.getAttribute('role') || '';
+}
+
 export function getRole(actor: Actor, save: SaveType): string {
     const roleModule = save.layout.getModulesWhere((m: any) => m && m.type !== 'quarters' && m.ownerId === actor.id)[0];
     if (roleModule !== undefined) {
         return roleModule.getAttribute('role') || '';
     } else if (save.aide.actorId === actor.id) {
-        return 'Tower Spirit';
+        // 'Tower Spirit' or 'Fellow Summoned' (a companion who hasn't taken on a room role yet).
+        return getAideLabel(save);
     } else if (actor.factionId && save.factions[actor.factionId]) {
         return save.factions[actor.factionId].name;
     }

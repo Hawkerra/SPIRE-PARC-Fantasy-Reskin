@@ -2,6 +2,7 @@ import Actor, { getStatDescription, findBestNameMatch, Stat, getRole } from "./a
 import { Emotion, EMOTION_MAPPING } from "./actors/Emotion";
 import { getStatRating, MODULE_TEMPLATES, STATION_STAT_PROMPTS, StationStat } from "./Module";
 import { Stage } from "./Stage";
+import { isCompanionMode, isTowerSpirit } from "./Aide";
 import { v4 as generateUuid } from 'uuid';
 
 export enum SkitType {
@@ -95,6 +96,40 @@ function splitScriptEntriesByLineBreaks(scriptEntries: ScriptEntry[]): ScriptEnt
     return splitEntries;
 }
 
+/**
+ * The opening scene for a game that starts with a fellow summoned companion instead of the tower spirit: the Magus and
+ * the companion arrive together, and with no one left to explain anything, they must work out the Spire's situation
+ * for themselves. It establishes the same essentials as the spirit's version (the title, the binding, the summoning
+ * queue), but through discovery and deduction instead of exposition.
+ */
+function generateCompanionBeginningPrompt(stage: Stage, continuing: boolean): string {
+    const playerName = stage.getSave().player.name;
+    const companionName = stage.getSave().aide.name;
+    return !continuing ?
+        `This scene introduces the beginning of the story. The player, ${playerName}, has just been pulled into the Spire's summoning sanctum by an enchanted tome ` +
+        `that identified them as matching a set of traits its late owner spent years searching for - a search left quietly running for nearly two hundred years. ` +
+        `${playerName} has not arrived alone: ${companionName} was dragged through the summoning circle in the very same instant. Whether ${companionName} was simply caught in the pull or the tome's ancient search somehow matched two people at once is unclear - fertile ground for speculation, or even a running argument over which of them was the 'intended' arrival. ` +
+        `Whether ${companionName} hails from ${playerName}'s own reality or a different one entirely should follow from their descriptions. ` +
+        `Crucially, there is no one here to greet or guide them: the tower stands empty, with no steward, spirit, or servant to explain anything. ` +
+        `${playerName} and ${companionName} must work out their situation together through exploration, observation, deduction, and whatever the late Magus left behind (journals, scattered notes, inscriptions, and the behavior of the tower's enchantments) - and their conclusions may be incomplete, uncertain, or occasionally mistaken. ` +
+        `Over the course of the scene, they should discover or strongly infer the following: ` +
+        `the tower's former master has been gone a very long time - the dust of ages and a final, unfinished journal entry suggest they perished long ago, perhaps confronting a dragon; ` +
+        `the tower's enchantments respond to ${playerName}, and not to ${companionName}, as their new Magus, effectively passing the late Magus's title, effects, and responsibilities to them; ` +
+        `the same one-way magic that pulled them here binds ${playerName} to the tower - every way out refuses the Magus alone - and the hostile jungle and ruins beyond make leaving moot regardless (the binding does not seem to hold ${companionName}, though the wilds outside make that cold comfort); ` +
+        `and the summoning sanctum's apparatus is still running, with a queue of souls apparently waiting to be pulled through who, if the late Magus's notes are to be believed, risk crumbling into arcane dust if left too long. ` +
+        `If the pair stumble upon the tome's search criteria, they may well read like the late Magus's wish list for a spouse or consort - a discovery that could prompt ${companionName} to tease ${playerName} as the late Magus's "magic-order bride" or "magic-order groom" (whichever suits ${playerName}'s description). ` +
+        `By the end, the two of them should conclude that if they want anything done around the Spire, they will have to complete those summonings and bring in help, and should turn their attention to the sanctum's apparatus to work out how to operate it. ` +
+        `This scene must end before bringing any additional residents into the tower; this process is handled via a separate game mechanic.` :
+        `Continue this introductory scene, as ${playerName} and ${companionName} - both newly and accidentally summoned - keep exploring the otherwise-empty Spire and piecing together what has happened to them, with no one to explain it. ` +
+        `Their understanding should grow through discovery and deduction rather than exposition, and remain partial and occasionally mistaken: ` +
+        `the tower's apparatus summons living people one way down the leyline current from their home realities; it was apparently never built to send anyone back; ` +
+        `an incomplete summoning is believed to leave nothing but arcane dust, so completing each one is a mercy, and the blame for the abductions rests with the strange system the late Magus built; ` +
+        `and the tower's magic recognizes ${playerName} as its new Magus. ` +
+        `They should come to the shared conclusion that drawing in new residents - and helping them find their place in this world (and, perhaps someday, a way home) - is their best path forward. ` +
+        `Once the concept is established, use a "[SUMMARY]" tag to summarize the scene before moving on. This scene must end before bringing any additional residents into the tower; ` +
+        `this process is handled via a separate game mechanic; use the "[SUMMARY]" tag to summarize the events of this intro and end the scene before that occurs.`;
+}
+
 export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing: boolean): string {
     const actor = stage.getSave().actors[skit.actorId || ''];
     const module = stage.getSave().layout.getModuleById(skit.moduleId || '');
@@ -102,6 +137,9 @@ export function generateSkitTypePrompt(skit: SkitData, stage: Stage, continuing:
     const notHereText = 'This audience is conducted through a scrying projection; no representative is physically present at the tower. ';
     switch (skit.type) {
         case SkitType.BEGINNING:
+            if (isCompanionMode(stage.getSave())) {
+                return generateCompanionBeginningPrompt(stage, continuing);
+            }
             return !continuing ?
                 `This scene introduces the beginning of the story. The player, ${stage.getSave().player.name}, has just been pulled into the Spire's summoning sanctum by an enchanted tome ` +
                 `that identified them as matching a set of traits its late owner spent years searching for - a search left quietly running for nearly two hundred years. The tower's spirit steward, ${stage.getSave().aide.name}, greets the bewildered new arrival, ` +
@@ -607,7 +645,8 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     const linkedModuleIds = currentSceneModule?.linkedModuleIds || [];
     const presentActorIds = getCurrentActorsInScene(skit, currentSceneModuleId, -1, linkedModuleIds);
     const presentPatients = Object.values(save.actors).filter(a => presentActorIds.has(a.id));
-    const absentPatients = Object.values(save.actors).filter(a => !presentActorIds.has(a.id) && save.aide.actorId != a.id && !['cryo', 'dead'].includes(a.locationId) && !a.isOffSite(save));
+    // The tower spirit gets its own segment below; a fellow summoned companion is physically somewhere, so they're listed like a resident.
+    const absentPatients = Object.values(save.actors).filter(a => !presentActorIds.has(a.id) && !isTowerSpirit(a, save) && !['cryo', 'dead'].includes(a.locationId) && !a.isOffSite(save));
     const cryoPatients = Object.values(save.actors).filter(a => a.locationId === 'cryo');
     const awayPatients = Object.values(save.actors).filter(a => !a.factionId && a.isOffSite(save));
 
@@ -625,6 +664,23 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     const faction = skit.context.factionId ? save.factions[skit.context.factionId] : null;
     const factionRepresentative = faction ? save.actors[faction.representativeId || ''] : null;
     const stationAide = save.actors[save.aide.actorId || ''];
+    const companionMode = isCompanionMode(save);
+
+    // In companion mode, the aide slot holds the Magus's fellow summoned: a living person with no special knowledge of the tower.
+    const buildCompanionContext = (companion: Actor): string => {
+        const isPresent = presentActorIds.has(companion.id);
+        const status = isPresent ? `${companion.name} is present in this scene.`
+            : companion.locationId === 'cryo' ? `${companion.name} is currently home through the Homeward Gate, unavailable unless recalled.`
+            : companion.locationId === 'dead' ? `${companion.name} has died.`
+            : companion.isOffSite(save) ? `${companion.name} is currently away from the Spire.`
+            : `${companion.name} is elsewhere in the Spire at the moment.`;
+        // Their profile already appears in whichever character list they're in; only repeat it if they're in none of them.
+        const listedElsewhere = isPresent || [...absentPatients, ...awayPatients, ...cryoPatients].includes(companion);
+        return `${companion.name} was pulled into the Spire by the same accidental summoning that brought ${playerName}, arriving at the very same moment. ` +
+            `Neither knew anything of this world or the tower beforehand, and with no steward or spirit to guide them, they have had to piece the Spire's workings together side by side - through trial, error, and the late Magus's cryptic notes - so their understanding remains incomplete and sometimes mistaken. ` +
+            `${companion.name} holds no title or authority over the tower, but as the only other person who shared that first bewildering day, they occupy a unique place at ${playerName}'s side. ${status}` +
+            (listedElsewhere ? '' : `\n${companion.profile}`);
+    };
 
     let fullPrompt = `{{messages}}` +
         buildPromptSegment('Premise', `This is a fantasy visual novel game set in an isolated wizard's tower that summons living people from other realities: ` +
@@ -632,7 +688,9 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
         `The thrust of the game positions the player character, ${playerName}, as the Magus of the Spire, interacting with the tower's residents as they navigate this strange arcane world together. ` +
         `The Spire stands upon a great leyline nexus amid a snarl of hostile jungle and ancient ruins; its apparatus draws living people one way down the leyline current from their home realities, without their consent. It was never built to send anyone back, and an incomplete summoning is believed to leave nothing but arcane dust, so completing each one is a mercy - the blame lies with the strange system the late Magus built. The Spire is also the only place from which a way home might ever be researched, a long-term hope for many residents. It serves as both sanctuary and containment for its diverse inhabitants, who hail from various alternate realities. ` +
         `${playerName} is technically as much a ward of the tower as anyone, having been pulled here by an enchanted tome, and every means of leaving the tower offers appears to refuse the Magus alone; still, they hold the title and its authority (and may take residents on as staff). As a result, the Spire may feel a bit lonely or alienating at times. ` +
-        `Much of the day-to-day upkeep of the tower is handled by its spirit steward, ${save.aide.name || 'the tower spirit'}, and various servitor charms and minor animations, enabling ${playerName} to focus on the residents' care and adjustment.`) +
+        (companionMode ?
+            `The tower has no steward or guide: its late master left behind only servitor charms and minor animations that handle the day-to-day upkeep in ways no one fully understands. ${playerName} and ${save.aide.name || 'their fellow summoned'}, who was pulled into the Spire alongside them, are still working out its mysteries together, even as ${playerName} focuses on the residents' care and adjustment.` :
+            `Much of the day-to-day upkeep of the tower is handled by its spirit steward, ${save.aide.name || 'the tower spirit'}, and various servitor charms and minor animations, enabling ${playerName} to focus on the residents' care and adjustment.`)) +
         buildPromptSegment('Narrative Tone', save.tone || stage.TONE_MAP['Original']) +
         buildPromptSegment('Tower Stats', save.stationStats ? (
             Object.values(StationStat).map(stat => `  ${stat} (${save.stationStats?.[stat] || 3}): ${STATION_STAT_PROMPTS[stat][getStatRating(save.stationStats?.[stat] || 3)]}`).join('\n')
@@ -644,7 +702,9 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
                 `  ${module.getAttribute('name')} ${module.getAttribute('role') ? `(${module.getAttribute('role')} : ${module.ownerId ? `${save.actors[module.ownerId]?.name || 'Unknown'}` : 'None'})` : ''}`).join('\n'))
         ) +
         buildPromptSegment(`${playerName}'s profile`, save.player.description) +
-        (stationAide ? buildPromptSegment('Tower Spirit profile', (presentActorIds.has(stationAide.id) ? `The tower's spirit steward, ${stationAide.name}, is active in the scene.` : `\n\nThe tower's spirit steward, ${stationAide.name}, remains absent from the scene unless called upon, though they can manifest nearly anywhere in the Spire.`) + `\n${stationAide.profile}`) : '') +
+        (stationAide ? (companionMode ?
+            buildPromptSegment('Fellow Summoned', buildCompanionContext(stationAide)) :
+            buildPromptSegment('Tower Spirit profile', (presentActorIds.has(stationAide.id) ? `The tower's spirit steward, ${stationAide.name}, is active in the scene.` : `\n\nThe tower's spirit steward, ${stationAide.name}, remains absent from the scene unless called upon, though they can manifest nearly anywhere in the Spire.`) + `\n${stationAide.profile}`)) : '') +
         // List non-present characters for reference; just need description and profile:
         buildPromptSegment('Absent Characters (Available to Add)', absentPatients.map(actor => {
             // Roll name and current location
@@ -728,7 +788,10 @@ export function buildSkitPrompt(skit: SkitData, stage: Stage, historyLength: num
     return fullPrompt;
 }
 
-function buildOutcomeTagRules(exampleActor: string): string {return `\n#Character Stat Changes:#\n` +
+function buildOutcomeTagRules(exampleActor: string, stage: Stage): string {
+    // Only a tower spirit needs calling out as an activity subject; a fellow summoned companion is simply a resident.
+    const spiritMode = !isCompanionMode(stage.getSave());
+    return `\n#Character Stat Changes:#\n` +
                             `Identify any changes to character stats implied by this entry. For each change, output a line in the following format:\n` +
                             `[<characterName>: <stat> +<value>(, ...)]` +
                             `Where <stat> is the name of the stat to be changed, and <value> is the amount to increase or decrease the stat by (positive or negative). ` +
@@ -748,8 +811,8 @@ function buildOutcomeTagRules(exampleActor: string): string {return `\n#Characte
                             `[STATION: Security -1]\n` +
 
                             `\n#Tower Activity:#\n` +
-                            `Separately, report on ONE resident of the Spire (or the tower's bound spirit) who did NOT appear in this scene, describing something they got up to elsewhere in the tower this turn. ` +
-                            `The subject MUST be either a current resident of the tower itself or the tower's bound spirit - NEVER a visiting faction representative, a member of an outside faction, or anyone away from the Spire. ` +
+                            `Separately, report on ONE resident of the Spire${spiritMode ? ` (or the tower's bound spirit)` : ``} who did NOT appear in this scene, describing something they got up to elsewhere in the tower this turn. ` +
+                            `The subject MUST be ${spiritMode ? `either a current resident of the tower itself or the tower's bound spirit` : `a current resident of the tower itself`} - NEVER a visiting faction representative, a member of an outside faction, or anyone away from the Spire. ` +
                             `Choose a resident from the roster who was absent from the scene; favor someone with an assigned role, and let their personality and role shape what they did. ` +
                             `Output EXACTLY ONE line in this exact format:\n` +
                             `[ACTIVITY: <characterName> | <a single short sentence, no more than about 20 words> | <TAG>]\n` +
@@ -861,7 +924,7 @@ function parseOutcomeTag(text: string, stage: Stage, skit: SkitData): Outcome[] 
         let line = (activityMatch[2] || '').trim();
         const tagRaw = (activityMatch[3] || '').trim();
 
-        // Match against tower residents (and the bound tower spirit): no faction members, no one away/visiting.
+        // Match against tower residents (and the aide: tower spirit or fellow summoned): no faction members, no one away/visiting.
         const inTowerResidents = allActors.filter(a =>
             !a.factionId &&
             !a.isOffSite(stage.getSave()) &&
@@ -1186,7 +1249,7 @@ export async function generateImpliedOutcomesForCurrentEnd(skit: SkitData, newEn
             const impliedOutcomePrompt = buildSkitPrompt(analysisSkit, stage, 0,
                 buildPromptSegment('Scene Script for Analysis', buildScriptLog(analysisSkit, [], stage)) +
                 buildPromptSegment('Outcome Tag Rules',
-                    buildOutcomeTagRules('Some Character')) +
+                    buildOutcomeTagRules('Some Character', stage)) +
                 buildPromptSegment('Instruction',
                     `Analyze the scene depicted in the above script. ` +
                     `The System will apply the Outcome Tag Rules to output outcome tags that represent the direct or implied consequences of this scene if it were to end at this moment. ` +
@@ -1339,7 +1402,7 @@ export async function generateSkitScript(skit: SkitData, stage: Stage): Promise<
                 buildPromptSegment(`Outcome Tags`, 
                             `In addition to the cue tags above, you may embed outcome tags to indicate important or relevant rewards or penalties, reflecting the narrative content; ` +
                             `typically, these are included at the tail end of the turn that triggers them. Weigh other outcome tags in the scene's script to avoid redundancy or overkill. ` +
-                            `For each entry, consider and output particularly suitable tags, avoiding redundant or unnecessary tags. ` + buildOutcomeTagRules('Some Character')
+                            `For each entry, consider and output particularly suitable tags, avoiding redundant or unnecessary tags. ` + buildOutcomeTagRules('Some Character', stage)
                 ) +
 
 
@@ -1907,7 +1970,7 @@ export async function updateCharacterArc(stage: Stage, skit: SkitData, actor: Ac
             `The System output should be a single paragraph, maintaining the same tone and style as the existing character arc.` +
             `If there are no significant developments, simply repeat the existing character arc without changes. `) +
         buildPromptSegment(`Full Examples`, 
-            `Revised Character Arc: John Smith has yet to find their footing at the Spire; they can't seem to make friends with the other residents - beyond the tower spirit - and the Magus hasn't proven trustworthy.\n[END]\n\n` +
+            `Revised Character Arc: John Smith has yet to find their footing at the Spire; they can't seem to make friends with the other residents${isCompanionMode(stage.getSave()) ? ',' : ' - beyond the tower spirit -'} and the Magus hasn't proven trustworthy.\n[END]\n\n` +
             `Revised Character Arc: Jane Doe has started to open up to others, forming tentative friendships. She feels a bit out of her depth in her role as Steward, but appreciates the trust the Magus has placed in her and hopes to prove that faith justified.\n[END]\n`)
         );
     

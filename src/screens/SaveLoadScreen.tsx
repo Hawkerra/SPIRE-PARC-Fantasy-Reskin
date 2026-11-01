@@ -9,6 +9,7 @@ import { Save, FolderOpen, Close, Delete, Download, Upload } from '@mui/icons-ma
 import { ScreenType } from './BaseScreen';
 import { STATION_STAT_ICONS, StationStat } from '../Module';
 import { buildSaveExport, tryDownloadTextAsFile, importSaveFromFile, copyTextToClipboard } from '../SaveFilePortability';
+import { isTowerSpirit } from '../Aide';
 
 // Identifier stamped into exported save files (helps when players send saves for troubleshooting).
 const STAGE_ID = 'spire-parc-fantasy-reskin';
@@ -123,8 +124,8 @@ export const SaveLoadScreen: FC<SaveLoadScreenProps> = ({ stage, mode, onClose, 
         const isEmpty = !save;
         const isCurrentSlot = stage().getCurrentSlot() === slotIndex;
 
-        // Get non-faction actors
-        const actors = !isEmpty ? Object.values(save.actors).filter(actor => !actor.factionId && save.aide.actorId !== actor.id) : [];
+        // Get non-faction actors (a fellow summoned companion counts; the tower spirit doesn't)
+        const actors = !isEmpty ? Object.values(save.actors).filter(actor => !actor.factionId && !isTowerSpirit(actor, save)) : [];
 
         return (
             <motion.div

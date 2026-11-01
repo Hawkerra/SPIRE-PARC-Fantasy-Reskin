@@ -16,6 +16,7 @@ import { EditNote } from '@mui/icons-material';
 import { SkitType } from '../Skit';
 import Actor from '../actors/Actor';
 import { generateActorDecor, getRole, isHologram } from '../actors/Actor';
+import { isTowerSpirit } from '../Aide';
 import { scoreToGrade, assignActorToRole } from '../utils';
 
 // Styled components for the day/turn display
@@ -1069,7 +1070,8 @@ export const StationScreen: FC<StationScreenProps> = ({stage, setScreenType, isV
 
     const save = stage().getSave();
     const stationActors = Object.values(save.actors).filter(actor => {
-        if (save.aide.actorId === actor.id || ['cryo', 'dead'].includes(actor.locationId)) {
+        // The tower spirit isn't a resident, but a fellow summoned companion is listed (and assignable) like one.
+        if (isTowerSpirit(actor, save) || ['cryo', 'dead'].includes(actor.locationId)) {
             return false;
         }
 

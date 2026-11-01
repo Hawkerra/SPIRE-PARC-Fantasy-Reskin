@@ -5,6 +5,7 @@ import { Stage } from '../Stage';
 import { GlassPanel, Title, Button, TextInput } from '../components/UIComponents';
 import { Close } from '@mui/icons-material';
 import { ArtStyle } from '../actors/Actor';
+import { AIDE_TYPE_OPTIONS, AideType, DEFAULT_COMPANION_DESCRIPTION, DEFAULT_COMPANION_NAME, getAideType } from '../Aide';
 
 interface SettingsScreenProps {
     stage: () => Stage;
@@ -16,8 +17,12 @@ interface SettingsScreenProps {
 interface SettingsData {
     playerName: string;
     playerDescription: string;
-    aideName: string;
-    aideDescription: string;
+    aideType: AideType;
+    // Separate name/description per aide type, so toggling between them in the new-game form never loses an edit.
+    aideName: string; // Tower spirit
+    aideDescription: string; // Tower spirit
+    companionName: string; // Fellow summoned
+    companionDescription: string; // Fellow summoned
     directorModuleName: string;
     directorModuleRoleName: string;
     disableTextToSpeech: boolean;
@@ -116,6 +121,9 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
 
     const initialTonePreset = getTonePresetFromValue(saveFromStage.tone);
     const initialTone = saveFromStage.tone || toneMap['Original'];
+    // The save's aide name/description belong to whichever type it uses; the other type starts from its defaults.
+    const initialAideType = getAideType(saveFromStage);
+    const savedAide = (type: AideType) => initialAideType === type ? saveFromStage.aide : undefined;
 
     const initialTagToggles = Object.keys(tagMap).reduce((acc, key) => ({ ...acc, [key]: true }), {} as { [key: string]: boolean });
     const initialWriteIns: string[] = [];
@@ -141,8 +149,11 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
     const [settings, setSettings] = useState<SettingsData>({
         playerName: saveFromStage.player?.name || 'Magus',
         playerDescription: saveFromStage.player?.description || 'The Spire\'s accidental Magus is the tower\'s sole living authority.',
-        aideName: saveFromStage.aide?.name || 'Soji',
-        aideDescription: saveFromStage.aide?.description ||
+        aideType: initialAideType,
+        companionName: savedAide('companion')?.name || DEFAULT_COMPANION_NAME,
+        companionDescription: savedAide('companion')?.description || DEFAULT_COMPANION_DESCRIPTION,
+        aideName: savedAide('spirit')?.name || 'Soji',
+        aideDescription: savedAide('spirit')?.description ||
             (`Every respectable tower comes haunted, and the Spire is no exception! Your resident tower spirit has been bound to these stones since long before your arrival and knows the Spire's workings intimately, so you don't have to. ` +
             `Fair warning: two centuries of empty halls have left them a touch capricious - expect teasing, dramatics, and open delight in your confusion, as your suffering is (by their own cheerful admission) the finest entertainment they've had in two hundred years. ` +
             `Rest assured the binding compels honest service no matter how they grumble, and those who earn their trust report the needling softens into something almost like fondness.\n\n` +
@@ -199,8 +210,13 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
         const save = stage().getSave();
         save.player.name = settings.playerName;
         save.player.description = settings.playerDescription;
-        save.aide.name = settings.aideName;
-        save.aide.description = settings.aideDescription;
+        const companionMode = settings.aideType === 'companion';
+        if (isNewGame) {
+            // Chosen once, at the start: the aide is generated (and the opening scene written) around it.
+            save.aide.type = settings.aideType;
+        }
+        save.aide.name = companionMode ? settings.companionName : settings.aideName;
+        save.aide.description = companionMode ? settings.companionDescription : settings.aideDescription;
         save.directorModule = save.directorModule || {};
         save.directorModule.name = settings.directorModuleName;
         save.directorModule.roleName = settings.directorModuleRoleName;
@@ -439,10 +455,118 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                 />
                             </div>
 
-                            {/* Tower Spirit Name */}
+                            {/* Starting Companion: Tower Spirit or Fellow Summoned */}
                             {isNewGame && (
                                 <div>
-                                    <label 
+                                    <label
+                                        id="aide-type-label"
+                                        style={{
+                                            display: 'block',
+                                            color: '#b066ff',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            marginBottom: '8px',
+                                        }}
+                                    >
+                                        Starting Companion
+                                    </label>
+                                    <div
+                                        role="radiogroup"
+                                        aria-labelledby="aide-type-label"
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                                            gap: '12px',
+                                        }}
+                                    >
+                                        {AIDE_TYPE_OPTIONS.map(option => {
+                                            const selected = settings.aideType === option.type;
+                                            const select = () => setSettings(prev => ({ ...prev, aideType: option.type }));
+                                            return (
+                                                <motion.div
+                                                    key={option.type}
+                                                    role="radio"
+                                                    aria-checked={selected}
+                                                    tabIndex={0}
+                                                    whileHover={{ scale: 1.01 }}
+                                                    whileTap={{ scale: 0.99 }}
+                                                    onClick={select}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            select();
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        padding: '12px',
+                                                        background: selected
+                                                            ? 'rgba(176, 102, 255, 0.15)'
+                                                            : 'rgba(18, 8, 32, 0.7)',
+                                                        border: selected
+                                                            ? '2px solid rgba(176, 102, 255, 0.5)'
+                                                            : '2px solid rgba(255, 255, 255, 0.1)',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        gap: '10px',
+                                                    }}
+                                                >
+                                                    {/* Radio indicator */}
+                                                    <div
+                                                        style={{
+                                                            width: '18px',
+                                                            height: '18px',
+                                                            marginTop: '1px',
+                                                            borderRadius: '50%',
+                                                            border: '2px solid ' + (selected ? '#b066ff' : 'rgba(255, 255, 255, 0.3)'),
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0,
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                    >
+                                                        {selected && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1 }}
+                                                                style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#b066ff' }}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        <span
+                                                            style={{
+                                                                color: selected ? '#b066ff' : 'rgba(255, 255, 255, 0.85)',
+                                                                fontSize: '14px',
+                                                                fontWeight: 'bold',
+                                                            }}
+                                                        >
+                                                            {option.label}
+                                                        </span>
+                                                        <span
+                                                            style={{
+                                                                color: 'rgba(255, 255, 255, 0.65)',
+                                                                fontSize: '12px',
+                                                                lineHeight: 1.4,
+                                                            }}
+                                                        >
+                                                            {option.blurb}
+                                                        </span>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tower Spirit / Fellow Summoned Name */}
+                            {isNewGame && (
+                                <div>
+                                    <label
                                         htmlFor="aide-name"
                                         style={{
                                             display: 'block',
@@ -452,23 +576,23 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        Tower Spirit Name
+                                        {settings.aideType === 'companion' ? 'Fellow Summoned Name' : 'Tower Spirit Name'}
                                     </label>
                                     <TextInput
                                         id="aide-name"
                                         fullWidth
-                                        value={settings.aideName}
-                                        onChange={(e) => handleInputChange('aideName', e.target.value)}
-                                        placeholder="Enter Tower Spirit name"
+                                        value={settings.aideType === 'companion' ? settings.companionName : settings.aideName}
+                                        onChange={(e) => handleInputChange(settings.aideType === 'companion' ? 'companionName' : 'aideName', e.target.value)}
+                                        placeholder={settings.aideType === 'companion' ? 'Enter your fellow summoned\'s name' : 'Enter Tower Spirit name'}
                                         style={{ fontSize: '16px' }}
                                     />
                                 </div>
                             )}
 
-                            {/* Tower Spirit Description */}
+                            {/* Tower Spirit / Fellow Summoned Description */}
                             {isNewGame && (
                                 <div>
-                                    <label 
+                                    <label
                                         htmlFor="aide-description"
                                         style={{
                                             display: 'block',
@@ -478,14 +602,14 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             marginBottom: '8px',
                                         }}
                                     >
-                                        Tower Spirit Description
+                                        {settings.aideType === 'companion' ? 'Fellow Summoned Description' : 'Tower Spirit Description'}
                                     </label>
                                     <textarea
                                         id="aide-description"
                                         className="text-input-primary"
-                                        value={settings.aideDescription}
-                                        onChange={(e) => handleInputChange('aideDescription', e.target.value)}
-                                        placeholder="Describe your Tower Spirit..."
+                                        value={settings.aideType === 'companion' ? settings.companionDescription : settings.aideDescription}
+                                        onChange={(e) => handleInputChange(settings.aideType === 'companion' ? 'companionDescription' : 'aideDescription', e.target.value)}
+                                        placeholder={settings.aideType === 'companion' ? 'Describe the person summoned alongside you...' : 'Describe your Tower Spirit...'}
                                         rows={4}
                                         style={{
                                             width: '100%',
@@ -802,7 +926,8 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                         </span>
                                     </motion.div>
 
-                                    {/* Solid Spirit Toggle */}
+                                    {/* Solid Spirit Toggle (only meaningful for a tower spirit; a fellow summoned is always solid) */}
+                                    {settings.aideType === 'spirit' && (
                                     <motion.div
                                         whileHover={{ scale: 1.01 }}
                                         whileTap={{ scale: 0.99 }}
@@ -861,6 +986,7 @@ export const SettingsScreen: FC<SettingsScreenProps> = ({ stage, onCancel, onCon
                                             Solid Spirit (No Ghostly Effect)
                                         </span>
                                     </motion.div>
+                                    )}
 
                                     {/* Fast Start (new game only, one-way lock once checked) */}
                                     {isNewGame && (
