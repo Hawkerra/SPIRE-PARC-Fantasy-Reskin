@@ -112,12 +112,27 @@ jobs:
       - name: Zip the build folder
         run: cd dist && zip -r ../build.zip * && cd ../
 
+      # Keep the exact build.zip from every run downloadable (Summary page > Artifacts), so it can be
+      # uploaded to Chub by hand if the automatic upload below is rejected.
+      - name: Save the build for manual upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: chub-stage-build
+          path: build.zip
+          if-no-files-found: error
+
       - name: Upload the build
         if: ${{ !contains(github.repository, 'template') }}
         env:
           CHUB_AUTH_TOKEN: ${{ secrets.CHUB_AUTH_TOKEN }}
-        run: |    
-          curl -H "CH-API-KEY: ${{ secrets.CHUB_AUTH_TOKEN }}" -F "file=@build.zip" https://api.chub.ai/extension/${{ env.STAGE_ID }}/upload
+        run: |
+          # --fail-with-body makes a rejected upload fail this run instead of passing silently. (Chub blocks
+          # GitHub's servers by region, answering HTTP 403 "This service is not available in your country.")
+          if ! curl --fail-with-body -H "CH-API-KEY: ${{ secrets.CHUB_AUTH_TOKEN }}" -F "file=@build.zip" https://api.chub.ai/extension/${{ env.STAGE_ID }}/upload; then
+            echo  # Chub's reply has no trailing newline, and ::error must start its own line.
+            echo "::error title=Chub rejected the upload::The stage on Chub was NOT updated. Download the chub-stage-build artifact from this run's Summary page, unzip it, and upload build.zip to Chub from your own computer."
+            exit 1
+          fi
 
       - name: Setup .npmrc
         env:
